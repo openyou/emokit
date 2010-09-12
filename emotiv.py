@@ -31,8 +31,9 @@ class EmotivPacket(object):
 		#assert ord(data[15]) == 0
 		
 		for name, (i, j) in channels.items():
-			i = data[i]
-			setattr(self, name, struct.unpack('>h', i+data[j])[0])
+			level = struct.unpack('>h', data[i]+data[j])[0]
+			strength = 4#(ord(data[j]) >> 3) & 1
+			setattr(self, name, (level, strength))
 	
 	def __repr__(self):
 		return 'EmotivPacket(counter=%i, gyroX=%i, gyroY=%i)' % (

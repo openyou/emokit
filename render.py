@@ -26,10 +26,22 @@ class Grapher(object):
 	def draw(self):
 		if len(self.buffer) == 0:
 			return
-		pos = self.xoff, int(self.buffer[0] / self.range * gheight * 0.5) + self.y
-		for i, x in enumerate(self.buffer):
+		pos = self.xoff, int(self.buffer[0][0] / self.range * gheight * 0.5) + self.y
+		for i, (x, strength) in enumerate(self.buffer):
 			y = int(x / self.range * gheight * 0.5) + self.y
-			pygame.draw.line(self.screen, (255, 255, 255), pos, (self.xoff + i, y))
+			if strength == 0:
+				color = (0, 0, 0)
+			elif strength == 1:
+				color = (255, 0, 0)
+			elif strength == 2:
+				color = (255, 165, 0)
+			elif strength == 3:
+				color = (255, 255, 0)
+			else:#if strength == 4:
+				color = (0, 255, 0)
+			#else:
+			#	raise Exception('bad color!')
+			pygame.draw.line(self.screen, color, pos, (self.xoff + i, y))
 			pos = (self.xoff+i, y)
 		self.screen.blit(self.text, self.textpos)
 
@@ -64,13 +76,13 @@ def main():
 		for packet in emotiv.dequeue():
 			updated = True
 			if abs(packet.gyroX) > 1:
-				curX -= packet.gyroX
+				curX -= packet.gyroX - 1
 			if abs(packet.gyroY) > 1:
 				curY += packet.gyroY
 			map(lambda x: x.update(packet), graphers)
 		
 		if updated:
-			screen.fill((0, 0, 0))
+			screen.fill((75, 75, 75))
 			map(lambda x: x.draw(), graphers)
 			pygame.draw.rect(screen, (255, 255, 255), (curX-5, curY-5, 10, 10), 0)
 			pygame.display.flip()
