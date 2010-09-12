@@ -6,20 +6,20 @@ key = '\x31\x00\x35\x54\x38\x10\x37\x42\x31\x00\x35\x48\x38\x00\x37\x50'
 rijn = rijndael(key, 16)
 
 channels = dict(
-	AF3=(1, 2), 
+	F3=(1, 2), 
+	AF3=(5, 6), # Right high byte
+	F4=(28, 31), # Right high byte
 	F7=(3, 4), # Right high byte
-	F3=(5, 6), 
-	FC5=(7, 8), 
+	FC5=(8, 7), 
 	T7=(10, 9), 
-	P7=(12, 11), 
-	O1=(14, 13), 
-	O2=(16, 17), 
-	P8=(19, 18), 
-	T8=(21, 20), 
+	P7=(14, 13), 
+	P8=(16, 17), # Right high byte
+	O1=(12, 11), # Right high byte
+	O2=(21, 20), 
+	T8=(19, 18), 
 	FC6=(22, 23), 
-	F4=(24, 25), 
+	AF4=(24, 25),  # Right high byte (?)
 	F8=(26, 27), 
-	AF4=(28, 31), 
 )
 
 class EmotivPacket(object):

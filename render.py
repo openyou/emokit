@@ -37,39 +37,44 @@ def main():
 	pygame.init()
 	screen = pygame.display.set_mode((1024, 600))
 	
-	curX, curY = 0, 0
+	curX, curY = 512, 300
 	
 	graphers = []
 	graphers.append(Grapher(screen, 'AF3', len(graphers)))
-	graphers.append(Grapher(screen, 'F7', len(graphers)))
+	graphers.append(Grapher(screen, 'AF4', len(graphers)))
 	graphers.append(Grapher(screen, 'F3', len(graphers)))
+	graphers.append(Grapher(screen, 'F4', len(graphers)))
+	graphers.append(Grapher(screen, 'F7', len(graphers)))
+	graphers.append(Grapher(screen, 'F8', len(graphers)))
 	graphers.append(Grapher(screen, 'FC5', len(graphers)))
+	graphers.append(Grapher(screen, 'FC6', len(graphers)))
 	graphers.append(Grapher(screen, 'T7', len(graphers)))
+	graphers.append(Grapher(screen, 'T8', len(graphers)))
 	graphers.append(Grapher(screen, 'P7', len(graphers)))
+	graphers.append(Grapher(screen, 'P8', len(graphers)))
 	graphers.append(Grapher(screen, 'O1', len(graphers)))
 	graphers.append(Grapher(screen, 'O2', len(graphers)))
-	graphers.append(Grapher(screen, 'P8', len(graphers)))
-	graphers.append(Grapher(screen, 'T8', len(graphers)))
-	graphers.append(Grapher(screen, 'FC6', len(graphers)))
-	graphers.append(Grapher(screen, 'F4', len(graphers)))
-	graphers.append(Grapher(screen, 'F8', len(graphers)))
-	graphers.append(Grapher(screen, 'AF4', len(graphers)))
 	
 	while True:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				return
 		
+		updated = False
 		for packet in emotiv.dequeue():
-			curX = packet.gyroX
-			curY = packet.gyroY
-			
+			updated = True
+			if abs(packet.gyroX) > 1:
+				curX -= packet.gyroX
+			if abs(packet.gyroY) > 1:
+				curY += packet.gyroY
 			map(lambda x: x.update(packet), graphers)
 		
-		screen.fill((0, 0, 0))
-		map(lambda x: x.draw(), graphers)
-		pygame.draw.rect(screen, (255, 255, 255), (curX+128, curY+128, 10, 10), 0)
-		pygame.display.flip()
+		if updated:
+			screen.fill((0, 0, 0))
+			map(lambda x: x.draw(), graphers)
+			pygame.draw.rect(screen, (255, 255, 255), (curX-5, curY-5, 10, 10), 0)
+			pygame.display.flip()
+		time.sleep(1.0/60)
 
 try:
 	main()
