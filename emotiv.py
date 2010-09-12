@@ -1,4 +1,9 @@
-import pywinusb.hid as hid
+try:
+	import pywinusb.hid as hid
+	windows = True
+except:
+	import hid
+	windows = False
 from aes import rijndael
 import struct
 
@@ -44,17 +49,43 @@ class EmotivPacket(object):
 
 class Emotiv(object):
 	def __init__(self, headsetId=0):
+		if windows:
+			self.setupWin(headsetId)
+		else:
+			self.setupPosix(headsetId)
+		self.packets = []
+	
+	def setupWin(self, headsetId):
 		filter = hid.HidDeviceFilter(vendor_id=0x21A1, product_name='Brain Waves')
 		devices = filter.get_devices()
 		assert len(devices) > headsetId
 		self.device = devices[headsetId]
 		self.device.open()
-		self.device.set_raw_data_handler(self.gotData)
-		self.packets = []
+		def handle(data):
+			assert data[0] == 0
+			self.gotData(''.join(map(chr, data[1:])))
+		self.device.set_raw_data_handler(handle)
+	
+	def setupPosix(self, headsetId):
+		hid.hid_set_debug(HID_DEBUG_ALL)
+		hid.hid_init()
+		matcher = hid.HIDInterfaceMatcher()
+		matcher.vendor_id  = 0x21a1
+		matcher.product_id = 0x0001
+		self.interface = interface = hid.hid_new_HIDInterface()
+		if hid.hid_force_open(interface, 0, matcher, 1000) != HID_RET_SUCCESS:
+			self.interface = interface = hid.hid_new_HIDInterface()
+			if hid.hid_force_open(interface, 1, matcher, 1000) != HID_RET_SUCCESS:
+				return False
+		def reader():
+			while True:
+				ret, data = hid.hid_interrupt_read(interface, 0x81, 0x20, 0)
+				if ret == 0:
+					self.gotData(data)
+		thread.start_new_thread(reader, ())
 	
 	def gotData(self, data):
-		assert data[0] == 0 and len(data) == 33
-		data = ''.join(map(chr, data[1:]))
+		assert len(data) == 32
 		data = rijn.decrypt(data[:16]) + rijn.decrypt(data[16:])
 		self.packets.append(EmotivPacket(data))
 	
@@ -63,4 +94,7 @@ class Emotiv(object):
 			yield self.packets.pop(0)
 	
 	def close(self):
-		self.device.close()
+		if windows:
+			self.device.close()
+		else:
+			hid.hid_close(self.interface)
