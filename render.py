@@ -37,10 +37,10 @@ class Grapher(object):
 				color = (255, 165, 0)
 			elif strength == 3:
 				color = (255, 255, 0)
-			else:#if strength == 4:
+			elif strength == 4:
 				color = (0, 255, 0)
-			#else:
-			#	raise Exception('bad color!')
+			else:
+				color = (255, 255, 255)
 			pygame.draw.line(self.screen, color, pos, (self.xoff + i, y))
 			pos = (self.xoff+i, y)
 		self.screen.blit(self.text, self.textpos)
