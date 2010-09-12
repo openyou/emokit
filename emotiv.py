@@ -12,31 +12,35 @@ rijn = rijndael(key, 16)
 
 channels = dict(
 	F3=(1, 2), 
-	AF3=(5, 6), # Right high byte
-	F4=(28, 31), # Right high byte
-	F7=(3, 4), # Right high byte
+	AF3=(5, 6),
+	F4=(3, 31),
+	F7=(23, 3), # Totally unknown.
 	FC5=(8, 7), 
 	T7=(10, 9), 
 	P7=(14, 13), 
-	P8=(16, 17), # Right high byte
+	P8=(16, 16), 
 	O1=(12, 11), # Right high byte
-	O2=(21, 20), 
-	T8=(19, 18), 
-	FC6=(22, 23), 
-	AF4=(24, 25),  # Right high byte (?)
-	F8=(26, 27), 
+	O2=(21, 20), # Right high byte
+	T8=(17, 18), 
+	FC6=(19, 22), 
+	AF4=(22, 24), 
+	F8=(24, 26), 
 )
+
+#valid = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31]
+#channels = dict((str(i), (i, 0)) for i in valid)
 
 class EmotivPacket(object):
 	def __init__(self, data):
 		self.counter = ord(data[0])
 		self.sync = self.counter == 0xe9
-		self.gyroX = ord(data[29]) - 100
+		self.gyroX = ord(data[29]) - 102
 		self.gyroY = ord(data[30]) - 104
 		#assert ord(data[15]) == 0
 		
 		for name, (i, j) in channels.items():
-			level = struct.unpack('>h', data[i]+data[j])[0]
+			level = struct.unpack('>h', data[i]+'\0')[0]
+			#level = struct.unpack('b', data[j])[0]
 			strength = 4#(ord(data[j]) >> 3) & 1
 			setattr(self, name, (level, strength))
 	

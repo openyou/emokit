@@ -23,12 +23,15 @@ class Grapher(object):
 			self.buffer = self.buffer[1:]
 		self.buffer.append(getattr(packet, self.name))
 	
+	def calcY(self, val):
+		return int(val / self.range * gheight * 0.5)
+	
 	def draw(self):
 		if len(self.buffer) == 0:
 			return
-		pos = self.xoff, int(self.buffer[0][0] / self.range * gheight * 0.5) + self.y
+		pos = self.xoff, self.calcY(self.buffer[0][0]) + self.y
 		for i, (x, strength) in enumerate(self.buffer):
-			y = int(x / self.range * gheight * 0.5) + self.y
+			y = self.calcY(x) + self.y
 			if strength == 0:
 				color = (0, 0, 0)
 			elif strength == 1:
@@ -66,6 +69,8 @@ def main():
 	graphers.append(Grapher(screen, 'P8', len(graphers)))
 	graphers.append(Grapher(screen, 'O1', len(graphers)))
 	graphers.append(Grapher(screen, 'O2', len(graphers)))
+	#for x in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31]:
+	#	graphers.append(Grapher(screen, str(x), len(graphers)))
 	
 	while True:
 		for event in pygame.event.get():
