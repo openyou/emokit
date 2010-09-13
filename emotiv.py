@@ -4,6 +4,11 @@ try:
 except:
 	import hid
 	windows = False
+
+import sys
+import logging
+logger = logging.getLogger("emotiv")
+
 from aes import rijndael
 import struct
 
@@ -58,10 +63,12 @@ class EmotivPacket(object):
 
 class Emotiv(object):
 	def __init__(self, headsetId=0):
-		if windows:
-			self.setupWin(headsetId)
+		if self.setupWin(headsetId) if windows else self.setupPosix(headsetId):
+			logger.info("Fine, connected to the Emotiv receiver")
 		else:
-			self.setupPosix(headsetId)
+			logger.error("Unable to connect to the Emotiv receiver :-(")
+			sys.exit(1)
+			
 		self.packets = []
 	
 	def setupWin(self, headsetId):
