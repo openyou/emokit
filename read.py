@@ -25,18 +25,30 @@ def sample_handler(data):
 	print ' '.join('%02x' % ord(c) for c in decrypt(data))
 	count += 1
 
+def bci_handler(data):
+	print '!!!', `data`
+
 def main(fn=None):
 	if fn == None:
-		for device in hid.find_all_hid_devices():
-			if device.vendor_id == 0x21A1 and device.product_name == 'Brain Waves':
-				try:
+		devices = []
+		try:
+			for device in hid.find_all_hid_devices():
+				if device.vendor_id != 0x21A1:
+					continue
+				if device.product_name == 'Brain Waves':
+					devices.append(device)
 					device.open()
 					device.set_raw_data_handler(sample_handler)
-					while device.is_plugged() and count < 1000:
-						time.sleep(0.1)
-				finally:
-					device.close()
-					break
+				elif device.product_name == 'EPOC BCI':
+					print 'foo'
+					devices.append(device)
+					device.open()
+					device.set_raw_data_handler(bci_handler)
+			while True:#device.is_plugged() and count < 1000:
+				time.sleep(0.1)
+		finally:
+			for device in devices:
+				device.close()
 	else:
 		for line in file(fn, 'r').readlines():
 			data = [0] + [int(x, 16) for x in line.strip().split(' ')]

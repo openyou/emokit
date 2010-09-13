@@ -1,3 +1,9 @@
+try:
+	import psyco
+	psyco.full()
+except:
+	print 'No psyco.  Expect poor performance.'
+
 import emotiv, pygame, sys, time
 
 emotiv = emotiv.Emotiv()
@@ -19,7 +25,7 @@ class Grapher(object):
 		self.textpos.centery = self.y
 	
 	def update(self, packet):
-		if len(self.buffer) == 1024 - self.xoff:
+		if len(self.buffer) == 800 - self.xoff:
 			self.buffer = self.buffer[1:]
 		self.buffer.append(getattr(packet, self.name))
 	
@@ -52,9 +58,9 @@ def main(debug=False):
 	global gheight
 	
 	pygame.init()
-	screen = pygame.display.set_mode((1024, 600))
+	screen = pygame.display.set_mode((800, 600))
 	
-	curX, curY = 512, 300
+	curX, curY = 400, 300
 	
 	graphers = []
 	if debug == False:
@@ -89,7 +95,7 @@ def main(debug=False):
 				curX -= packet.gyroX - 1
 			if abs(packet.gyroY) > 1:
 				curY += packet.gyroY
-			curX = max(0, min(curX, 1024))
+			curX = max(0, min(curX, 800))
 			curY = max(0, min(curY, 600))
 			map(lambda x: x.update(packet), graphers)
 		

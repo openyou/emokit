@@ -3,7 +3,7 @@ Intro
 
 I've been interested in the [Emotiv EPOC](http://emotiv.com/) headset for a while; a $300 14-sensor EEG.  It's intended for gaming, but it's quite high quality.  There's a research SDK available for $750, but it's Windows-only and totally proprietary.  I decided to hack it, and open the consumer headset up to development.  Thanks to [donations](http://pledgie.com/campaigns/12906) I got some hardware in hand this weekend.
 
-I'm happy to announce the Emokit project, an open source interface to the EPOC.  The goal is to open it up to develompent and enable new products and research.  For the first time, we have access to a high-quality EEG for $300 -- this is huge.
+I'm happy to announce the Emokit project, an open source interface to the EPOC.  The goal is to open it up to development and enable new products and research.  For the first time, we have access to a high-quality EEG for $300 -- this is huge.
 
 Code
 ====
