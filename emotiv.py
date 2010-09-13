@@ -11,24 +11,25 @@ key = '\x31\x00\x35\x54\x38\x10\x37\x42\x31\x00\x35\x48\x38\x00\x37\x50'
 rijn = rijndael(key, 16)
 
 channels = dict(
-	F3=(1, 2), 
-	AF3=(5, 6),
-	F4=(3, 31),
-	F7=(23, 3), # Totally unknown.
-	FC5=(8, 7), 
-	T7=(10, 9), 
-	P7=(14, 13), 
-	P8=(16, 16), 
-	O1=(12, 11), # Right high byte
-	O2=(21, 20), # Right high byte
-	T8=(17, 18), 
-	FC6=(19, 22), 
-	AF4=(22, 24), 
-	F8=(24, 26), 
+	L1=(9, 20), 
+	L2=(5, 18), 
+	L3=(31, 7), 
+	L4=(2, -1), 
+	L5=(2, -1), 
+	L6=(28, -1), 
+	L7=(23, -1), 
+	
+	R1=(0, -1), 
+	R2=(0, -1), 
+	R3=(0, -1), 
+	R4=(28, -1), 
+	R5=(17, -1), 
+	R6=(0, -1), 
+	R7=(0, -1), 
 )
 
-#valid = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31]
-#channels = dict((str(i), (i, 0)) for i in valid)
+valid = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31]
+channels.update(dict((str(i), (i, -1)) for i in valid))
 
 class EmotivPacket(object):
 	def __init__(self, data):
@@ -39,7 +40,11 @@ class EmotivPacket(object):
 		#assert ord(data[15]) == 0
 		
 		for name, (i, j) in channels.items():
-			level = struct.unpack('>h', data[i]+'\0')[0]
+			if j != -1:
+				iv, jv = data[i], data[j]
+			else:
+				iv, jv = data[i], '\0'
+			level = struct.unpack('>h', iv + jv)[0]
 			#level = struct.unpack('b', data[j])[0]
 			strength = 4#(ord(data[j]) >> 3) & 1
 			setattr(self, name, (level, strength))

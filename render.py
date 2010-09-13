@@ -1,4 +1,4 @@
-import emotiv, pygame, time
+import emotiv, pygame, sys, time
 
 emotiv = emotiv.Emotiv()
 
@@ -48,29 +48,34 @@ class Grapher(object):
 			pos = (self.xoff+i, y)
 		self.screen.blit(self.text, self.textpos)
 
-def main():
+def main(debug=False):
+	global gheight
+	
 	pygame.init()
 	screen = pygame.display.set_mode((1024, 600))
 	
 	curX, curY = 512, 300
 	
 	graphers = []
-	graphers.append(Grapher(screen, 'AF3', len(graphers)))
-	graphers.append(Grapher(screen, 'AF4', len(graphers)))
-	graphers.append(Grapher(screen, 'F3', len(graphers)))
-	graphers.append(Grapher(screen, 'F4', len(graphers)))
-	graphers.append(Grapher(screen, 'F7', len(graphers)))
-	graphers.append(Grapher(screen, 'F8', len(graphers)))
-	graphers.append(Grapher(screen, 'FC5', len(graphers)))
-	graphers.append(Grapher(screen, 'FC6', len(graphers)))
-	graphers.append(Grapher(screen, 'T7', len(graphers)))
-	graphers.append(Grapher(screen, 'T8', len(graphers)))
-	graphers.append(Grapher(screen, 'P7', len(graphers)))
-	graphers.append(Grapher(screen, 'P8', len(graphers)))
-	graphers.append(Grapher(screen, 'O1', len(graphers)))
-	graphers.append(Grapher(screen, 'O2', len(graphers)))
-	#for x in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31]:
-	#	graphers.append(Grapher(screen, str(x), len(graphers)))
+	if debug == False:
+		graphers.append(Grapher(screen, 'L1', len(graphers)))
+		graphers.append(Grapher(screen, 'L2', len(graphers)))
+		graphers.append(Grapher(screen, 'L3', len(graphers)))
+		graphers.append(Grapher(screen, 'L4', len(graphers)))
+		graphers.append(Grapher(screen, 'L5', len(graphers)))
+		graphers.append(Grapher(screen, 'L6', len(graphers)))
+		graphers.append(Grapher(screen, 'L7', len(graphers)))
+		graphers.append(Grapher(screen, 'R1', len(graphers)))
+		graphers.append(Grapher(screen, 'R2', len(graphers)))
+		graphers.append(Grapher(screen, 'R3', len(graphers)))
+		graphers.append(Grapher(screen, 'R4', len(graphers)))
+		graphers.append(Grapher(screen, 'R5', len(graphers)))
+		graphers.append(Grapher(screen, 'R6', len(graphers)))
+		graphers.append(Grapher(screen, 'R7', len(graphers)))
+	else:
+		gheight = 600 / 28
+		for x in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31]:
+			graphers.append(Grapher(screen, str(x), len(graphers)))
 	
 	while True:
 		for event in pygame.event.get():
@@ -84,6 +89,8 @@ def main():
 				curX -= packet.gyroX - 1
 			if abs(packet.gyroY) > 1:
 				curY += packet.gyroY
+			curX = max(0, min(curX, 1024))
+			curY = max(0, min(curY, 600))
 			map(lambda x: x.update(packet), graphers)
 		
 		if updated:
@@ -94,6 +101,6 @@ def main():
 		time.sleep(1.0/60)
 
 try:
-	main()
+	main(*sys.argv[1:])
 finally:
 	emotiv.close()
