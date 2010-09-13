@@ -2,7 +2,6 @@ try:
 	import pywinusb.hid as hid
 	windows = True
 except:
-	import hid
 	windows = False
 
 import sys
@@ -11,6 +10,8 @@ logger = logging.getLogger("emotiv")
 
 from aes import rijndael
 import struct
+
+from threading import Thread
 
 key = '\x31\x00\x35\x54\x38\x10\x37\x42\x31\x00\x35\x48\x38\x00\x37\x50'
 rijn = rijndael(key, 16)
@@ -63,6 +64,9 @@ class EmotivPacket(object):
 
 class Emotiv(object):
 	def __init__(self, headsetId=0):
+		
+		self._goOn = True
+		
 		if self.setupWin(headsetId) if windows else self.setupPosix(headsetId):
 			logger.info("Fine, connected to the Emotiv receiver")
 		else:
@@ -83,22 +87,16 @@ class Emotiv(object):
 		self.device.set_raw_data_handler(handle)
 	
 	def setupPosix(self, headsetId):
-		hid.hid_set_debug(hid.HID_DEBUG_ALL)
-		hid.hid_init()
-		matcher = hid.HIDInterfaceMatcher()
-		matcher.vendor_id  = 0x21a1
-		matcher.product_id = 0x0001
-		self.interface = interface = hid.hid_new_HIDInterface()
-		if hid.hid_force_open(interface, 0, matcher, 1000) != hid.HID_RET_SUCCESS:
-			self.interface = interface = hid.hid_new_HIDInterface()
-			if hid.hid_force_open(interface, 1, matcher, 1000) != hid.HID_RET_SUCCESS:
-				return False
 		def reader():
-			while True:
-				ret, data = hid.hid_interrupt_read(interface, 0x81, 0x20, 0)
-				if ret == 0:
+			self.hidraw = open("/dev/hidraw2")
+			while self._goOn:
+				#ret, data = hid.hid_interrupt_read(interface, 0x81, 0x20, 0)
+				data = self.hidraw.read(32)
+				if data != "":
 					self.gotData(data)
-		thread.start_new_thread(reader, ())
+		self._dataReader = Thread(target=reader)
+		self._dataReader.start()
+		return True
 	
 	def gotData(self, data):
 		assert len(data) == 32
@@ -113,4 +111,7 @@ class Emotiv(object):
 		if windows:
 			self.device.close()
 		else:
-			hid.hid_close(self.interface)
+			self._goOn = False
+			self._dataReader.join()
+			
+			self.hidraw.close()
