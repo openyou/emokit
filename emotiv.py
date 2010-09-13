@@ -76,15 +76,15 @@ class Emotiv(object):
 		self.device.set_raw_data_handler(handle)
 	
 	def setupPosix(self, headsetId):
-		hid.hid_set_debug(HID_DEBUG_ALL)
+		hid.hid_set_debug(hid.HID_DEBUG_ALL)
 		hid.hid_init()
 		matcher = hid.HIDInterfaceMatcher()
 		matcher.vendor_id  = 0x21a1
 		matcher.product_id = 0x0001
 		self.interface = interface = hid.hid_new_HIDInterface()
-		if hid.hid_force_open(interface, 0, matcher, 1000) != HID_RET_SUCCESS:
+		if hid.hid_force_open(interface, 0, matcher, 1000) != hid.HID_RET_SUCCESS:
 			self.interface = interface = hid.hid_new_HIDInterface()
-			if hid.hid_force_open(interface, 1, matcher, 1000) != HID_RET_SUCCESS:
+			if hid.hid_force_open(interface, 1, matcher, 1000) != hid.HID_RET_SUCCESS:
 				return False
 		def reader():
 			while True:
