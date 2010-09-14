@@ -13,8 +13,8 @@ import struct
 
 from threading import Thread
 
-key = '\x31\x00\x35\x54\x38\x10\x37\x42\x31\x00\x35\x48\x38\x00\x37\x50'
-rijn = rijndael(key, 16)
+consumer_key = '\x31\x00\x35\x54\x38\x10\x37\x42\x31\x00\x35\x48\x38\x00\x37\x50'
+research_key = '\x31\x00\x39\x54\x38\x10\x37\x42\x31\x00\x39\x48\x38\x00\x37\x50'
 
 channels = dict(
 	L1=(9, 20), 
@@ -63,7 +63,12 @@ class EmotivPacket(object):
 			)
 
 class Emotiv(object):
-	def __init__(self, headsetId=0):
+	def __init__(self, headsetId=0, research_headset = False):
+		
+		if research_headset:
+			self.rijn = rijndael(research_key, 16)
+		else:
+			self.rijn = rijndael(consumer_key, 16)
 		
 		self._goOn = True
 		
@@ -88,7 +93,7 @@ class Emotiv(object):
 	
 	def setupPosix(self, headsetId):
 		def reader():
-			self.hidraw = open("/dev/hidraw2")
+			self.hidraw = open("/dev/hidraw1")
 			while self._goOn:
 				#ret, data = hid.hid_interrupt_read(interface, 0x81, 0x20, 0)
 				data = self.hidraw.read(32)
@@ -100,7 +105,7 @@ class Emotiv(object):
 	
 	def gotData(self, data):
 		assert len(data) == 32
-		data = rijn.decrypt(data[:16]) + rijn.decrypt(data[16:])
+		data = self.rijn.decrypt(data[:16]) + self.rijn.decrypt(data[16:])
 		self.packets.append(EmotivPacket(data))
 	
 	def dequeue(self):
