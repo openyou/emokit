@@ -1,15 +1,13 @@
+#!/usr/bin/python
+
 try:
 	import psyco
 	psyco.full()
 except:
 	print 'No psyco.  Expect poor performance.'
 
-import emotiv, pygame, sys, time
-
-emotiv = emotiv.Emotiv()
-
-gheight = 600 / 14
-hgheight = gheight >> 1
+import pygame, sys, time, logging
+from emotiv import Emotiv
 
 class Grapher(object):
 	def __init__(self, screen, name, i):
@@ -106,7 +104,22 @@ def main(debug=False):
 			pygame.display.flip()
 		time.sleep(1.0/60)
 
+
+emotiv = None
+
 try:
+	logger = logging.getLogger('emotiv')
+	logger.setLevel(logging.INFO)
+	log_handler = logging.StreamHandler()
+	logger.addHandler(log_handler)
+
+	emotiv = Emotiv()
+
+	gheight = 600 / 14
+	hgheight = gheight >> 1
+	
 	main(*sys.argv[1:])
+
 finally:
-	emotiv.close()
+	if emotiv:
+		emotiv.close()

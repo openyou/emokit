@@ -2,14 +2,19 @@ try:
 	import pywinusb.hid as hid
 	windows = True
 except:
-	import hid
 	windows = False
+
+import sys
+import logging
+logger = logging.getLogger("emotiv")
+
 from aes import rijndael
 import struct
 
-key = '\x31\x00\x35\x54\x38\x10\x37\x42\x31\x00\x35\x48\x38\x00\x37\x50'
-devKey = '\x31\x00\x35\x48\x31\x00\x35\x54\x38\x10\x37\x42\x38\x00\x37\x50'
-rijn = rijndael(key, 16)
+from threading import Thread
+
+consumer_key = '\x31\x00\x35\x54\x38\x10\x37\x42\x31\x00\x35\x48\x38\x00\x37\x50'
+research_key = '\x31\x00\x39\x54\x38\x10\x37\x42\x31\x00\x39\x48\x38\x00\x37\x50'
 
 channels = dict(
 	L1=(9, 20), 
@@ -58,11 +63,21 @@ class EmotivPacket(object):
 			)
 
 class Emotiv(object):
-	def __init__(self, headsetId=0):
-		if windows:
-			self.setupWin(headsetId)
+	def __init__(self, headsetId=0, research_headset = False):
+		
+		if research_headset:
+			self.rijn = rijndael(research_key, 16)
 		else:
-			self.setupPosix(headsetId)
+			self.rijn = rijndael(consumer_key, 16)
+		
+		self._goOn = True
+		
+		if self.setupWin(headsetId) if windows else self.setupPosix(headsetId):
+			logger.info("Fine, connected to the Emotiv receiver")
+		else:
+			logger.error("Unable to connect to the Emotiv receiver :-(")
+			sys.exit(1)
+			
 		self.packets = []
 	
 	def setupWin(self, headsetId):
@@ -75,28 +90,23 @@ class Emotiv(object):
 			assert data[0] == 0
 			self.gotData(''.join(map(chr, data[1:])))
 		self.device.set_raw_data_handler(handle)
+		return True
 	
 	def setupPosix(self, headsetId):
-		hid.hid_set_debug(HID_DEBUG_ALL)
-		hid.hid_init()
-		matcher = hid.HIDInterfaceMatcher()
-		matcher.vendor_id  = 0x21a1
-		matcher.product_id = 0x0001
-		self.interface = interface = hid.hid_new_HIDInterface()
-		if hid.hid_force_open(interface, 0, matcher, 1000) != HID_RET_SUCCESS:
-			self.interface = interface = hid.hid_new_HIDInterface()
-			if hid.hid_force_open(interface, 1, matcher, 1000) != HID_RET_SUCCESS:
-				return False
 		def reader():
-			while True:
-				ret, data = hid.hid_interrupt_read(interface, 0x81, 0x20, 0)
-				if ret == 0:
+			self.hidraw = open("/dev/hidraw1")
+			while self._goOn:
+				#ret, data = hid.hid_interrupt_read(interface, 0x81, 0x20, 0)
+				data = self.hidraw.read(32)
+				if data != "":
 					self.gotData(data)
-		thread.start_new_thread(reader, ())
+		self._dataReader = Thread(target=reader)
+		self._dataReader.start()
+		return True
 	
 	def gotData(self, data):
 		assert len(data) == 32
-		data = rijn.decrypt(data[:16]) + rijn.decrypt(data[16:])
+		data = self.rijn.decrypt(data[:16]) + self.rijn.decrypt(data[16:])
 		self.packets.append(EmotivPacket(data))
 	
 	def dequeue(self):
@@ -107,4 +117,7 @@ class Emotiv(object):
 		if windows:
 			self.device.close()
 		else:
-			hid.hid_close(self.interface)
+			self._goOn = False
+			self._dataReader.join()
+			
+			self.hidraw.close()
