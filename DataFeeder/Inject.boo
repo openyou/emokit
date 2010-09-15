@@ -41,7 +41,7 @@ class Inject(EasyHook.IEntryPoint):
 	callable DCreateFileA(fn as string, access as uint, share as uint, secattr as IntPtr, disp as uint, flags as uint, tpl as IntPtr) as IntPtr
 	static def CreateFileAHooker(fn as string, access as uint, share as uint, secattr as IntPtr, disp as uint, flags as uint, tpl as IntPtr) as IntPtr:
 		handle = CreateFileA(fn, access, share, secattr, disp, flags, tpl)
-		if fn == '\\\\?\\hid#vid_21a1&pid_0001&mi_01#7&942b1e3&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}':
+		if fn.StartsWith('\\\\?\\hid'):#vid_21a1&pid_0001&mi_01#7&942b1e3&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}':
 			Handles.Add(handle)
 			return handle
 		return handle

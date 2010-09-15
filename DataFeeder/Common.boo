@@ -11,16 +11,12 @@ public class DatafeederInterface(MarshalByRefObject):
 	Temp as (byte)
 	Packet as (byte)
 	Counter as int = 0
-	IKey = (0x31, 0x00, 0x35, 0x54, 0x38, 0x10, 0x37, 0x42, 0x31, 0x00, 0x35, 0x48, 0x38, 0x00, 0x37, 0x50)
-	Key as (byte)
+	public static Key = array(byte, 16)
 	static I = 0
 	def NextPacket() as (byte):
 		if Packet == null:
 			Temp = array(byte, 32)
 			Packet = array(byte, 33)
-			Key = array(byte, 16)
-			for i in range(16):
-				Key[i] = IKey[i]
 		
 		Temp[0] = Counter
 		Counter += 1
