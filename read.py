@@ -22,7 +22,7 @@ def sample_handler(data):
 	global count
 	assert data[0] == 0
 	data = ''.join(map(chr, data[1:]))
-	print ' '.join('%02x' % ord(c) for c in decrypt(data))
+	print ' '.join('%02x' % ord(c) for c in decrypt(data)[1:]) # Cut off the counter for datafeeding purposes.
 	count += 1
 
 def bci_handler(data):
@@ -40,7 +40,6 @@ def main(fn=None):
 					device.open()
 					device.set_raw_data_handler(sample_handler)
 				elif device.product_name == 'EPOC BCI':
-					print 'foo'
 					devices.append(device)
 					device.open()
 					device.set_raw_data_handler(bci_handler)
