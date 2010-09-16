@@ -21,12 +21,12 @@ public class DatafeederInterface(MarshalByRefObject):
 		Array.Copy(Data[I], 0, Temp, 0, 32)
 		I = (I + 1) % Data.Length
 		
-		Temp[0] = Counter
-		Counter += 1
-		if Counter == 128:
-			Counter = 0xF1
-		elif Counter == 0xF2:
-			Counter = 0
+		#Temp[0] = Counter
+		#Counter += 1
+		#if Counter == 128:
+		#	Counter = 0xF1
+		#elif Counter == 0xF2:
+		#	Counter = 0
 		
 		rijn = RijndaelManaged()
 		rijn.Mode = CipherMode.ECB
