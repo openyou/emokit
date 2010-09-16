@@ -18,15 +18,15 @@ public class DatafeederInterface(MarshalByRefObject):
 			Temp = array(byte, 32)
 			Packet = array(byte, 33)
 		
+		Array.Copy(Data[I], 0, Temp, 0, 32)
+		I = (I + 1) % Data.Length
+		
 		Temp[0] = Counter
 		Counter += 1
 		if Counter == 128:
-			Counter = 0xE9
-		elif Counter == 0xEA:
+			Counter = 0xF1
+		elif Counter == 0xF2:
 			Counter = 0
-		
-		Array.Copy(Data[I], 0, Temp, 1, 31)
-		I = (I + 1) % Data.Length
 		
 		rijn = RijndaelManaged()
 		rijn.Mode = CipherMode.ECB

@@ -30,8 +30,8 @@ class Inject(EasyHook.IEntryPoint):
 			)
 		ChannelServices.RegisterChannel(channel_, false)
 	
-	[DllImport('Kernel32.dll', CallingConvention: CallingConvention.StdCall)]
-	static def CreatePipe(ref read as IntPtr, ref write as IntPtr, attr as IntPtr, size as int) as bool:
+	[DllImport('Kernel32.dll', SetLastError: true)]
+	static def CreateNamedPipe(lpName as string, dwOpenMode as uint, dwPipeMoed as uint, nMaxInstances as uint, nOutBufferSize as uint, nInBufferSize as uint, nDefaultTimeout as uint, lpSecurityAttributes as IntPtr) as IntPtr:
 		pass
 	
 	[DllImport('Kernel32.dll', CallingConvention: CallingConvention.StdCall, CharSet: CharSet.Ansi)]
@@ -55,6 +55,19 @@ class Inject(EasyHook.IEntryPoint):
 		return CloseHandle(handle)
 	
 	[DllImport('Kernel32.dll', CallingConvention: CallingConvention.StdCall, CharSet: CharSet.Ansi)]
+	static def CancelIo(handle as IntPtr) as bool:
+		pass
+	[UnmanagedFunctionPointer(CallingConvention.StdCall)]
+	callable DCancelIo(handle as IntPtr) as bool
+	static def CancelIoHooker(handle as IntPtr) as bool:
+		if handle in Handles:
+			handle = RPipe
+			App.Log('Cancel')
+		else:
+			App.Log('other cancel')
+		return CancelIo(handle)
+	
+	[DllImport('Kernel32.dll', CallingConvention: CallingConvention.StdCall, CharSet: CharSet.Ansi)]
 	static def ReadFile(handle as IntPtr, buf as IntPtr, toRead as int, read as IntPtr, olapped as IntPtr) as bool:
 		pass
 	[UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -67,12 +80,27 @@ class Inject(EasyHook.IEntryPoint):
 	def Run(context as RemoteHooking.IContext, _channel as string):
 		App.Log('Started')
 		
-		wpipe as IntPtr
-		if not CreatePipe(RPipe, wpipe, IntPtr(0), 16*33):
-			App.Log('Pipe creation failed')
-			return
+		wpipe = CreateNamedPipe(
+				'\\\\.\\pipe\\emopipe', 
+				0x00000003 | 0x40000000, 
+				0,#0x00000004 | 0x00000002 | 0x00000000, 
+				2, 
+				16*33, 
+				16*33, 
+				5000, 
+				IntPtr.Zero
+			)
+		RPipe = CreateFileA(
+				'\\\\.\\pipe\\emopipe', 
+				0x80000000, 
+				0, 
+				IntPtr.Zero, 
+				3, 
+				0x40000000, 
+				IntPtr.Zero
+			)
 		
-		App.Log('Pipe created')
+		App.Log('Pipe created {0}' % (RPipe, ))
 		CreateFileAHook = LocalHook.Create(
 				LocalHook.GetProcAddress('Kernel32.dll', 'CreateFileA'), 
 				DCreateFileA(CreateFileAHooker), 
@@ -85,6 +113,12 @@ class Inject(EasyHook.IEntryPoint):
 				self
 			)
 		CloseHandleHook.ThreadACL.SetExclusiveACL((0, ))
+		CancelIoHook = LocalHook.Create(
+				LocalHook.GetProcAddress('Kernel32.dll', 'CancelIo'), 
+				DCancelIo(CancelIoHooker), 
+				self
+			)
+		CancelIoHook.ThreadACL.SetExclusiveACL((0, ))
 		ReadFileHook = LocalHook.Create(
 				LocalHook.GetProcAddress('Kernel32.dll', 'ReadFile'), 
 				DReadFile(ReadFileHooker), 
@@ -98,4 +132,4 @@ class Inject(EasyHook.IEntryPoint):
 		while true:
 			packet = App.NextPacket()
 			stream.Write(packet, 0, packet.Length)
-			Thread.Sleep(1)
+			Thread.Sleep(1000 / 512)

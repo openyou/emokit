@@ -18,11 +18,19 @@ def decrypt(data):
 	return ''.join(map(chr, dec + dec2))
 
 count = 0
+last = 0
 def sample_handler(data):
-	global count
+	global count, last
 	assert data[0] == 0
 	data = ''.join(map(chr, data[1:]))
-	print ' '.join('%02x' % ord(c) for c in decrypt(data)[1:]) # Cut off the counter for datafeeding purposes.
+	data = decrypt(data)
+	#print ' '.join('%02x' % ord(c) for c in data)
+	counter = ord(data[0])
+	if last == 0x7F:
+		print '%02x' % counter
+		last = None
+	else:
+		last = counter
 	count += 1
 
 def bci_handler(data):

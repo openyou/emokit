@@ -22,8 +22,8 @@ class Datafeeder:
 			if line == null:
 				break
 			elems = line.Split(char(' '))
-			edata = array(byte, 31)
-			for i in range(31):
+			edata = array(byte, 32)
+			for i in range(32):
 				edata[i] = int.Parse(elems[i], System.Globalization.NumberStyles.AllowHexSpecifier)
 			data.Add(edata)
 		
