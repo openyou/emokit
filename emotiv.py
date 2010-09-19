@@ -96,7 +96,6 @@ class Emotiv(object):
 		def reader():
 			self.hidraw = open("/dev/hidraw1")
 			while self._goOn:
-				#ret, data = hid.hid_interrupt_read(interface, 0x81, 0x20, 0)
 				data = self.hidraw.read(32)
 				if data != "":
 					self.gotData(data)
