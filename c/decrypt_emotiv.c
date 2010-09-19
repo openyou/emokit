@@ -1,6 +1,7 @@
 /* Decrypt Emotic EPOC stream using ECB and RIJNDAEL-128 cipher
  * 
- * Usage: decrypt_emotiv /dev/emotiv/raw > decoded
+ * Usage: decrypt_emotiv (consumer/research) /dev/emotiv/raw > decoded
+ * Make sure to pick the right type of device, as this determins the key
  * */
 
 #include <mcrypt.h>
@@ -9,25 +10,30 @@
 
 #define KEYSIZE 16 /* 128 bits == 16 bytes */
 
-#define CONSUMERKEY {31,0,35,54,38,10,37,42,31,0,35,48,38,0,37,50}
-#define RESEARCHKEY {31,0,39,54,38,10,37,42,31,0,39,48,38,0,37,50}
+unsigned char CONSUMERKEY[KEYSIZE] =  {0x31,0x00,0x35,0x54,0x38,0x10,0x37,0x42,0x31,0x00,0x35,0x48,0x38,0x00,0x37,0x50};
+unsigned char RESEARCHKEY[KEYSIZE] =  {0x31,0x00,0x39,0x54,0x38,0x10,0x37,0x42,0x31,0x00,0x39,0x48,0x38,0x00,0x37,0x50};
 
 int main(int argc, char **argv)
 {
   MCRYPT td;
   int i;
-  unsigned char key[KEYSIZE] = RESEARCHKEY;
+  unsigned char key[KEYSIZE];
   char *block_buffer;
   int blocksize;
 
   FILE *input;
-  if (argc < 2)
+  if (argc < 3)
   {
-    fputs("Missing argument\nExpected: decrypt_emotiv source\n", stderr);
+    fputs("Missing argument\nExpected: decrypt_emotiv (consumer/research) source\n", stderr);
     return 1;
   }
+  
+  if(strcmp(argv[1], "research") == 0)
+    memcpy(key, RESEARCHKEY, KEYSIZE);
+  else
+    memcpy(key, CONSUMERKEY, KEYSIZE);
 
-  input = fopen(argv[1], "rb");
+  input = fopen(argv[2], "rb");
   if (input == NULL)
   {
     fputs("File read error", stderr);
