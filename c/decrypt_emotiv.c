@@ -7,6 +7,7 @@
 #include <mcrypt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define KEYSIZE 16 /* 128 bits == 16 bytes */
 
