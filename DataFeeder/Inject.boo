@@ -85,8 +85,8 @@ class Inject(EasyHook.IEntryPoint):
 				0x00000003 | 0x40000000, 
 				0,#0x00000004 | 0x00000002 | 0x00000000, 
 				2, 
-				16*33, 
-				16*33, 
+				578*33, 
+				578*33, 
 				5000, 
 				IntPtr.Zero
 			)
@@ -129,7 +129,7 @@ class Inject(EasyHook.IEntryPoint):
 		App.Log('Woken up')
 		
 		stream = FileStream(wpipe, FileAccess.Write)
-		while true:
+		for i in range(578):#while true:
 			packet = App.NextPacket()
 			stream.Write(packet, 0, packet.Length)
-			Thread.Sleep(1000 / 512)
+			#Thread.Sleep(10)

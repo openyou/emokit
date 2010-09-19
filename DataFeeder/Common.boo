@@ -20,6 +20,8 @@ public class DatafeederInterface(MarshalByRefObject):
 		
 		Array.Copy(Data[I], 0, Temp, 0, 32)
 		I = (I + 1) % Data.Length
+		if I == 0:
+			print 'Loop'
 		
 		#Temp[0] = Counter
 		#Counter += 1

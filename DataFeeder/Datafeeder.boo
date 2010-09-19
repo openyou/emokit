@@ -37,18 +37,28 @@ class Datafeeder:
 		
 		channelName as string
 		RemoteHooking.IpcCreateServer [of DatafeederInterface](channelName, WellKnownObjectMode.SingleCall)
-		pid as int
-		RemoteHooking.CreateAndInject(
-				exec, 
-				'', 
+		#pid as int
+		#RemoteHooking.CreateAndInject(
+		#		'c:\\python26\\python.exe', 
+		#		'c:\\python26\\python.exe C:\\AAA\\Projects\\RawEEG\\emotiv.py', 
+		#		'Datafeeder.Inject.dll', 
+		#		'Datafeeder.Inject.dll', 
+		#		pid, 
+		#		channelName
+		#	)
+		process as Process
+		for proc in Process.GetProcesses():
+			if 'python' in proc.ProcessName.ToLower():
+				process = proc
+		RemoteHooking.Inject(
+				process.Id, 
 				'Datafeeder.Inject.dll', 
 				'Datafeeder.Inject.dll', 
-				pid, 
 				channelName
 			)
 		
 		try:
-			Process.GetProcessById(pid).WaitForExit()
+			Process.GetProcessById(process.Id).WaitForExit()
 		except:
 			return
 
