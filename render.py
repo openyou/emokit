@@ -13,14 +13,14 @@ class Grapher(object):
 	def __init__(self, screen, name, i):
 		self.screen = screen
 		self.name = name
-		self.range = 32678.0
+		self.range = float(1 << 13)
 		self.xoff = 40
-		self.y = i * gheight + hgheight
+		self.y = i * gheight
 		self.buffer = []
 		font = pygame.font.Font(None, 24)
 		self.text = font.render(self.name, 1, (255, 0, 0))
 		self.textpos = self.text.get_rect()
-		self.textpos.centery = self.y
+		self.textpos.centery = self.y + hgheight
 	
 	def update(self, packet):
 		if len(self.buffer) == 800 - self.xoff:
@@ -28,7 +28,7 @@ class Grapher(object):
 		self.buffer.append(getattr(packet, self.name))
 	
 	def calcY(self, val):
-		return int(val / self.range * gheight * 0.5)
+		return int(val / self.range * gheight)
 	
 	def draw(self):
 		if len(self.buffer) == 0:
@@ -61,25 +61,8 @@ def main(debug=False):
 	curX, curY = 400, 300
 	
 	graphers = []
-	if debug == False:
-		graphers.append(Grapher(screen, 'L1', len(graphers)))
-		graphers.append(Grapher(screen, 'L2', len(graphers)))
-		graphers.append(Grapher(screen, 'L3', len(graphers)))
-		graphers.append(Grapher(screen, 'L4', len(graphers)))
-		graphers.append(Grapher(screen, 'L5', len(graphers)))
-		graphers.append(Grapher(screen, 'L6', len(graphers)))
-		graphers.append(Grapher(screen, 'L7', len(graphers)))
-		graphers.append(Grapher(screen, 'R1', len(graphers)))
-		graphers.append(Grapher(screen, 'R2', len(graphers)))
-		graphers.append(Grapher(screen, 'R3', len(graphers)))
-		graphers.append(Grapher(screen, 'R4', len(graphers)))
-		graphers.append(Grapher(screen, 'R5', len(graphers)))
-		graphers.append(Grapher(screen, 'R6', len(graphers)))
-		graphers.append(Grapher(screen, 'R7', len(graphers)))
-	else:
-		gheight = 600 / 28
-		for x in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31]:
-			graphers.append(Grapher(screen, str(x), len(graphers)))
+	for name in 'AF3 F7 F3 FC5 T7 P7 O1 O2 P8 T8 FC6 F4 F8 AF4'.split(' '):
+		graphers.append(Grapher(screen, name, len(graphers)))
 	
 	while True:
 		for event in pygame.event.get():
