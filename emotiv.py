@@ -4,7 +4,7 @@ try:
 except:
 	windows = False
 
-import sys
+import sys, os
 import logging
 logger = logging.getLogger("emotiv")
 
@@ -58,7 +58,7 @@ class EmotivPacket(object):
 			)
 
 class Emotiv(object):
-	def __init__(self, headsetId=0, research_headset = False):
+	def __init__(self, headsetId=0, research_headset = True):
 		
 		if research_headset:
 			self.rijn = rijndael(research_key, 16)
@@ -69,9 +69,9 @@ class Emotiv(object):
 		self.packets = []
 		
 		if self.setupWin(headsetId) if windows else self.setupPosix(headsetId):
-			logger.info("Fine, connected to the Emotiv receiver")
+			logger.info("Fine, connected to the Emotiv EPOC receiver")
 		else:
-			logger.error("Unable to connect to the Emotiv receiver :-(")
+			logger.error("Unable to connect to the Emotiv EPOC receiver :-(")
 			sys.exit(1)
 	
 	def setupWin(self, headsetId):
@@ -88,11 +88,26 @@ class Emotiv(object):
 	
 	def setupPosix(self, headsetId):
 		def reader():
-			self.hidraw = open("/dev/hidraw1")
+			_os_decryption = False
+			if os.path.exists('/dev/eeg/raw'):
+				#The decrpytion is handled by the Linux epoc daemon. We don't need to handle it there.
+				_os_decryption = True
+				self.hidraw = open("/dev/eeg/raw")
+			else:
+				if os.path.exists("/dev/hidraw2"):
+					self.hidraw = open("/dev/hidraw2")
+				else:
+					self.hidraw = open("/dev/hidraw2")
+			
 			while self._goOn:
 				data = self.hidraw.read(32)
 				if data != "":
-					self.gotData(data)
+					if _os_decryption:
+						self.packets.append(EmotivPacket(data))
+					else:
+						#Decrypt it!
+						self.gotData(data)
+					
 		self._dataReader = Thread(target=reader)
 		self._dataReader.start()
 		return True
