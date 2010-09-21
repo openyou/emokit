@@ -1,0 +1,17 @@
+#UDEV rule for the Emotiv EPOC headset
+#
+#Once installed into /etc/udev/rules.d, udev will recognize the headset and
+#create a /dev/eeg/encrypted device where you can access the headset encryted
+#stream.
+#
+#It will as well attempt to start a daemon in charge of decrypting the stream.
+#If the daemon successfully starts, you will find the data under /dev/eeg/raw
+
+ATTR{manufacturer}=="Emotiv Systems Pty Ltd", ATTRS{product}=="Receiver Dongle L01", NAME="eeg/epoc%2", SYMLINK+="epoc%n"
+
+#Consumer headset
+#SUBSYSTEM=="hidraw", ATTRS{idVendor}=="21a1", ATTRS{idProduct}=="0001", ATTRS{interface}=="Emotiv RAW DATA", NAME="eeg/encrypted%n", SYMLINK+="eeg/encrypted", MODE="0444", RUN +="decrypt_emotiv.sh consumer"
+
+#Research headset
+SUBSYSTEM=="hidraw", ATTRS{interface}=="Emotiv RAW DATA", NAME="eeg/encrypted%n", SYMLINK+="eeg/encrypted", MODE="0444", RUN +="decrypt_emotiv.sh research"
+
