@@ -20,7 +20,8 @@ int main(int argc, char **argv)
   
   char raw_frame[32];
   struct epoc_frame frame;
-  
+
+  /*
   if (argc < 3)
   {
     fputs("Missing argument\nExpected: decrypt_emotiv [consumer|research] source [dest]\n", stderr);
@@ -60,5 +61,30 @@ int main(int argc, char **argv)
   }
 
   epoc_close();
+  */
+
+  epoc_init(SPECIAL_HEADSET);
+  epoc_device* d;
+  char data[32];
+  d = epoc_create();
+  printf("Current epoc devices connected: %d\n", epoc_get_count(d, EPOC_VID, EPOC_PID));
+  if(epoc_open(d, EPOC_VID, EPOC_PID, 0) != 0)
+  {
+	  printf("CANNOT CONNECT\n");
+  }
+  while(1)
+  {
+	  if(epoc_read_data(d, data) > 0)
+	  {
+		  epoc_get_next_frame(&frame, data);
+		  printf("%d %d %d %d %d\n", frame.gyroX, frame.gyroY, frame.F3, frame.FC6, frame.P7);
+		  
+		  fflush(stdout);
+	  }
+  }
+
+  epoc_close(d);
+
+  epoc_delete(d);
   return 0;
 }

@@ -4,12 +4,21 @@
 cmake_minimum_required (VERSION 2.6)
 PROJECT(libepoc)
 
-set(LIBS mcrypt)
+#set(LIBS mcrypt)
 
 SET(BUILD_SHARED_LIBS true)
 
-include_directories(${libepoc_SOURCE_DIR}/include)
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 
+FIND_PACKAGE(Mcrypt REQUIRED)
+
+FIND_PACKAGE(libusb-1.0 REQUIRED)
+
+SET(LIBS ${Mcrypt_LIBS} ${LIBUSB_1_LIBRARIES})
+
+MESSAGE(STATUS ${LIBS})
+include_directories(${libepoc_SOURCE_DIR}/include /usr/local/include)
+LINK_DIRECTORIES(/usr/local/lib)
 set(LIBEPOC_HEADERS include/libepoc.h)
 
 ##########################################
@@ -18,7 +27,9 @@ set(LIBEPOC_HEADERS include/libepoc.h)
 
 # Create a library called "libepoc"
 
-ADD_LIBRARY (epoc src/epoc.c) 
+ADD_LIBRARY (epoc src/epoc.c src/epoc_libusb.c) 
+
+target_link_libraries (epoc ${LIBS}) 
 
 INSTALL (TARGETS epoc
 	LIBRARY DESTINATION lib

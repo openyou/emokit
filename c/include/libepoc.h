@@ -16,9 +16,34 @@
 #ifndef LIBEPOC_H_
 #define LIBEPOC_H_
 
-#include <stdio.h>
+#define E_NPUTIL_DRIVER_ERROR -1
+#define E_NPUTIL_NOT_INITED -2
+#define E_NPUTIL_NOT_OPENED -3
 
-enum headset_type {CONSUMER_HEADSET, RESEARCH_HEADSET};
+#include <stdio.h>
+#include <stdint.h>
+#include "libusb-1.0/libusb.h"
+typedef struct {
+	struct libusb_context* _context;
+	struct libusb_device_handle* _device;
+	struct libusb_transfer* _in_transfer;
+	struct libusb_transfer* _out_transfer;
+	int _is_open;
+	int _is_inited;
+} epoc_device;
+
+/// Vendor ID for all omron health devices
+const static uint32_t EPOC_VID = 0x21a1;
+/// Product ID for all omron health devices
+const static uint32_t EPOC_PID = 0x0001;
+
+/// Out endpoint for all omron health devices
+const static uint32_t EPOC_OUT_ENDPT = 0x02;
+/// In endpoint for all omron health devices
+const static uint32_t EPOC_IN_ENDPT  = 0x82;
+
+
+enum headset_type {CONSUMER_HEADSET, RESEARCH_HEADSET, SPECIAL_HEADSET};
 
 struct epoc_contact_quality {
     char F3, FC6, P7, T8, F7, F8, T7, P8, AF4, F4, AF3, O2, O1, FC5;
@@ -31,11 +56,18 @@ struct epoc_frame {
     char battery;
 };
 
-int epoc_init(FILE* source, enum headset_type type);
-int epoc_close();
+//int epoc_init(FILE* source, enum headset_type type);
+//int epoc_close();
 
-int epoc_get_next_raw(char raw_frame[32]);
-int epoc_get_next_frame(struct epoc_frame* frame);
+int epoc_get_next_raw(unsigned char raw_frame[32], unsigned char* raw_data);
+int epoc_get_next_frame(struct epoc_frame* frame, unsigned char* raw_data);
+
+epoc_device* epoc_create();
+int epoc_get_count(epoc_device* s, int device_vid, int device_pid);
+int epoc_open(epoc_device* s, int device_vid, int device_pid, unsigned int device_index);
+int epoc_close(epoc_device* s);
+void epoc_delete(epoc_device* dev);
+int epoc_read_data(epoc_device* dev, uint8_t* input_report);
 
 
 #endif //LIBEPOC_H_

@@ -9,6 +9,7 @@
 
 const unsigned char CONSUMERKEY[KEYSIZE] =  {0x31,0x00,0x35,0x54,0x38,0x10,0x37,0x42,0x31,0x00,0x35,0x48,0x38,0x00,0x37,0x50};
 const unsigned char RESEARCHKEY[KEYSIZE] =  {0x31,0x00,0x39,0x54,0x38,0x10,0x37,0x42,0x31,0x00,0x39,0x48,0x38,0x00,0x37,0x50};
+const unsigned char SPECIALKEY[KEYSIZE]  = {0x31,0x00,0x35,0x48,0x31,0x00,0x35,0x54,0x38,0x10,0x37,0x42,0x38,0x00,0x37,0x50};
 
 const unsigned char F3_MASK[14] = {10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7}; 
 const unsigned char FC6_MASK[14] = {214, 215, 200, 201, 202, 203, 204, 205, 206, 207, 192, 193, 194, 195};
@@ -27,21 +28,19 @@ const unsigned char FC5_MASK[14] = {28, 29, 30, 31, 16, 17, 18, 19, 20, 21, 22, 
 
 MCRYPT td;
 unsigned char key[KEYSIZE];
-char *block_buffer;
+unsigned char *block_buffer;
 int blocksize;
 
 unsigned char frame[32];
 
-FILE *input;
- 
-int epoc_init(FILE* source, enum headset_type type) {
-    
-    input = source;
+int epoc_init(enum headset_type type) {
     
     if(type == RESEARCH_HEADSET)
         memcpy(key, RESEARCHKEY, KEYSIZE);
-    else
+    else if(type == CONSUMER_HEADSET)
         memcpy(key, CONSUMERKEY, KEYSIZE);
+    else if(type == SPECIAL_HEADSET)
+        memcpy(key, SPECIALKEY, KEYSIZE);
     
     //libmcrypt initialization
     td = mcrypt_module_open(MCRYPT_RIJNDAEL_128, NULL, MCRYPT_ECB, NULL);
@@ -52,12 +51,12 @@ int epoc_init(FILE* source, enum headset_type type) {
     mcrypt_generic_init( td, key, KEYSIZE, NULL);
 }
 
-int epoc_close() {
-    mcrypt_generic_deinit (td);
-    mcrypt_module_close(td);
+/* int epoc_close() { */
+/*     mcrypt_generic_deinit (td); */
+/*     mcrypt_module_close(td); */
     
-    fclose(input);
-}
+/*     fclose(input); */
+/* } */
 
 int get_level(unsigned char frame[32], const unsigned char bits[14]) {
     char i;
@@ -75,9 +74,11 @@ int get_level(unsigned char frame[32], const unsigned char bits[14]) {
     return level;
 }
 
-int epoc_get_next_raw(char frame[32]) {
+int epoc_get_next_raw(unsigned char frame[32], unsigned char raw_frame[32]) {
     //Two blocks of 16 bytes must be read.
-    if (fread (block_buffer, 1, blocksize, input) == blocksize) {
+	int i;
+
+    if (memcpy (block_buffer, raw_frame, blocksize)) {
         mdecrypt_generic (td, block_buffer, blocksize);
         memcpy(frame, block_buffer, 16);
     }
@@ -85,7 +86,7 @@ int epoc_get_next_raw(char frame[32]) {
         return -1;
     }
     
-    if (fread (block_buffer, 1, blocksize, input) == blocksize) {
+    if (memcpy(block_buffer, raw_frame + blocksize, blocksize)) {
         mdecrypt_generic (td, block_buffer, blocksize);
         memcpy(frame + 16, block_buffer, 16);
     }
@@ -95,11 +96,14 @@ int epoc_get_next_raw(char frame[32]) {
     return 0;
 }
 
-int epoc_get_next_frame(struct epoc_frame* frame) {
-    char raw_frame[32];
-    
-    epoc_get_next_raw(raw_frame);
-    
+int epoc_get_next_frame(struct epoc_frame* frame, unsigned char* raw_data) {
+
+	unsigned char raw_frame[32];
+
+	memset(raw_frame, 0, 32);
+	
+    epoc_get_next_raw(raw_frame, raw_data);
+
     frame->F3 = get_level(raw_frame, F3_MASK);
     frame->FC6 = get_level(raw_frame, FC6_MASK);
     frame->P7 = get_level(raw_frame, P7_MASK);
@@ -116,8 +120,8 @@ int epoc_get_next_frame(struct epoc_frame* frame) {
     frame->FC5 = get_level(raw_frame, FC5_MASK);
     
     //TODO!
-    frame->gyroX = 0;
-    frame->gyroY = 0;
+    frame->gyroX = raw_frame[29] - 102;
+    frame->gyroY = raw_frame[30] - 104;
     
     frame->battery = 0;
 }
