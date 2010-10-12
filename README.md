@@ -13,6 +13,33 @@ Description
 
 Emokit is a set of language for user space access to the raw stream data from the Emotiv EPOC headset. Note that this will not give you processed data (i.e. anything available in the Emo Suites in the software), just the raw sensor data. 
 
+The C library is currently supported on:
+
+* OS X/Linux - Via libusb-1.0
+* Windows - Coming soon (via good ol' Win32 HID calls)
+
+The Python library is currently supported on:
+
+* Linux - udev rules and file system access (no special library required)
+* Windows - pywinhid
+* OS X - Coming soon (via pyusb)
+
+Required Libraries
+==================
+
+Python
+------
+
+* pywinhid (Windows Only) - http://code.google.com/p/pywinusb/
+
+C
+- 
+
+* CMake (Required on all platforms) - http://www.cmake.org
+* WDK (Windows Only) - http://www.microsoft.com/whdc/devtools/WDK/default.mspx
+* libusb-1.0 (All non-windows platforms) - http://www.libusb.org
+* libmcrypt (Required on all platforms) - https://sourceforge.net/projects/mcrypt/
+
 Usage
 =====
 
@@ -56,7 +83,7 @@ There are two ways to run Emokit on Linux
 Windows
 -------
 
-Should "just work", since it uses the Win32 HID layer. How often does that happen, eh?
+WinHID example in C coming soon. Should work with Python example already.
 
 Credits - Cody
 ==============
