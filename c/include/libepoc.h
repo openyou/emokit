@@ -56,8 +56,8 @@ struct epoc_frame {
     char battery;
 };
 
-//int epoc_init(FILE* source, enum headset_type type);
-//int epoc_close();
+int epoc_init(enum headset_type type);
+int epoc_deinit();
 
 int epoc_get_next_raw(unsigned char raw_frame[32], unsigned char* raw_data);
 int epoc_get_next_frame(struct epoc_frame* frame, unsigned char* raw_data);

@@ -49,28 +49,27 @@ int epoc_init(enum headset_type type) {
     block_buffer = malloc(blocksize);
 
     mcrypt_generic_init( td, key, KEYSIZE, NULL);
+	return 0;
 }
 
-/* int epoc_close() { */
-/*     mcrypt_generic_deinit (td); */
-/*     mcrypt_module_close(td); */
-    
-/*     fclose(input); */
-/* } */
+int epoc_deinit() {
+    mcrypt_generic_deinit (td);
+    mcrypt_module_close(td);
+	return 0;
+}
 
 int get_level(unsigned char frame[32], const unsigned char bits[14]) {
     char i;
     char b,o;
     int level = 0;
     
-    for (i= 13; i == -1; --i){
+    for (i = 13; i >= 0; --i) {
         level <<= 1;
         b = (bits[i] / 8) + 1;
         o = bits[i] % 8;
         
         level |= (frame[b] >> o) & 1;
     }
-    
     return level;
 }
 
