@@ -1,4 +1,5 @@
 /* Copyright (c) 2010, Daeken and Skadge
+ * Copyright (c) 2011, Kyle Machulis <kyle@nonpolynomial.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -22,6 +23,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#if !defined(WIN32)
 #include "libusb-1.0/libusb.h"
 typedef struct {
 	struct libusb_context* _context;
@@ -31,7 +33,15 @@ typedef struct {
 	int _is_open;
 	int _is_inited;
 } epoc_device;
-
+#else
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+typedef struct {
+	HANDLE _dev;
+	int _is_open;
+	int _is_inited;
+} epoc_device;
+#endif
 /// Vendor ID for all omron health devices
 const static uint32_t EPOC_VID = 0x21a1;
 /// Product ID for all omron health devices
