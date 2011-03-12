@@ -85,7 +85,7 @@ int epoc_open_win32(epoc_device* dev, int VID, int PID, unsigned int device_inde
 
 	Length = 0;
 	detailData = NULL;
-	dev->device._dev = NULL;
+	dev->_dev = NULL;
 
 	/*
 	  API function: HidD_GetHidGuid
@@ -198,7 +198,7 @@ int epoc_open_win32(epoc_device* dev, int VID, int PID, unsigned int device_inde
 			*/
 
 			
-			dev->device._dev =CreateFile
+			dev->_dev =CreateFile
 				(detailData->DevicePath,
 				 GENERIC_READ | GENERIC_WRITE,
 				 FILE_SHARE_READ|FILE_SHARE_WRITE,
@@ -222,7 +222,7 @@ int epoc_open_win32(epoc_device* dev, int VID, int PID, unsigned int device_inde
 			Attributes.Size = sizeof(Attributes);
 
 			Result = HidD_GetAttributes
-				(dev->device._dev,
+				(dev->_dev,
 				 &Attributes);
 
 			//Is it the desired device?
@@ -231,22 +231,22 @@ int epoc_open_win32(epoc_device* dev, int VID, int PID, unsigned int device_inde
 
 			if ((Attributes.VendorID == VID && Attributes.ProductID == PID))
 			{
-				if(get_count)
+				if(get_count || device_count != device_index)
 				{
-					++device_count;
-					CloseHandle(dev->device._dev);
+					CloseHandle(dev->_dev);
 				}
-				else
+				else if (device_count  == device_index)
 				{
 					MyDeviceDetected = TRUE;
 					MyDevicePathName = detailData->DevicePath;
-					GetDeviceCapabilities(dev->device._dev);
+					GetDeviceCapabilities(dev->_dev);
 					break;
 				}
+				++device_count;
 			}
 			else
 			{
-				CloseHandle(dev->device._dev);
+				CloseHandle(dev->_dev);
 			}
 			free(detailData);
 		}  //if (Result != 0)
@@ -266,19 +266,19 @@ int epoc_open_win32(epoc_device* dev, int VID, int PID, unsigned int device_inde
 	return -1;
 }
 
-EPOC_DECLSPEC int epoc_get_count(epoc_device* dev)
+EPOC_DECLSPEC int epoc_get_count(epoc_device* dev,int device_vid, int device_pid)
 {
-	return epoc_open_win32(dev, VID, PID, 0, 1);
+	return epoc_open_win32(dev, device_vid, device_pid, 0, 1);
 }
 
 EPOC_DECLSPEC int epoc_open(epoc_device* dev, int device_vid, int device_pid, unsigned int device_index)
 {
-	return epoc_open_win32(dev, VID, PID, device_index, 0);
+	return epoc_open_win32(dev, device_vid, device_pid, device_index, 0);
 }
 
 EPOC_DECLSPEC int epoc_close(epoc_device* dev)
 {
-	CloseHandle(dev->device._dev);
+	CloseHandle(dev->_dev);
 	return 0;
 }
 
@@ -287,7 +287,7 @@ EPOC_DECLSPEC int epoc_read_data(epoc_device* dev, unsigned char *input_report)
 	int Result;
 	char read[33];
 	Result = ReadFile
-		(dev->device._dev,
+		(dev->_dev,
 		 read,
 		 Capabilities.InputReportByteLength,
 		 &NumberOfBytesRead,
@@ -299,8 +299,8 @@ EPOC_DECLSPEC int epoc_read_data(epoc_device* dev, unsigned char *input_report)
 EPOC_DECLSPEC epoc_device* epoc_create()
 {
 	epoc_device* s = (epoc_device*)malloc(sizeof(epoc_device));
-	s->device._is_open = 0;
-	s->device._is_inited = 1;	
+	s->_is_open = 0;
+	s->_is_inited = 1;	
 	return s;
 }
 
@@ -309,8 +309,4 @@ EPOC_DECLSPEC void epoc_delete(epoc_device* dev)
 	free(dev);
 }
 
-void epoc_delete(epoc_device* dev)
-{
-	free(dev);
-}
 

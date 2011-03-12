@@ -36,6 +36,7 @@ typedef struct {
 #else
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#define EPOC_DECLSPEC __declspec(dllexport)
 typedef struct {
 	HANDLE _dev;
 	int _is_open;
@@ -66,18 +67,18 @@ struct epoc_frame {
     char battery;
 };
 
-int epoc_init(enum headset_type type);
-int epoc_deinit();
+EPOC_DECLSPEC int epoc_init(enum headset_type type);
+EPOC_DECLSPEC int epoc_deinit();
 
-int epoc_get_next_raw(unsigned char raw_frame[32], unsigned char* raw_data);
-int epoc_get_next_frame(struct epoc_frame* frame, unsigned char* raw_data);
+EPOC_DECLSPEC int epoc_get_next_raw(unsigned char raw_frame[32], unsigned char* raw_data);
+EPOC_DECLSPEC int epoc_get_next_frame(struct epoc_frame* frame, unsigned char* raw_data);
 
-epoc_device* epoc_create();
-int epoc_get_count(epoc_device* s, int device_vid, int device_pid);
-int epoc_open(epoc_device* s, int device_vid, int device_pid, unsigned int device_index);
-int epoc_close(epoc_device* s);
-void epoc_delete(epoc_device* dev);
-int epoc_read_data(epoc_device* dev, uint8_t* input_report);
+EPOC_DECLSPEC epoc_device* epoc_create();
+EPOC_DECLSPEC int epoc_get_count(epoc_device* s, int device_vid, int device_pid);
+EPOC_DECLSPEC int epoc_open(epoc_device* s, int device_vid, int device_pid, unsigned int device_index);
+EPOC_DECLSPEC int epoc_close(epoc_device* s);
+EPOC_DECLSPEC void epoc_delete(epoc_device* dev);
+EPOC_DECLSPEC int epoc_read_data(epoc_device* dev, uint8_t* input_report);
 
 
 #endif //LIBEPOC_H_

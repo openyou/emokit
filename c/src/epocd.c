@@ -20,7 +20,8 @@ int main(int argc, char **argv)
   
 	char raw_frame[32];
 	struct epoc_frame frame;
-
+	epoc_device* d;
+	char data[32];
 	if (argc < 2)
 	{
 		fputs("Missing argument\nExpected: epocd [consumer|research|special]\n", stderr);
@@ -39,8 +40,7 @@ int main(int argc, char **argv)
 	}
   
 	epoc_init(type);
-	epoc_device* d;
-	char data[32];
+
 	d = epoc_create();
 	printf("Current epoc devices connected: %d\n", epoc_get_count(d, EPOC_VID, EPOC_PID));
 	if(epoc_open(d, EPOC_VID, EPOC_PID, 0) != 0)

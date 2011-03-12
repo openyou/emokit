@@ -37,9 +37,11 @@ set(LIBEPOC_HEADERS include/libepoc.h)
 ##########################################
 
 # Create a library called "libepoc"
-
+IF(WIN32)
+ADD_LIBRARY (epoc STATIC src/epoc.c src/epoc_win32.c) 
+ELSE()
 ADD_LIBRARY (epoc STATIC src/epoc.c src/epoc_libusb.c) 
-
+ENDIF()
 target_link_libraries (epoc ${LIBS}) 
 
 INSTALL (TARGETS epoc
