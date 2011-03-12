@@ -12,7 +12,18 @@ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 
 FIND_PACKAGE(Mcrypt REQUIRED)
 
-FIND_PACKAGE(libusb-1.0 REQUIRED)
+IF(WIN32)
+  SET(WDK_PATH CACHE PATH "Path to WDK Installation")
+  INCLUDE_DIRECTORIES(${WDK_PATH}/inc/api ${WDK_PATH}/inc/crt ${WDK_PATH}/inc)
+  LINK_DIRECTORIES(${WDK_PATH}/lib/wxp/i386)
+  LIST(APPEND LIBEPOC_REQUIRED_LIBS hid setupapi)
+ELSEIF(UNIX)
+  FIND_PACKAGE(libusb-1.0 REQUIRED)
+  IF(LIBUSB_1_FOUND)
+    INCLUDE_DIRECTORIES(${LIBUSB_1_INCLUDE_DIRS})
+    LIST(APPEND LIBEPOC_REQUIRED_LIBS ${LIBUSB_1_LIBRARIES})
+  ENDIF(LIBUSB_1_FOUND)
+ENDIF(WIN32)
 
 SET(LIBS ${Mcrypt_LIBS} ${LIBUSB_1_LIBRARIES})
 
@@ -27,7 +38,7 @@ set(LIBEPOC_HEADERS include/libepoc.h)
 
 # Create a library called "libepoc"
 
-ADD_LIBRARY (epoc src/epoc.c src/epoc_libusb.c) 
+ADD_LIBRARY (epoc STATIC src/epoc.c src/epoc_libusb.c) 
 
 target_link_libraries (epoc ${LIBS}) 
 
