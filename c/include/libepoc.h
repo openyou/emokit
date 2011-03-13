@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #if !defined(WIN32)
+#define EPOC_DECLSPEC
 #include "libusb-1.0/libusb.h"
 typedef struct {
 	struct libusb_context* _context;
@@ -67,6 +68,10 @@ struct epoc_frame {
     char battery;
 };
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 EPOC_DECLSPEC int epoc_init(enum headset_type type);
 EPOC_DECLSPEC int epoc_deinit();
 
@@ -79,6 +84,7 @@ EPOC_DECLSPEC int epoc_open(epoc_device* s, int device_vid, int device_pid, unsi
 EPOC_DECLSPEC int epoc_close(epoc_device* s);
 EPOC_DECLSPEC void epoc_delete(epoc_device* dev);
 EPOC_DECLSPEC int epoc_read_data(epoc_device* dev, uint8_t* input_report);
-
-
+#ifdef __cplusplus
+};
+#endif
 #endif //LIBEPOC_H_
