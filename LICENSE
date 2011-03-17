@@ -1,8 +1,12 @@
 Aes.py copyright 2001 Bram Cohen and released into the public domain.
 
-Everything else copyright 2010 Cody Brocious.  In countries where it's respected, everything is released into the public domain; otherwise it's released under the following terms:
+Everything else:  
+
+In countries where it's respected, everything is released into the public domain; otherwise it's released under the following terms:
 
 Copyright (c) 2010, Cody Brocious
+Copyright (c) 2011, Kyle Machulis/Nonpolynomial Labs
+
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

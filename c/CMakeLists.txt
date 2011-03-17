@@ -9,6 +9,8 @@ PROJECT(libepoc)
 SET(BUILD_SHARED_LIBS true)
 
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
+SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 FIND_PACKAGE(Mcrypt REQUIRED)
 
@@ -32,44 +34,9 @@ include_directories(${libepoc_SOURCE_DIR}/include /usr/local/include)
 LINK_DIRECTORIES(/usr/local/lib)
 set(LIBEPOC_HEADERS include/libepoc.h)
 
-##########################################
-##              libepoc                ###
-##########################################
-
-# Create a library called "libepoc"
-IF(WIN32)
-ADD_LIBRARY (epoc STATIC src/epoc.c src/epoc_win32.c) 
-ELSE()
-ADD_LIBRARY (epoc STATIC src/epoc.c src/epoc_libusb.c) 
-ENDIF()
-target_link_libraries (epoc ${LIBS}) 
-
-INSTALL (TARGETS epoc
-	LIBRARY DESTINATION lib
-	ARCHIVE DESTINATION lib
-)
-
-INSTALL(FILES
-	${LIBEPOC_HEADERS}
-	DESTINATION include/libepoc
-)
-
-##################################################
-#                epoc daemon                   #
-##################################################
-
-add_executable (epocd src/epocd.c)
-
-target_link_libraries (epocd epoc ${LIBS}) 
-
-SET_TARGET_PROPERTIES(epocd PROPERTIES
-	INSTALL_RPATH_USE_LINK_PATH TRUE
-	INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib
-	BUILD_WITH_INSTALL_RPATH TRUE )
-
-INSTALL (TARGETS epocd
-	RUNTIME DESTINATION bin
-)
+ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(examples/epocd)
+ADD_SUBDIRECTORY(examples/emokit_osc)
 
 ##########################################
 ##       PKGCONFIG file                ###
