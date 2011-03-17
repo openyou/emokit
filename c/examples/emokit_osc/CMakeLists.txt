@@ -7,5 +7,5 @@ IF(NOT oscpack_FOUND)
 ENDIF()
 INCLUDE_DIRECTORIES(${oscpack_INCLUDE_DIR})
 ADD_EXECUTABLE(emokit_osc emokit_osc.cpp)
-ADD_DEPENDENCIES(emokit_osc
-TARGET_LINK_LIBRARIES(emokit_osc ${oscpack_LIBS})
+ADD_DEPENDENCIES(emokit_osc epoc)
+TARGET_LINK_LIBRARIES(emokit_osc ${oscpack_LIBS} epoc ${LIBS})
