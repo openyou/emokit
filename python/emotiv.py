@@ -130,3 +130,40 @@ class Emotiv(object):
 			self._dataReader.join()
 			
 			self.hidraw.close()
+
+# Key generator function by Daeken, 2012-01-31
+# Magic byte still unknown, but should generate keys for most headsets
+# one way or another.
+def genkey(sn, magic): # WTF IS MAGIC?!
+	key = ['\0'] * 16
+	key[0] = sn[-1]
+	key[1] = '\0'
+	key[2] = sn[-2]
+	if magic:
+		key[3] = 'H'
+		key[4] = sn[-1]
+		key[5] = '\0'
+		key[6] = sn[-2]
+		key[7] = 'T'
+		key[8] = sn[-3]
+		key[9] = '\x10'
+		key[10] = sn[-4]
+		key[11] = 'B'
+	else:
+		key[3] = 'T'
+		key[4] = sn[-3]
+		key[5] = '\x10'
+		key[6] = sn[-4]
+		key[7] = 'B'
+		key[8] = sn[-1]
+		key[9] = '\0'
+		key[10] = sn[-2]
+		key[11] = 'H'
+	
+	key[12] = sn[-3]
+	key[13] = '\0'
+	key[14] = sn[-4]
+	key[15] = 'P'
+
+	return ''.join(key)
+
