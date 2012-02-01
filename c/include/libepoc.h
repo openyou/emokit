@@ -31,6 +31,7 @@ typedef struct {
 	struct libusb_device_handle* _device;
 	struct libusb_transfer* _in_transfer;
 	struct libusb_transfer* _out_transfer;
+	unsigned char serial[16];
 	int _is_open;
 	int _is_inited;
 } epoc_device;
@@ -84,6 +85,7 @@ EPOC_DECLSPEC int epoc_open(epoc_device* s, int device_vid, int device_pid, unsi
 EPOC_DECLSPEC int epoc_close(epoc_device* s);
 EPOC_DECLSPEC void epoc_delete(epoc_device* dev);
 EPOC_DECLSPEC int epoc_read_data(epoc_device* dev, uint8_t* input_report);
+EPOC_DECLSPEC int epoc_get_crypto_key(const char* serial, const unsigned char* feature_report);
 #ifdef __cplusplus
 };
 #endif

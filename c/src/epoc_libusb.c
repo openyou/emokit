@@ -79,9 +79,9 @@ int epoc_open(epoc_device* s, int device_vid, int device_pid, unsigned int devic
 		return E_NPUTIL_DRIVER_ERROR;
 	}
 
+	struct libusb_device_descriptor desc;
 	while ((dev = devs[i++]) != NULL)
 	{
-		struct libusb_device_descriptor desc;
 		device_error_code = libusb_get_device_descriptor(dev, &desc);
 		if (device_error_code < 0)
 		{
@@ -100,13 +100,16 @@ int epoc_open(epoc_device* s, int device_vid, int device_pid, unsigned int devic
 	}
 
 	if (found)
-	{
+	{		
 		device_error_code = libusb_open(found, &s->_device);
 		if (device_error_code < 0)
 		{
 			libusb_free_device_list(devs, 1);
 			return E_NPUTIL_NOT_INITED;
 		}
+		libusb_get_device_descriptor(found, &desc);
+		// Why does this want 17 bytes?
+		libusb_get_string_descriptor_ascii(s->_device, desc.iSerialNumber, s->serial, 17);
 	}
 	else
 	{
@@ -130,6 +133,8 @@ int epoc_open(epoc_device* s, int device_vid, int device_pid, unsigned int devic
 	}
 	ret = libusb_claim_interface(s->_device, 1);
 	printf("Done %d\n", ret);
+
+	epoc_init_crypto(s);
 	return ret;
 }
 

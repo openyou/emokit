@@ -22,25 +22,7 @@ int main(int argc, char **argv)
 	struct epoc_frame frame;
 	epoc_device* d;
 	char data[32];
-	if (argc < 2)
-	{
-		fputs("Missing argument\nExpected: epocd [consumer|research|special]\n", stderr);
-		return 1;
-	}
   
-	if(strcmp(argv[1], "research") == 0)
-		type = RESEARCH_HEADSET;
-	else if(strcmp(argv[1], "consumer") == 0)
-		type = CONSUMER_HEADSET;
-	else if(strcmp(argv[1], "special") == 0)
-		type = SPECIAL_HEADSET;
-	else {
-		fputs("Bad headset type argument\nExpected: epocd [consumer|research|special] source [dest]\n", stderr);
-		return 1;
-	}
-  
-	epoc_init(type);
-
 	d = epoc_create();
 	printf("Current epoc devices connected: %d\n", epoc_get_count(d, EPOC_VID, EPOC_PID));
 	if(epoc_open(d, EPOC_VID, EPOC_PID, 0) != 0)

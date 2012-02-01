@@ -33,66 +33,101 @@ int blocksize;
 
 unsigned char frame[32];
 
-int epoc_init(enum headset_type type) {
-    
-    if(type == RESEARCH_HEADSET)
-        memcpy(key, RESEARCHKEY, KEYSIZE);
-    else if(type == CONSUMER_HEADSET)
-        memcpy(key, CONSUMERKEY, KEYSIZE);
-    else if(type == SPECIAL_HEADSET)
-        memcpy(key, SPECIALKEY, KEYSIZE);
-    
-    //libmcrypt initialization
-    td = mcrypt_module_open(MCRYPT_RIJNDAEL_128, NULL, MCRYPT_ECB, NULL);
-    blocksize = mcrypt_enc_get_block_size(td); //should return a 16bits blocksize
-    
-    block_buffer = malloc(blocksize);
+int epoc_get_crypto_key(const char* serial, const unsigned char* feature_report) {
 
-    mcrypt_generic_init( td, key, KEYSIZE, NULL);
+	unsigned char type = 0; //feature[5];
+	int i;
+	type &= 0xF;
+	type = (type == 0);
+
+	unsigned int l = 16;
+	
+	key[0] = serial[l-1];
+	key[1] = '\0';
+	key[2] = serial[l-2];
+	if(type) {
+		key[3] = 'H';
+		key[4] = serial[l-1];
+		key[5] = '\0';
+		key[6] = serial[l-2];
+		key[7] = 'T';
+		key[8] = serial[l-3];
+		key[9] = '\x10';
+		key[10] = serial[l-4];
+		key[11] = 'B';
+	}
+	else {
+		key[3] = 'T';
+		key[4] = serial[l-3];
+		key[5] = '\x10';
+		key[6] = serial[l-4];
+		key[7] = 'B';
+		key[8] = serial[l-1];
+		key[9] = '\0';
+		key[10] = serial[l-2];
+		key[11] = 'H';
+	}
+	key[12] = serial[l-3];
+	key[13] = '\0';
+	key[14] = serial[l-4];
+	key[15] = 'P';
+}
+
+int epoc_init_crypto(epoc_device* s) {
+
+	epoc_get_crypto_key(s->serial, "");
+
+	//libmcrypt initialization
+	td = mcrypt_module_open(MCRYPT_RIJNDAEL_128, NULL, MCRYPT_ECB, NULL);
+	blocksize = mcrypt_enc_get_block_size(td); //should return a 16bits blocksize
+    
+	block_buffer = malloc(blocksize);
+
+	mcrypt_generic_init( td, key, KEYSIZE, NULL);
 	return 0;
 }
 
 int epoc_deinit() {
-    mcrypt_generic_deinit (td);
-    mcrypt_module_close(td);
+	mcrypt_generic_deinit (td);
+	mcrypt_module_close(td);
 	return 0;
 }
 
 int get_level(unsigned char frame[32], const unsigned char bits[14]) {
-    char i;
-    char b,o;
-    int level = 0;
+	char i;
+	char b,o;
+	int level = 0;
     
-    for (i = 13; i >= 0; --i) {
-        level <<= 1;
-        b = (bits[i] / 8) + 1;
-        o = bits[i] % 8;
+	for (i = 13; i >= 0; --i) {
+		level <<= 1;
+		b = (bits[i] / 8) + 1;
+		o = bits[i] % 8;
         
-        level |= (frame[b] >> o) & 1;
-    }
-    return level;
+		level |= (frame[b] >> o) & 1;
+	}
+	return level;
 }
 
 int epoc_get_next_raw(unsigned char frame[32], unsigned char raw_frame[32]) {
-    //Two blocks of 16 bytes must be read.
+	//Two blocks of 16 bytes must be read.
 	int i;
 
-    if (memcpy (block_buffer, raw_frame, blocksize)) {
-        mdecrypt_generic (td, block_buffer, blocksize);
-        memcpy(frame, block_buffer, 16);
-    }
-    else {
-        return -1;
-    }
+	if (memcpy (block_buffer, raw_frame, blocksize)) {
+		mdecrypt_generic (td, block_buffer, blocksize);
+		memcpy(frame, block_buffer, 16);
+	}
+	else {
+		return -1;
+	}
     
-    if (memcpy(block_buffer, raw_frame + blocksize, blocksize)) {
-        mdecrypt_generic (td, block_buffer, blocksize);
-        memcpy(frame + 16, block_buffer, 16);
-    }
-    else {
-        return -1;
-    }
-    return 0;
+	if (memcpy(block_buffer, raw_frame + blocksize, blocksize)) {
+		mdecrypt_generic (td, block_buffer, blocksize);
+		memcpy(frame + 16, block_buffer, 16);
+	}
+	else {
+		return -1;
+	}
+	return 0;
 }
 
 int epoc_get_next_frame(struct epoc_frame* frame, unsigned char* raw_data) {
@@ -101,26 +136,27 @@ int epoc_get_next_frame(struct epoc_frame* frame, unsigned char* raw_data) {
 
 	memset(raw_frame, 0, 32);
 	
-    epoc_get_next_raw(raw_frame, raw_data);
+	epoc_get_next_raw(raw_frame, raw_data);
 
-    frame->F3 = get_level(raw_frame, F3_MASK);
-    frame->FC6 = get_level(raw_frame, FC6_MASK);
-    frame->P7 = get_level(raw_frame, P7_MASK);
-    frame->T8 = get_level(raw_frame, T8_MASK);
-    frame->F7 = get_level(raw_frame, F7_MASK);
-    frame->F8 = get_level(raw_frame, F8_MASK);
-    frame->T7 = get_level(raw_frame, T7_MASK);
-    frame->P8 = get_level(raw_frame, P8_MASK);
-    frame->AF4 = get_level(raw_frame, AF4_MASK);
-    frame->F4 = get_level(raw_frame, F4_MASK);
-    frame->AF3 = get_level(raw_frame, AF3_MASK);
-    frame->O2 = get_level(raw_frame, O2_MASK);
-    frame->O1 = get_level(raw_frame, O1_MASK);
-    frame->FC5 = get_level(raw_frame, FC5_MASK);
+	frame->F3 = get_level(raw_frame, F3_MASK);
+	frame->FC6 = get_level(raw_frame, FC6_MASK);
+	frame->P7 = get_level(raw_frame, P7_MASK);
+	frame->T8 = get_level(raw_frame, T8_MASK);
+	frame->F7 = get_level(raw_frame, F7_MASK);
+	frame->F8 = get_level(raw_frame, F8_MASK);
+	frame->T7 = get_level(raw_frame, T7_MASK);
+	frame->P8 = get_level(raw_frame, P8_MASK);
+	frame->AF4 = get_level(raw_frame, AF4_MASK);
+	frame->F4 = get_level(raw_frame, F4_MASK);
+	frame->AF3 = get_level(raw_frame, AF3_MASK);
+	frame->O2 = get_level(raw_frame, O2_MASK);
+	frame->O1 = get_level(raw_frame, O1_MASK);
+	frame->FC5 = get_level(raw_frame, FC5_MASK);
     
-    //TODO!
-    frame->gyroX = raw_frame[29] - 102;
-    frame->gyroY = raw_frame[30] - 104;
+	//TODO!
+	frame->gyroX = raw_frame[29] - 102;
+	frame->gyroY = raw_frame[30] - 104;
     
-    frame->battery = 0;
+	frame->battery = 0;
 }
+
