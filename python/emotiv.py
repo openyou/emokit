@@ -61,11 +61,6 @@ class EmotivPacket(object):
 class Emotiv(object):
 	def __init__(self, headsetId=0, research_headset = True):
 		
-		if research_headset:
-			self.rijn = rijndael(research_key, 16)
-		else:
-			self.rijn = rijndael(consumer_key, 16)
-		
 		self._goOn = True
 		self.packets = []
 		
@@ -81,6 +76,9 @@ class Emotiv(object):
 		assert len(devices) > headsetId
 		self.device = devices[headsetId]
 		self.device.open()
+		feature = self.device.find_feature_reports()[0]
+		self.setupCrypto(self.device.serial_number, feature.get())
+
 		def handle(data):
 			assert data[0] == 0
 			self.gotData(''.join(map(chr, data[1:])))
@@ -113,6 +111,42 @@ class Emotiv(object):
 		self._dataReader.start()
 		return True
 	
+	def setupCrypto(self, sn, feature):
+		type = feature[5]
+		type &= 0xF
+		type = type == 0
+
+		key = ['\0'] * 16
+		key[0] = sn[-1]
+		key[1] = '\0'
+		key[2] = sn[-2]
+		if type:
+			key[3] = 'H'
+			key[4] = sn[-1]
+			key[5] = '\0'
+			key[6] = sn[-2]
+			key[7] = 'T'
+			key[8] = sn[-3]
+			key[9] = '\x10'
+			key[10] = sn[-4]
+			key[11] = 'B'
+		else:
+			key[3] = 'T'
+			key[4] = sn[-3]
+			key[5] = '\x10'
+			key[6] = sn[-4]
+			key[7] = 'B'
+			key[8] = sn[-1]
+			key[9] = '\0'
+			key[10] = sn[-2]
+			key[11] = 'H'
+		
+		key[12] = sn[-3]
+		key[13] = '\0'
+		key[14] = sn[-4]
+		key[15] = 'P'
+		self.rijn = rijndael(''.join(key), 16)
+	
 	def gotData(self, data):
 		assert len(data) == 32
 		data = self.rijn.decrypt(data[:16]) + self.rijn.decrypt(data[16:])
@@ -130,40 +164,3 @@ class Emotiv(object):
 			self._dataReader.join()
 			
 			self.hidraw.close()
-
-# Key generator function by Daeken, 2012-01-31
-# Magic byte still unknown, but should generate keys for most headsets
-# one way or another.
-def genkey(sn, magic): # WTF IS MAGIC?!
-	key = ['\0'] * 16
-	key[0] = sn[-1]
-	key[1] = '\0'
-	key[2] = sn[-2]
-	if magic:
-		key[3] = 'H'
-		key[4] = sn[-1]
-		key[5] = '\0'
-		key[6] = sn[-2]
-		key[7] = 'T'
-		key[8] = sn[-3]
-		key[9] = '\x10'
-		key[10] = sn[-4]
-		key[11] = 'B'
-	else:
-		key[3] = 'T'
-		key[4] = sn[-3]
-		key[5] = '\x10'
-		key[6] = sn[-4]
-		key[7] = 'B'
-		key[8] = sn[-1]
-		key[9] = '\0'
-		key[10] = sn[-2]
-		key[11] = 'H'
-	
-	key[12] = sn[-3]
-	key[13] = '\0'
-	key[14] = sn[-4]
-	key[15] = 'P'
-
-	return ''.join(key)
-
