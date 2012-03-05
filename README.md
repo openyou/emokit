@@ -1,13 +1,11 @@
 Emokit
 ======
 
-By Cody Brocious 
+By Cody Brocious and Kyle Machulis
 
 Contributions by
 
 * Severin Lemaignan (Base C Library and mcrypt functionality)
-* Kyle Machulis (libusb communications in C, C library updates,
-  special epoc key, OS X Compatibility work)
 
 Description
 ===========
@@ -20,7 +18,7 @@ software), just the raw sensor data.
 The C library is currently supported on:
 
 * OS X/Linux - Via libusb-1.0
-* Windows - Coming soon (via good ol' Win32 HID calls)
+* Windows - via Win32 HID calls
 
 The Python library is currently supported on:
 
@@ -35,6 +33,7 @@ Python
 ------
 
 * pywinhid (Windows Only) - http://code.google.com/p/pywinusb/
+* pyusb (OS X, Optional for Linux) - http://sourceforge.net/projects/pyusb/
 
 C Language
 ----------
@@ -96,7 +95,7 @@ There are two ways to run Emokit on Linux
 Windows
 -------
 
-WinHID example in C coming soon. Should work with Python example already.
+No platform specifics. Should just work.
 
 Credits - Cody
 ==============
