@@ -93,10 +93,10 @@ class Emotiv(object):
 				_os_decryption = True
 				self.hidraw = open("/dev/eeg/raw")
 			else:
-				if os.path.exists("/dev/hidraw2"):
-					self.hidraw = open("/dev/hidraw2")
+				if os.path.exists("/dev/hidraw5"):
+					self.hidraw = open("/dev/hidraw5")
 				else:
-					self.hidraw = open("/dev/hidraw2")
+					self.hidraw = open("/dev/hidraw5")
 			
 			while self._goOn:
 				data = self.hidraw.read(32)
@@ -116,37 +116,39 @@ class Emotiv(object):
 		type &= 0xF
 		type = type == 0
 
-		key = ['\0'] * 16
-		key[0] = sn[-1]
-		key[1] = '\0'
-		key[2] = sn[-2]
+		k = ['\0'] * 16
+		k[0] = sn[-1]
+		k[1] = '\0'
+		k[2] = sn[-2]
 		if type:
-			key[3] = 'H'
-			key[4] = sn[-1]
-			key[5] = '\0'
-			key[6] = sn[-2]
-			key[7] = 'T'
-			key[8] = sn[-3]
-			key[9] = '\x10'
-			key[10] = sn[-4]
-			key[11] = 'B'
+			k[3] = 'H'
+			k[4] = sn[-1]
+			k[5] = '\0'
+			k[6] = sn[-2]
+			k[7] = 'T'
+			k[8] = sn[-3]
+			k[9] = '\x10'
+			k[10] = sn[-4]
+			k[11] = 'B'
 		else:
-			key[3] = 'T'
-			key[4] = sn[-3]
-			key[5] = '\x10'
-			key[6] = sn[-4]
-			key[7] = 'B'
-			key[8] = sn[-1]
-			key[9] = '\0'
-			key[10] = sn[-2]
-			key[11] = 'H'
+			k[3] = 'T'
+			k[4] = sn[-3]
+			k[5] = '\x10'
+			k[6] = sn[-4]
+			k[7] = 'B'
+			k[8] = sn[-1]
+			k[9] = '\0'
+			k[10] = sn[-2]
+			k[11] = 'H'
 		
-		key[12] = sn[-3]
-		key[13] = '\0'
-		key[14] = sn[-4]
-		key[15] = 'P'
-		self.rijn = rijndael(''.join(key), 16)
-	
+		k[12] = sn[-3]
+		k[13] = '\0'
+		k[14] = sn[-4]
+		k[15] = 'P'
+		self.rijn = rijndael(''.join(k), 16)
+		for i in k: print "0x%.02x " % (ord(i))
+
+
 	def gotData(self, data):
 		assert len(data) == 32
 		data = self.rijn.decrypt(data[:16]) + self.rijn.decrypt(data[16:])
@@ -164,3 +166,4 @@ class Emotiv(object):
 			self._dataReader.join()
 			
 			self.hidraw.close()
+
