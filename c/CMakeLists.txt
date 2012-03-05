@@ -35,22 +35,22 @@ LINK_DIRECTORIES(/usr/local/lib)
 set(LIBEPOC_HEADERS include/libepoc.h)
 
 ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(examples/epocd)
+ADD_SUBDIRECTORY(examples/emokitd)
 # ADD_SUBDIRECTORY(examples/emokit_osc)
 
 ##########################################
 ##       PKGCONFIG file                ###
 ##########################################
 
-IF   (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libepoc.pc.in")
-    MESSAGE(STATUS "configured ${CMAKE_CURRENT_SOURCE_DIR}/libepoc.pc.in --> ${CMAKE_CURRENT_BINARY_DIR}/libepoc.pc")
-    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/libepoc.pc.in 
-      ${CMAKE_CURRENT_BINARY_DIR}/libepoc.pc
-      @ONLY )
+IF   (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/emokit.pc.in")
+  MESSAGE(STATUS "configured ${CMAKE_CURRENT_SOURCE_DIR}/emokit.pc.in --> ${CMAKE_CURRENT_BINARY_DIR}/emokit.pc")
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/emokit.pc.in 
+    ${CMAKE_CURRENT_BINARY_DIR}/emokit.pc
+    @ONLY )
 
 	INSTALL(FILES
-		${CMAKE_CURRENT_BINARY_DIR}/libepoc.pc
+		${CMAKE_CURRENT_BINARY_DIR}/emokit.pc
 		DESTINATION lib/pkgconfig
-	)
-ENDIF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libepoc.pc.in")
+		)
+ENDIF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/emokit.pc.in")
 
