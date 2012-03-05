@@ -4,18 +4,18 @@
 
 # Create a library called "libepoc"
 IF(WIN32)
-  ADD_LIBRARY (epoc STATIC epoc.c epoc_win32.c) 
+  ADD_LIBRARY (emokit STATIC emokit.c emokit_win32.c) 
 ELSE()
-  ADD_LIBRARY (epoc STATIC epoc.c epoc_libusb.c) 
+  ADD_LIBRARY (emokit STATIC emokit.c emokit_libusb.c) 
 ENDIF()
-target_link_libraries (epoc ${LIBS}) 
+target_link_libraries (emokit ${LIBS}) 
 
-INSTALL (TARGETS epoc
+INSTALL (TARGETS emokit
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   )
 
 INSTALL(FILES
-  ${LIBEPOC_HEADERS}
-  DESTINATION include/libepoc
+  ${LIBEMOKIT_HEADERS}
+  DESTINATION include/libemokit
   )

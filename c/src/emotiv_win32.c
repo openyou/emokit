@@ -4,7 +4,7 @@
  */
 
 
-#include "libepoc.h"
+#include "emokit/emokit.h"
 #include <stdlib.h>
 #include <api/setupapi.h>
 #include <api/hidsdi.h>

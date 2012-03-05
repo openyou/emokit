@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "libepoc.h"
+#include "emokit/emokit.h"
 
 const unsigned char F3_MASK[14] = {10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7}; 
 const unsigned char FC6_MASK[14] = {214, 215, 200, 201, 202, 203, 204, 205, 206, 207, 192, 193, 194, 195};
