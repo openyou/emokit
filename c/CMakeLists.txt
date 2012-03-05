@@ -1,14 +1,9 @@
-# The name of the project is "LIBORO". CMakeLists files in this project can
-# refer to the root source directory of the project as ${LIBORO_SOURCE_DIR} and
-# to the root binary directory of the project as ${LIBORO_BINARY_DIR}.
 cmake_minimum_required (VERSION 2.6)
-PROJECT(libepoc)
-
-#set(LIBS mcrypt)
+PROJECT(emokit)
 
 SET(BUILD_SHARED_LIBS true)
 
-LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules)
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
