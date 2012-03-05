@@ -20,7 +20,7 @@ const unsigned char O2_MASK[14] = {140, 141, 142, 143, 128, 129, 130, 131, 132, 
 const unsigned char O1_MASK[14] = {102, 103, 88, 89, 90, 91, 92, 93, 94, 95, 80, 81, 82, 83};
 const unsigned char FC5_MASK[14] = {28, 29, 30, 31, 16, 17, 18, 19, 20, 21, 22, 23, 8, 9};
 
-EPOC_DECLSPEC int epoc_get_crypto_key(epoc_device* s, const unsigned char* feature_report) {
+EMOKIT_DECLSPEC int emokit_get_crypto_key(emokit_device* s, const unsigned char* feature_report) {
 	unsigned char type = 0; //feature[5];
 	int i;
 	type &= 0xF;
@@ -59,9 +59,9 @@ EPOC_DECLSPEC int epoc_get_crypto_key(epoc_device* s, const unsigned char* featu
 	s->key[15] = 'P';
 }
 
-EPOC_DECLSPEC int epoc_init_crypto(epoc_device* s) {
+EMOKIT_DECLSPEC int emokit_init_crypto(emokit_device* s) {
 
-	epoc_get_crypto_key(s, "");
+	emokit_get_crypto_key(s, "");
 
 	//libmcrypt initialization
 	s->td = mcrypt_module_open(MCRYPT_RIJNDAEL_128, NULL, MCRYPT_ECB, NULL);
@@ -69,11 +69,11 @@ EPOC_DECLSPEC int epoc_init_crypto(epoc_device* s) {
     
 	s->block_buffer = malloc(s->blocksize);
 
-	mcrypt_generic_init( s->td, s->key, EPOC_KEYSIZE, NULL);
+	mcrypt_generic_init( s->td, s->key, EMOKIT_KEYSIZE, NULL);
 	return 0;
 }
 
-EPOC_DECLSPEC int epoc_deinit(epoc_device* s) {
+EMOKIT_DECLSPEC int emokit_deinit(emokit_device* s) {
 	mcrypt_generic_deinit (s->td);
 	mcrypt_module_close(s->td);
 	return 0;
@@ -94,7 +94,7 @@ int get_level(unsigned char frame[32], const unsigned char bits[14]) {
 	return level;
 }
 
-EPOC_DECLSPEC int epoc_get_next_raw(epoc_device* s) {
+EMOKIT_DECLSPEC int emokit_get_next_raw(emokit_device* s) {
 	//Two blocks of 16 bytes must be read.
 	int i;
 
@@ -116,11 +116,11 @@ EPOC_DECLSPEC int epoc_get_next_raw(epoc_device* s) {
 	return 0;
 }
 
-EPOC_DECLSPEC int epoc_get_next_frame(epoc_device* s) {
+EMOKIT_DECLSPEC int emokit_get_next_frame(emokit_device* s) {
 
 	memset(s->raw_unenc_frame, 0, 32);
 	
-	epoc_get_next_raw(s);
+	emokit_get_next_raw(s);
 
 	s->current_frame.F3 = get_level(s->raw_unenc_frame, F3_MASK);
 	s->current_frame.FC6 = get_level(s->raw_unenc_frame, FC6_MASK);
@@ -143,8 +143,8 @@ EPOC_DECLSPEC int epoc_get_next_frame(epoc_device* s) {
 	s->current_frame.battery = 0;
 }
 
-EPOC_DECLSPEC void epoc_delete(epoc_device* dev)
+EMOKIT_DECLSPEC void emokit_delete(emokit_device* dev)
 {
-	epoc_deinit(dev);
+	emokit_deinit(dev);
 	free(dev);
 }

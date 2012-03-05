@@ -17,27 +17,27 @@ int main(int argc, char **argv)
 	FILE *input;
 	FILE *output;
   
-	epoc_device* d;
+	emokit_device* d;
   
-	d = epoc_create();
-	printf("Current epoc devices connected: %d\n", epoc_get_count(d, EPOC_VID, EPOC_PID));
-	if(epoc_open(d, EPOC_VID, EPOC_PID, 0) != 0)
+	d = emokit_create();
+	printf("Current epoc devices connected: %d\n", emokit_get_count(d, EMOKIT_VID, EMOKIT_PID));
+	if(emokit_open(d, EMOKIT_VID, EMOKIT_PID, 0) != 0)
 	{
 		printf("CANNOT CONNECT\n");
 		return 1;
 	}
 	while(1)
 	{
-		if(epoc_read_data(d) > 0)
+		if(emokit_read_data(d) > 0)
 		{
-			epoc_get_next_frame(d);
+			emokit_get_next_frame(d);
 			printf("%d %d %d %d %d\n", d->current_frame.gyroX, d->current_frame.gyroY, d->current_frame.F3, d->current_frame.FC6, d->current_frame.P7);
 		  
 			fflush(stdout);
 		}
 	}
 
-	epoc_close(d);
-	epoc_delete(d);
+	emokit_close(d);
+	emokit_delete(d);
 	return 0;
 }

@@ -10,7 +10,7 @@
 #include <api/hidsdi.h>
 #include <stdio.h>
 
-#define EPOC_USB_INTERFACE	0
+#define EMOKIT_USB_INTERFACE	0
 
 
 //Application global variables
@@ -72,7 +72,7 @@ void GetDeviceCapabilities(HANDLE DeviceHandle)
 	HidD_FreePreparsedData(PreparsedData);
 }
 
-int epoc_open_win32(epoc_device* dev, int VID, int PID, unsigned int device_index, int get_count)
+int emokit_open_win32(emokit_device* dev, int VID, int PID, unsigned int device_index, int get_count)
 {
 	//Use a series of API calls to find a HID with a specified Vendor IF and Product ID.
 
@@ -266,23 +266,23 @@ int epoc_open_win32(epoc_device* dev, int VID, int PID, unsigned int device_inde
 	return -1;
 }
 
-EPOC_DECLSPEC int epoc_get_count(epoc_device* dev,int device_vid, int device_pid)
+EMOKIT_DECLSPEC int emokit_get_count(emokit_device* dev,int device_vid, int device_pid)
 {
-	return epoc_open_win32(dev, device_vid, device_pid, 0, 1);
+	return emokit_open_win32(dev, device_vid, device_pid, 0, 1);
 }
 
-EPOC_DECLSPEC int epoc_open(epoc_device* dev, int device_vid, int device_pid, unsigned int device_index)
+EMOKIT_DECLSPEC int emokit_open(emokit_device* dev, int device_vid, int device_pid, unsigned int device_index)
 {
-	return epoc_open_win32(dev, device_vid, device_pid, device_index, 0);
+	return emokit_open_win32(dev, device_vid, device_pid, device_index, 0);
 }
 
-EPOC_DECLSPEC int epoc_close(epoc_device* dev)
+EMOKIT_DECLSPEC int emokit_close(emokit_device* dev)
 {
 	CloseHandle(dev->_dev);
 	return 0;
 }
 
-EPOC_DECLSPEC int epoc_read_data(epoc_device* dev)
+EMOKIT_DECLSPEC int emokit_read_data(emokit_device* dev)
 {
 	int Result;
 	char read[33];
@@ -296,9 +296,9 @@ EPOC_DECLSPEC int epoc_read_data(epoc_device* dev)
 	return Result;
 }
 
-EPOC_DECLSPEC epoc_device* epoc_create()
+EMOKIT_DECLSPEC emokit_device* emokit_create()
 {
-	epoc_device* s = (epoc_device*)malloc(sizeof(epoc_device));
+	emokit_device* s = (emokit_device*)malloc(sizeof(emokit_device));
 	s->_is_open = 0;
 	s->_is_inited = 1;	
 	return s;
