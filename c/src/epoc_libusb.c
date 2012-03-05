@@ -5,6 +5,7 @@
 
 
 #include "libepoc.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 #define EPOC_USB_INTERFACE	0
@@ -158,10 +159,10 @@ void epoc_delete(epoc_device* dev)
 	free(dev);
 }
 
-int epoc_read_data(epoc_device* dev, uint8_t* input_report)
+int epoc_read_data(epoc_device* dev)
 {
 	int trans;
-	int ret = libusb_interrupt_transfer(dev->_device, EPOC_IN_ENDPT, input_report, 32, &trans, 1000);
+	int ret = libusb_interrupt_transfer(dev->_device, EPOC_IN_ENDPT, dev->raw_frame, 32, &trans, 1000);
 	return trans;
 }
 

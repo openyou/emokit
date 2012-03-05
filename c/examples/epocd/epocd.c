@@ -16,12 +16,8 @@ int main(int argc, char **argv)
 {
 	FILE *input;
 	FILE *output;
-	enum headset_type type;
   
-	char raw_frame[32];
-	struct epoc_frame frame;
 	epoc_device* d;
-	char data[32];
   
 	d = epoc_create();
 	printf("Current epoc devices connected: %d\n", epoc_get_count(d, EPOC_VID, EPOC_PID));
@@ -32,10 +28,10 @@ int main(int argc, char **argv)
 	}
 	while(1)
 	{
-		if(epoc_read_data(d, data) > 0)
+		if(epoc_read_data(d) > 0)
 		{
-			epoc_get_next_frame(&frame, data);
-			printf("%d %d %d %d %d\n", frame.gyroX, frame.gyroY, frame.F3, frame.FC6, frame.P7);
+			epoc_get_next_frame(d);
+			printf("%d %d %d %d %d\n", d->current_frame.gyroX, d->current_frame.gyroY, d->current_frame.F3, d->current_frame.FC6, d->current_frame.P7);
 		  
 			fflush(stdout);
 		}

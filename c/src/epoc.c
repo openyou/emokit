@@ -5,11 +5,7 @@
 
 #include "libepoc.h"
 
-#define KEYSIZE 16 /* 128 bits == 16 bytes */
 
-const unsigned char CONSUMERKEY[KEYSIZE] =  {0x31,0x00,0x35,0x54,0x38,0x10,0x37,0x42,0x31,0x00,0x35,0x48,0x38,0x00,0x37,0x50};
-const unsigned char RESEARCHKEY[KEYSIZE] =  {0x31,0x00,0x39,0x54,0x38,0x10,0x37,0x42,0x31,0x00,0x39,0x48,0x38,0x00,0x37,0x50};
-const unsigned char SPECIALKEY[KEYSIZE]  = {0x31,0x00,0x35,0x48,0x31,0x00,0x35,0x54,0x38,0x10,0x37,0x42,0x38,0x00,0x37,0x50};
 
 const unsigned char F3_MASK[14] = {10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7}; 
 const unsigned char FC6_MASK[14] = {214, 215, 200, 201, 202, 203, 204, 205, 206, 207, 192, 193, 194, 195};
@@ -26,15 +22,7 @@ const unsigned char O2_MASK[14] = {140, 141, 142, 143, 128, 129, 130, 131, 132, 
 const unsigned char O1_MASK[14] = {102, 103, 88, 89, 90, 91, 92, 93, 94, 95, 80, 81, 82, 83};
 const unsigned char FC5_MASK[14] = {28, 29, 30, 31, 16, 17, 18, 19, 20, 21, 22, 23, 8, 9};
 
-MCRYPT td;
-unsigned char key[KEYSIZE];
-unsigned char *block_buffer;
-int blocksize;
-
-unsigned char frame[32];
-
-int epoc_get_crypto_key(const char* serial, const unsigned char* feature_report) {
-
+int epoc_get_crypto_key(epoc_device* s, const unsigned char* feature_report) {
 	unsigned char type = 0; //feature[5];
 	int i;
 	type &= 0xF;
@@ -42,54 +30,54 @@ int epoc_get_crypto_key(const char* serial, const unsigned char* feature_report)
 
 	unsigned int l = 16;
 	
-	key[0] = serial[l-1];
-	key[1] = '\0';
-	key[2] = serial[l-2];
+	s->key[0] = s->serial[l-1];
+	s->key[1] = '\0';
+	s->key[2] = s->serial[l-2];
 	if(type) {
-		key[3] = 'H';
-		key[4] = serial[l-1];
-		key[5] = '\0';
-		key[6] = serial[l-2];
-		key[7] = 'T';
-		key[8] = serial[l-3];
-		key[9] = '\x10';
-		key[10] = serial[l-4];
-		key[11] = 'B';
+		s->key[3] = 'H';
+		s->key[4] = s->serial[l-1];
+		s->key[5] = '\0';
+		s->key[6] = s->serial[l-2];
+		s->key[7] = 'T';
+		s->key[8] = s->serial[l-3];
+		s->key[9] = '\x10';
+		s->key[10] = s->serial[l-4];
+		s->key[11] = 'B';
 	}
 	else {
-		key[3] = 'T';
-		key[4] = serial[l-3];
-		key[5] = '\x10';
-		key[6] = serial[l-4];
-		key[7] = 'B';
-		key[8] = serial[l-1];
-		key[9] = '\0';
-		key[10] = serial[l-2];
-		key[11] = 'H';
+		s->key[3] = 'T';
+		s->key[4] = s->serial[l-3];
+		s->key[5] = '\x10';
+		s->key[6] = s->serial[l-4];
+		s->key[7] = 'B';
+		s->key[8] = s->serial[l-1];
+		s->key[9] = '\0';
+		s->key[10] = s->serial[l-2];
+		s->key[11] = 'H';
 	}
-	key[12] = serial[l-3];
-	key[13] = '\0';
-	key[14] = serial[l-4];
-	key[15] = 'P';
+	s->key[12] = s->serial[l-3];
+	s->key[13] = '\0';
+	s->key[14] = s->serial[l-4];
+	s->key[15] = 'P';
 }
 
 int epoc_init_crypto(epoc_device* s) {
 
-	epoc_get_crypto_key(s->serial, "");
+	epoc_get_crypto_key(s, "");
 
 	//libmcrypt initialization
-	td = mcrypt_module_open(MCRYPT_RIJNDAEL_128, NULL, MCRYPT_ECB, NULL);
-	blocksize = mcrypt_enc_get_block_size(td); //should return a 16bits blocksize
+	s->td = mcrypt_module_open(MCRYPT_RIJNDAEL_128, NULL, MCRYPT_ECB, NULL);
+	s->blocksize = mcrypt_enc_get_block_size(s->td); //should return a 16bits blocksize
     
-	block_buffer = malloc(blocksize);
+	s->block_buffer = malloc(s->blocksize);
 
-	mcrypt_generic_init( td, key, KEYSIZE, NULL);
+	mcrypt_generic_init( s->td, s->key, EPOC_KEYSIZE, NULL);
 	return 0;
 }
 
-int epoc_deinit() {
-	mcrypt_generic_deinit (td);
-	mcrypt_module_close(td);
+int epoc_deinit(epoc_device* s) {
+	mcrypt_generic_deinit (s->td);
+	mcrypt_module_close(s->td);
 	return 0;
 }
 
@@ -108,21 +96,21 @@ int get_level(unsigned char frame[32], const unsigned char bits[14]) {
 	return level;
 }
 
-int epoc_get_next_raw(unsigned char frame[32], unsigned char raw_frame[32]) {
+int epoc_get_next_raw(epoc_device* s) {
 	//Two blocks of 16 bytes must be read.
 	int i;
 
-	if (memcpy (block_buffer, raw_frame, blocksize)) {
-		mdecrypt_generic (td, block_buffer, blocksize);
-		memcpy(frame, block_buffer, 16);
+	if (memcpy (s->block_buffer, s->raw_frame, s->blocksize)) {
+		mdecrypt_generic (s->td, s->block_buffer, s->blocksize);
+		memcpy(s->raw_unenc_frame, s->block_buffer, 16);
 	}
 	else {
 		return -1;
 	}
     
-	if (memcpy(block_buffer, raw_frame + blocksize, blocksize)) {
-		mdecrypt_generic (td, block_buffer, blocksize);
-		memcpy(frame + 16, block_buffer, 16);
+	if (memcpy(s->block_buffer, s->raw_frame + s->blocksize, s->blocksize)) {
+		mdecrypt_generic (s->td, s->block_buffer, s->blocksize);
+		memcpy(s->raw_unenc_frame + 16, s->block_buffer, 16);
 	}
 	else {
 		return -1;
@@ -130,33 +118,30 @@ int epoc_get_next_raw(unsigned char frame[32], unsigned char raw_frame[32]) {
 	return 0;
 }
 
-int epoc_get_next_frame(struct epoc_frame* frame, unsigned char* raw_data) {
+int epoc_get_next_frame(epoc_device* s) {
 
-	unsigned char raw_frame[32];
-
-	memset(raw_frame, 0, 32);
+	memset(s->raw_unenc_frame, 0, 32);
 	
-	epoc_get_next_raw(raw_frame, raw_data);
+	epoc_get_next_raw(s);
 
-	frame->F3 = get_level(raw_frame, F3_MASK);
-	frame->FC6 = get_level(raw_frame, FC6_MASK);
-	frame->P7 = get_level(raw_frame, P7_MASK);
-	frame->T8 = get_level(raw_frame, T8_MASK);
-	frame->F7 = get_level(raw_frame, F7_MASK);
-	frame->F8 = get_level(raw_frame, F8_MASK);
-	frame->T7 = get_level(raw_frame, T7_MASK);
-	frame->P8 = get_level(raw_frame, P8_MASK);
-	frame->AF4 = get_level(raw_frame, AF4_MASK);
-	frame->F4 = get_level(raw_frame, F4_MASK);
-	frame->AF3 = get_level(raw_frame, AF3_MASK);
-	frame->O2 = get_level(raw_frame, O2_MASK);
-	frame->O1 = get_level(raw_frame, O1_MASK);
-	frame->FC5 = get_level(raw_frame, FC5_MASK);
+	s->current_frame.F3 = get_level(s->raw_unenc_frame, F3_MASK);
+	s->current_frame.FC6 = get_level(s->raw_unenc_frame, FC6_MASK);
+	s->current_frame.P7 = get_level(s->raw_unenc_frame, P7_MASK);
+	s->current_frame.T8 = get_level(s->raw_unenc_frame, T8_MASK);
+	s->current_frame.F7 = get_level(s->raw_unenc_frame, F7_MASK);
+	s->current_frame.F8 = get_level(s->raw_unenc_frame, F8_MASK);
+	s->current_frame.T7 = get_level(s->raw_unenc_frame, T7_MASK);
+	s->current_frame.P8 = get_level(s->raw_unenc_frame, P8_MASK);
+	s->current_frame.AF4 = get_level(s->raw_unenc_frame, AF4_MASK);
+	s->current_frame.F4 = get_level(s->raw_unenc_frame, F4_MASK);
+	s->current_frame.AF3 = get_level(s->raw_unenc_frame, AF3_MASK);
+	s->current_frame.O2 = get_level(s->raw_unenc_frame, O2_MASK);
+	s->current_frame.O1 = get_level(s->raw_unenc_frame, O1_MASK);
+	s->current_frame.FC5 = get_level(s->raw_unenc_frame, FC5_MASK);
     
-	//TODO!
-	frame->gyroX = raw_frame[29] - 102;
-	frame->gyroY = raw_frame[30] - 104;
+	s->current_frame.gyroX = s->raw_unenc_frame[29] - 102;
+	s->current_frame.gyroY = s->raw_unenc_frame[30] - 104;
     
-	frame->battery = 0;
+	s->current_frame.battery = 0;
 }
 
