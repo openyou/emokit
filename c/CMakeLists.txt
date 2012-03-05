@@ -25,9 +25,8 @@ ENDIF(WIN32)
 SET(LIBS ${Mcrypt_LIBS} ${LIBUSB_1_LIBRARIES})
 
 MESSAGE(STATUS ${LIBS})
-include_directories(${libepoc_SOURCE_DIR}/include /usr/local/include)
+INCLUDE_DIRECTORIES(${Mcrypt_INCLUDE_DIR} ${libepoc_SOURCE_DIR}/include)
 LINK_DIRECTORIES(/usr/local/lib)
-set(LIBEPOC_HEADERS include/libepoc.h)
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(examples/emokitd)
