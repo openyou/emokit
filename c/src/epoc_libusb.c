@@ -154,11 +154,6 @@ int epoc_close(epoc_device* s)
 	return 0;
 }
 
-void epoc_delete(epoc_device* dev)
-{
-	free(dev);
-}
-
 int epoc_read_data(epoc_device* dev)
 {
 	int trans;

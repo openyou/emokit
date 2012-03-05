@@ -5,8 +5,6 @@
 
 #include "libepoc.h"
 
-
-
 const unsigned char F3_MASK[14] = {10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7}; 
 const unsigned char FC6_MASK[14] = {214, 215, 200, 201, 202, 203, 204, 205, 206, 207, 192, 193, 194, 195};
 const unsigned char P7_MASK[14] = {84, 85, 86, 87, 72, 73, 74, 75, 76, 77, 78, 79, 64, 65};
@@ -22,7 +20,7 @@ const unsigned char O2_MASK[14] = {140, 141, 142, 143, 128, 129, 130, 131, 132, 
 const unsigned char O1_MASK[14] = {102, 103, 88, 89, 90, 91, 92, 93, 94, 95, 80, 81, 82, 83};
 const unsigned char FC5_MASK[14] = {28, 29, 30, 31, 16, 17, 18, 19, 20, 21, 22, 23, 8, 9};
 
-int epoc_get_crypto_key(epoc_device* s, const unsigned char* feature_report) {
+EPOC_DECLSPEC int epoc_get_crypto_key(epoc_device* s, const unsigned char* feature_report) {
 	unsigned char type = 0; //feature[5];
 	int i;
 	type &= 0xF;
@@ -61,7 +59,7 @@ int epoc_get_crypto_key(epoc_device* s, const unsigned char* feature_report) {
 	s->key[15] = 'P';
 }
 
-int epoc_init_crypto(epoc_device* s) {
+EPOC_DECLSPEC int epoc_init_crypto(epoc_device* s) {
 
 	epoc_get_crypto_key(s, "");
 
@@ -75,7 +73,7 @@ int epoc_init_crypto(epoc_device* s) {
 	return 0;
 }
 
-int epoc_deinit(epoc_device* s) {
+EPOC_DECLSPEC int epoc_deinit(epoc_device* s) {
 	mcrypt_generic_deinit (s->td);
 	mcrypt_module_close(s->td);
 	return 0;
@@ -96,7 +94,7 @@ int get_level(unsigned char frame[32], const unsigned char bits[14]) {
 	return level;
 }
 
-int epoc_get_next_raw(epoc_device* s) {
+EPOC_DECLSPEC int epoc_get_next_raw(epoc_device* s) {
 	//Two blocks of 16 bytes must be read.
 	int i;
 
@@ -118,7 +116,7 @@ int epoc_get_next_raw(epoc_device* s) {
 	return 0;
 }
 
-int epoc_get_next_frame(epoc_device* s) {
+EPOC_DECLSPEC int epoc_get_next_frame(epoc_device* s) {
 
 	memset(s->raw_unenc_frame, 0, 32);
 	
@@ -145,3 +143,8 @@ int epoc_get_next_frame(epoc_device* s) {
 	s->current_frame.battery = 0;
 }
 
+EPOC_DECLSPEC void epoc_delete(epoc_device* dev)
+{
+	epoc_deinit(dev);
+	free(dev);
+}

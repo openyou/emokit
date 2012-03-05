@@ -28,7 +28,7 @@ OVERLAPPED							HIDOverlapped;
 char								InputReport[256];
 ULONG								Length;
 LPOVERLAPPED						lpOverLap;
-BOOL								MyDeviceDetected = FALSE;
+BOOL								MyDeviceDetected		 = FALSE;
 TCHAR*								MyDevicePathName;
 DWORD								NumberOfBytesRead;
 char								OutputReport[256];
@@ -282,7 +282,7 @@ EPOC_DECLSPEC int epoc_close(epoc_device* dev)
 	return 0;
 }
 
-EPOC_DECLSPEC int epoc_read_data(epoc_device* dev, unsigned char *input_report)
+EPOC_DECLSPEC int epoc_read_data(epoc_device* dev)
 {
 	int Result;
 	char read[33];
@@ -292,7 +292,7 @@ EPOC_DECLSPEC int epoc_read_data(epoc_device* dev, unsigned char *input_report)
 		 Capabilities.InputReportByteLength,
 		 &NumberOfBytesRead,
 		 NULL);
-	memcpy(input_report, read+1, 32);
+	memcpy(dev->raw_frame, read+1, 32);
 	return Result;
 }
 
@@ -303,10 +303,4 @@ EPOC_DECLSPEC epoc_device* epoc_create()
 	s->_is_inited = 1;	
 	return s;
 }
-
-EPOC_DECLSPEC void epoc_delete(epoc_device* dev)
-{
-	free(dev);
-}
-
 
