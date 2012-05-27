@@ -1,0 +1,123 @@
+= Emotiv EEG Protocol Documentation
+
+By Daeken, Eguru, qDot
+Version 1.0, 2012-05-26
+
+== Introduction
+
+This document gives an overview of the communications and obfuscation
+mechanisms for the Emotiv EEG Headset. It covers the raw data
+transmission protocols, as well as the techniques used to lock down
+the system. 
+
+This document does not cover the inner working of any of the Emotiv
+SDK or Suites used on top of the raw data. It exists mainly for those
+interested in doing research with raw wave processing software such as
+OpenVibe and BrainBay.
+
+== Communications Mechanisms
+
+The Emotiv EEG communicates via a proprietary wireless protocol to a
+USB dongle hooked to the host computer. The USB dongle identifies as a
+USB HID device, emitting 32-byte reports at a rate of 128hz when the
+headset is on and in range. No data is ever written to the dongle or
+head, only read from them.
+
+Each report contains the following information:
+
+* Packet Counter
+* Battery Level
+* Contact Quality
+* Contact Sensor Readings
+* Gyro Sensor Readings
+
+== Cryptography
+
+=== Information and History
+
+To ensure that raw data is only read by those that have paid for the
+raw data license, each USB dongle encrypts incoming wireless data via
+AES against a key composed of the Serial Number (relayed in the USB
+feature report descriptor for the HID endpoint) of the dongle before
+emitting it as an HID report. It is assumed that data coming to the
+dongle from the wireless protocol is unencrypted, and all encryption
+happens on the dongle.
+
+While one would figure that dongles would have unique serials, this
+was not necessarily the case for the first year or so of emotiv
+development, and cracked decryption keys could be passed around as
+long as serials for USB dongles matched. However, later headsets now
+have unique serials per USB dongle.
+
+Initial key extraction techniques can be found at "Announcement.md"
+documentation in the emokit repository.
+
+=== Key Strategy
+
+To create a 128-bit key to decrypt incoming data from the usb dongle,
+we first need to request a feature report from the device that
+contains whether the device is a consumer or research headset. This
+fact changes the makeup of the key.
+
+Serial numbers are fetched via the feature report for the HID
+endpoint. Serial numbers are 16 byte strings of the format:
+
+-------
+SNXXXXXXXXXXYYYY
+-------
+
+Where Xs and Ys are usually numbers. The last 4 characters of the
+serial number are what are used to create the key. It's interesting to
+note that sometimes serials have dates embedded in them, i.e.
+
+-------
+SN20120526998912
+-------
+
+The date is probably the day the usb dongle was flashed. 
+
+For the research headset, the key is composed of the following values:
+
+-------
+[15] 0x00 [14] 0x54 [13] 0x10 [12] 0x42 [15] 0x00 [14] 0x48 [13] 0x00 [12] 0x50
+-------
+
+For the consumer headset, the key is composed of the following values:
+
+-------
+[15] 0x00 [14] 0x48 [13] 0x00 [12] 0x54 [15] 0x10 [14] 0x42 [13] 0x00 [12] 0x50
+-------
+
+Where the numbers in brackets are indexes of the serial string
+retrieved from the USB feature report descriptor. So for instance, if
+a serial number for a consumer headset is
+
+-------
+SN20120526998912
+-------
+
+The characters we're interested in are the last 4:
+
+-------
+8 [0x38] 9 [0x39] 1 [0x31] 2 [0x32]
+-------
+
+Then the resulting crypto key will be 
+
+-------
+0x32 0x00 0x31 0x48 0x39 0x00 0x38 0x54 0x32 0x10 0x31 0x42 0x39 0x00 0x38 0x50
+-------
+
+== Packet Analysis
+
+=== Packet Layout
+
+=== Counter and Battery
+
+=== Contact Readings
+
+=== Contact Quality
+
+=== Gyros
+
+
