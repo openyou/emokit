@@ -13,10 +13,6 @@ import struct
 
 from threading import Thread
 
-consumer_key = '\x31\x00\x35\x54\x38\x10\x37\x42\x31\x00\x35\x48\x38\x00\x37\x50'
-research_key = '\x31\x00\x39\x54\x38\x10\x37\x42\x31\x00\x39\x48\x38\x00\x37\x50'
-special_key = '\x31\x00\x35\x48\x31\x00\x35\x54\x38\x10\x37\x42\x38\x00\x37\x50'
-
 sensorBits = {
   'F3': [10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7], 
   'FC6': [214, 215, 200, 201, 202, 203, 204, 205, 206, 207, 192, 193, 194, 195], 
@@ -34,9 +30,17 @@ sensorBits = {
   'FC5': [28, 29, 30, 31, 16, 17, 18, 19, 20, 21, 22, 23, 8, 9]
 }
 
+g_battery = 0
+
 class EmotivPacket(object):
   def __init__(self, data):
+    global g_battery
     self.counter = ord(data[0])
+    self.battery = g_battery
+    if(self.counter > 127):
+      self.battery = self.counter
+      g_battery = self.battery
+      self.counter = 128
     self.sync = self.counter == 0xe9
     self.gyroX = ord(data[29]) - 102
     self.gyroY = ord(data[30]) - 104
@@ -52,10 +56,12 @@ class EmotivPacket(object):
       setattr(self, name, (level, strength))
   
   def __repr__(self):
-    return 'EmotivPacket(counter=%i, gyroX=%i, gyroY=%i)' % (
-        self.counter, 
-        self.gyroX, 
-        self.gyroY, 
+    return 'EmotivPacket(counter=%i, battery=%i, gyroX=%i, gyroY=%i, F3=%i)' % (
+      self.counter,
+      self.battery,
+      self.gyroX,
+      self.gyroY,
+      self.F3[0]
       )
 
 class Emotiv(object):
@@ -86,20 +92,19 @@ class Emotiv(object):
     return True
   
   def setupPosix(self, headsetId):
-    def reader():
-      self.setupCrypto(self.device.serial_number, None) #feature.get())
-      _os_decryption = False
-      if os.path.exists('/dev/eeg/raw'):
-        #The decrpytion is handled by the Linux epoc daemon. We don't need to handle it there.
-        _os_decryption = True
-        self.hidraw = open("/dev/eeg/raw")
+    _os_decryption = False
+    if os.path.exists('/dev/eeg/raw'):
+      #The decrpytion is handled by the Linux epoc daemon. We don't need to handle it there.
+      _os_decryption = True
+      self.hidraw = open("/dev/eeg/raw")
+    else:
+      if os.path.exists("/dev/hidraw5"):
+        self.hidraw = open("/dev/hidraw5")
       else:
-        if os.path.exists("/dev/hidraw5"):
-          self.hidraw = open("/dev/hidraw5")
-        else:
-          self.hidraw = open("/dev/hidraw5")
-      
-      while self._goOn:
+        self.hidraw = open("/dev/hidraw5")
+        
+    while self._goOn:
+      try: 
         data = self.hidraw.read(32)
         if data != "":
           if _os_decryption:
@@ -107,9 +112,8 @@ class Emotiv(object):
           else:
             #Decrypt it!
             self.gotData(data)
-          
-    self._dataReader = Thread(target=reader)
-    self._dataReader.start()
+      except KeyboardInterrupt:
+        self._goOn = False          
     return True
   
   def setupCrypto(self, sn, feature):
