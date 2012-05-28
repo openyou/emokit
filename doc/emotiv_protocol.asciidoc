@@ -110,6 +110,14 @@ Then the resulting crypto key will be
 
 == Packet Analysis
 
+32-byte packets are received from the USB device at 128hz. Update
+rates within that packet are:
+
+* Sensor Data - 128hz
+* Gyro Data - 128hz
+* Battery - 1hz
+* Sensor Quality - 1hz-16hz (Depending on sensor)
+
 === Packet Layout
 
 An Overview of the 256-bit Packet Layout:
@@ -124,7 +132,7 @@ An Overview of the 256-bit Packet Layout:
 | 64:77 | T7 Data
 | 78:91 | P7 Data
 | 92:105 | O1 Data
-| 107:120 | Connection Quality (Interlaced)
+| 107:120 | Connection Quality (Rotating)
 | 121:133 | Unknown
 | 134:147 | O2 Data
 | 148:161 | P8 Data
@@ -140,14 +148,16 @@ An Overview of the 256-bit Packet Layout:
 
 === Counter and Battery
 
-The first byte of each packet denotes two things: the packet count,
-and the protocol.
+The first byte of each packet can denote one of two things: the packet
+count, or the battery power level.
 
 Packet count makes up the lower 7 bits of the first byte. If the
-highest bit is a 1, then the battery level is being relayed.
+highest bit is a 1, then the battery level is being relayed. This
+happens once per second.
 
-Packet count goes from 0-127 then wraps back to 0. This can be used to
-detect dropped packets.
+Packet count goes from 0-127, then transmits a battery power packet,
+then wraps back to 0. This can be used to detect dropped packets. The
+battery power packet will always have the highest bit set to 1.
 
 Battery count is read via this table:
 
@@ -182,10 +192,66 @@ Battery count is read via this table:
 
 === Contact Readings
 
-Readings from the contacts are available as 12 bit
+Readings from the contacts are available as 14 bit values, with each
+sensor sending at 128hz. The values are interspered throughout the
+packet. See the Packet Layout section for which sensors are covered by
+each bit range.
 
 === Contact Quality
 
+Contact quality consists of 14 bits, and refers to the contact quality
+of the sensor as an amplitude of its calibration signal. The sensor
+context of the field changes based on the value of the packet counter
+in the first byte. For instance, a counter value of 1 means the packet
+is showing the quality for sensor FC5, while a counter value of 2
+means that the packet is showing the quality for sensor AF3, and
+so on.
+
+The following list shows the order that the sensors are listed in, in
+relation to the counter, starting with counter = 0.
+
+|============================
+| Counter Index | Contact	
+| 0 | F3
+| 1 | FC5
+| 2 | AF3
+| 3 | F7
+| 4 | T7
+| 5 | P7
+| 6 | O1
+| 7 | O2
+| 8 | P8
+| 9 | T8
+| 10 | F8
+| 11 | AF4
+| 12 | FC6
+| 13 | F4
+| 14 | F8
+| 15 | AF4
+| 64 | F3
+| 65 | FC5
+| 66 | AF3
+| 67 | F7
+| 68 | T7
+| 69 | P7
+| 70 | O1
+| 71 | O2
+| 72 | P8
+| 73 | T8
+| 74 | F8
+| 75 | AF4
+| 76 | FC6
+| 77 | F4
+| 78 | F8
+| 79 | AF4
+| 80 | FC6
+| .. | 77-80 Pattern repeats until counter hits 127
+|============================
+
+
 === Gyros
 
-
+Gyro readings are available for 2 axes (head turned left/right and
+foreward/back). These are 8-bit values that update at a rate of 128hz,
+with 7-bits of resolution on either side of the median point for the
+turn.
