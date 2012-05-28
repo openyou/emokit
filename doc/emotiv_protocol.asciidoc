@@ -110,9 +110,50 @@ Then the resulting crypto key will be
 
 == Packet Analysis
 
+
+
 === Packet Layout
 
 === Counter and Battery
+
+The first byte of each packet denotes two things: the packet count,
+and the protocol.
+
+Packet count makes up the lower 7 bits of the first byte. If the
+highest bit is a 1, then the battery level is being relayed.
+
+Packet count goes from 0-127 then wraps back to 0. This can be used to
+detect dropped packets.
+
+Battery count is read via this table:
+
+|============================
+| Value		| Battery Level (%)
+| >= 248  | ~100
+|    247  | 99.93
+|    246  | 97.02
+|    245  | 93.40
+|    244  | 89.45
+|    243  | 85.23
+|    242  | 81.89
+|    241  | 76.77
+|    240  | 71.54
+|    239  | 66.59
+|    238  | 61.92
+|    237  | 55.37
+|    236  | 45.93
+|    235  | 32.34
+|    234  | 20.43
+|    233  | 12.37
+|    232  |  5.08
+|    231  |  3.63
+|    230  |  2.80
+|    229  |  2.05
+|    228  |  1.42
+|    227  |  0.88
+|    226  |  0.42
+| <=225  |  ~0
+|============================
 
 === Contact Readings
 
