@@ -24,10 +24,7 @@
 #include <stdint.h>
 #if !defined(WIN32)
 #define EMOKIT_DECLSPEC
-#include "libusb-1.0/libusb.h"
 #else
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #define EMOKIT_DECLSPEC __declspec(dllexport)
 #endif
 
@@ -52,53 +49,36 @@ struct emokit_contact_quality {
 };
 
 struct emokit_frame {
+	char counter;
 	int F3, FC6, P7, T8, F7, F8, T7, P8, AF4, F4, AF3, O2, O1, FC5;
 	struct emokit_contact_quality cq;
 	char gyroX, gyroY;
 	char battery;
 };
 
-typedef struct {
-#if !defined(WIN32)
-	struct libusb_context* _context;
-	struct libusb_device_handle* _device;
-	struct libusb_transfer* _in_transfer;
-	struct libusb_transfer* _out_transfer;
-#else
-	HANDLE _dev;
-#endif
-	unsigned char serial[16]; // USB Dongle serial number
-	int _is_open; // Is device currently open
-	int _is_inited; // Is device current initialized
-	MCRYPT td; // mcrypt context
-	unsigned char key[EMOKIT_KEYSIZE]; // crypt key for device
-	unsigned char *block_buffer; // temporary storage for decrypt
-	int blocksize; // Size of current block
-	struct emokit_frame current_frame; // Last information received from headset
-	unsigned char raw_frame[32]; // Raw encrypted data received from headset
-	unsigned char raw_unenc_frame[32]; // Raw unencrypted data received from headset
-} emokit_device;
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+	struct emokit_device;
+	
 	/** 
 	 * Kills crypto context. Not meant for public calling, call
 	 * emokit_delete instead.
 	 *
 	 */
-	void emokit_deinit(emokit_device* s);
+	void emokit_deinit(struct emokit_device* s);
 
 	/** 
-	 * Create a new emokit_device structure and return a pointer to it.
+	 * Create a new struct emokit_device structure and return a pointer to it.
 	 * Makes sure structure is initialized properly. To delete, call
 	 * emokit_delete().
 	 *
 	 *
-	 * @return new emokit_device structure
+	 * @return new struct emokit_device structure
 	 */
-	EMOKIT_DECLSPEC emokit_device* emokit_create();
+	EMOKIT_DECLSPEC struct emokit_device* emokit_create();
 
 	/** 
 	 * Return the number of devices currently connected to the system
@@ -110,7 +90,7 @@ extern "C"
 	 * @return Number of devices currently connected to system, or < 0
 	 * for error
 	 */
-	EMOKIT_DECLSPEC int emokit_get_count(emokit_device* s, int device_vid, int device_pid);
+	EMOKIT_DECLSPEC int emokit_get_count(struct emokit_device* s, int device_vid, int device_pid);
 
 	/** 
 	 * Open an inited device
@@ -122,7 +102,7 @@ extern "C"
 	 *
 	 * @return 0 if successful, < 0 for error
 	 */
-	EMOKIT_DECLSPEC int emokit_open(emokit_device* s, int device_vid, int device_pid, unsigned int device_index);
+	EMOKIT_DECLSPEC int emokit_open(struct emokit_device* s, int device_vid, int device_pid, unsigned int device_index);
 
 	/** 
 	 * Close an opened device
@@ -131,14 +111,14 @@ extern "C"
 	 *
 	 * @return 0 if successful, < 0 for error
 	 */
-	EMOKIT_DECLSPEC int emokit_close(emokit_device* s);
+	EMOKIT_DECLSPEC int emokit_close(struct emokit_device* s);
 
 	/** 
 	 * Delete an inited device
 	 *
 	 * @param dev Initied device strucure
 	 */
-	EMOKIT_DECLSPEC void emokit_delete(emokit_device* dev);
+	EMOKIT_DECLSPEC void emokit_delete(struct emokit_device* dev);
 
 	/** 
 	 * Read a single raw report from the device. This function will
@@ -150,7 +130,9 @@ extern "C"
 	 *
 	 * @return 0 if successful, < 0 for error
 	 */
-	EMOKIT_DECLSPEC int emokit_read_data(emokit_device* dev);
+	EMOKIT_DECLSPEC int emokit_read_data(struct emokit_device* dev);
+
+	EMOKIT_DECLSPEC struct emokit_frame emokit_get_next_frame(struct emokit_device* dev);
 
 	/** 
 	 * Given a feature report from the device, extract the serial and
@@ -162,7 +144,7 @@ extern "C"
 	 *
 	 * @return 0 if successful, < 0 for error
 	 */
-	EMOKIT_DECLSPEC int emokit_get_crypto_key(emokit_device* s, const unsigned char* feature_report);
+	EMOKIT_DECLSPEC int emokit_get_crypto_key(struct emokit_device* s, const unsigned char* feature_report);
 #ifdef __cplusplus
 };
 #endif

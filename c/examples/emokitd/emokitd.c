@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 	FILE *input;
 	FILE *output;
   
-	emokit_device* d;
+	struct emokit_device* d;
   
 	d = emokit_create();
 	printf("Current epoc devices connected: %d\n", emokit_get_count(d, EMOKIT_VID, EMOKIT_PID));
@@ -26,12 +26,15 @@ int main(int argc, char **argv)
 		printf("CANNOT CONNECT\n");
 		return 1;
 	}
+	emokit_init_crypto(d);
 	while(1)
 	{
 		if(emokit_read_data(d) > 0)
 		{
-			emokit_get_next_frame(d);
-			printf("%d %d %d %d %d\n", d->current_frame.gyroX, d->current_frame.gyroY, d->current_frame.F3, d->current_frame.FC6, d->current_frame.P7);
+			printf("Read data!\n");
+			struct emokit_frame c;
+			c = emokit_get_next_frame(d);
+			printf("%d %d %d %d %d %d\n", c.counter, c.gyroX, c.gyroY, c.F3, c.FC6, c.P7);
 		  
 			fflush(stdout);
 		}
