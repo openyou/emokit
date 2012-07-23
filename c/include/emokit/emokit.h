@@ -17,8 +17,6 @@
 #ifndef LIBEMOKIT_H_
 #define LIBEMOKIT_H_
 
-#include <hidapi.h>
-
 #define E_EMOKIT_DRIVER_ERROR -1
 #define E_EMOKIT_NOT_INITED -2
 #define E_EMOKIT_NOT_OPENED -3
@@ -29,18 +27,6 @@
 #else
 #define EMOKIT_DECLSPEC __declspec(dllexport)
 #endif
-
-#define EMOKIT_SERIALSIZE 16
-
-#define EMOKIT_KEYSIZE 16 /* 128 bits == 16 bytes */
-
-#define EMOKIT_CONSUMER 0
-#define EMOKIT_RESEARCH 1
-
-/* ID of the feature report we need to identify the device
-   as consumer/research */
-#define EMOKIT_REPORT_ID 0
-#define EMOKIT_REPORT_SIZE 9
 
 //prototypes so we don't need to include mcrypt at this level
 struct CRYPT_STREAM;
@@ -68,25 +54,12 @@ struct emokit_frame {
 	char battery;
 };
 
-struct emokit_device {
-	hid_device* _dev;
-	unsigned char serial[16]; // USB Dongle serial number
-	int _is_open; // Is device currently open
-	int _is_inited; // Is device current initialized
-	MCRYPT td; // mcrypt context
-	unsigned char key[EMOKIT_KEYSIZE]; // crypt key for device
-	unsigned char *block_buffer; // temporary storage for decrypt
-	int blocksize; // Size of current block
-	struct emokit_frame current_frame; // Last information received from headset
-	unsigned char raw_frame[32]; // Raw encrypted data received from headset
-	unsigned char raw_unenc_frame[32]; // Raw unencrypted data received from headset
-};
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
+	struct emokit_device;
 	/** 
 	 * Kills crypto context. Not meant for public calling, call
 	 * emokit_delete instead.
@@ -173,9 +146,3 @@ extern "C"
 };
 #endif
 #endif //LIBEMOKIT_H_
-
-
-
-
-
-
