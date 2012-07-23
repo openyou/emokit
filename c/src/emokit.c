@@ -36,20 +36,6 @@ const unsigned char O2_MASK[14] = {140, 141, 142, 143, 128, 129, 130, 131, 132, 
 const unsigned char O1_MASK[14] = {102, 103, 88, 89, 90, 91, 92, 93, 94, 95, 80, 81, 82, 83};
 const unsigned char FC5_MASK[14] = {28, 29, 30, 31, 16, 17, 18, 19, 20, 21, 22, 23, 8, 9};
 
-struct emokit_device {
-	hid_device* _dev;
-	unsigned char serial[16]; // USB Dongle serial number
-	int _is_open; // Is device currently open
-	int _is_inited; // Is device current initialized
-	MCRYPT td; // mcrypt context
-	unsigned char key[EMOKIT_KEYSIZE]; // crypt key for device
-	unsigned char *block_buffer; // temporary storage for decrypt
-	int blocksize; // Size of current block
-	struct emokit_frame current_frame; // Last information received from headset
-	unsigned char raw_frame[32]; // Raw encrypted data received from headset
-	unsigned char raw_unenc_frame[32]; // Raw unencrypted data received from headset
-};
-
 struct emokit_device* emokit_create()
 {
 	struct emokit_device* s = (struct emokit_device*)malloc(sizeof(struct emokit_device));
@@ -81,8 +67,36 @@ int emokit_get_count(struct emokit_device* s, int device_vid, int device_pid)
 	return count;
 }
 
+int emokit_get_serial(hid_device *dev, char *str) {
+	int i;
+	wchar_t buf[EMOKIT_SERIALSIZE];
+	hid_get_serial_number_string(dev, buf, EMOKIT_SERIALSIZE*sizeof(wchar_t));
+	for (i=0; i < EMOKIT_SERIALSIZE; ++i) 
+		str[i] = (char) buf[i];
+}
+
+int emokit_identify_device(hid_device *dev) {
+	/* currently we check to see if the feature report matches the consumer
+	   model and if not we assume it's a research model.*/
+	int nbytes, i, dev_type = EMOKIT_CONSUMER;
+	char buf[EMOKIT_REPORT_SIZE];
+	char report_consumer[] = {0x00, 0xa0, 0xff, 0x1f, 0xff, 0x00, 0x00, 0x00, 0x00};
+	buf[0] = EMOKIT_REPORT_ID;
+	nbytes = hid_get_feature_report(dev, buf, sizeof(buf));
+	if (nbytes != EMOKIT_REPORT_SIZE) 
+		printf("warning: got feature report of length %d (expected length %d)\n", nbytes, EMOKIT_REPORT_SIZE);
+	for (i=0; i < nbytes; ++i) {
+		if (buf[i] != report_consumer[i]) {
+			dev_type = EMOKIT_RESEARCH;
+			break;
+		}
+	}
+	return dev_type;
+}
+
 int emokit_open(struct emokit_device* s, int device_vid, int device_pid, unsigned int device_index)
 {
+	int dev_type;
 	int count = 0;
 	struct hid_device_info* devices;
 	struct hid_device_info* device_cur;
@@ -107,7 +121,9 @@ int emokit_open(struct emokit_device* s, int device_vid, int device_pid, unsigne
 		return E_EMOKIT_NOT_OPENED;
 	}
 	s->_is_open = 1;
-	emokit_init_crypto(s);
+	dev_type = emokit_identify_device(s->_dev);
+	emokit_get_serial(s->_dev, s->serial);
+	emokit_init_crypto(s, dev_type);
 	return 0;
 }
 
@@ -127,8 +143,8 @@ int emokit_read_data(struct emokit_device* s)
 	return hid_read(s->_dev, s->raw_frame, 32);
 }
 
-EMOKIT_DECLSPEC int emokit_get_crypto_key(struct emokit_device* s, const unsigned char* feature_report) {
-	unsigned char type = 0x0; //feature[5];
+EMOKIT_DECLSPEC int emokit_get_crypto_key(struct emokit_device* s, int dev_type) {
+	unsigned char type = (unsigned char) dev_type;
 	int i;
 	type &= 0xF;
 	type = (type == 0);
@@ -176,9 +192,9 @@ EMOKIT_DECLSPEC int emokit_get_crypto_key(struct emokit_device* s, const unsigne
 	printf("\n");
 }
 
-EMOKIT_DECLSPEC int emokit_init_crypto(struct emokit_device* s) {
+EMOKIT_DECLSPEC int emokit_init_crypto(struct emokit_device* s, int dev_type) {
 	printf("Initializing crypto!\n");
-	emokit_get_crypto_key(s, "");
+	emokit_get_crypto_key(s, dev_type);
 
 	//libmcrypt initialization
 	s->td = mcrypt_module_open(MCRYPT_RIJNDAEL_128, NULL, MCRYPT_ECB, NULL);

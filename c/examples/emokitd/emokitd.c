@@ -21,12 +21,12 @@ int main(int argc, char **argv)
   
 	d = emokit_create();
 	printf("Current epoc devices connected: %d\n", emokit_get_count(d, EMOKIT_VID, EMOKIT_PID));
-	if(emokit_open(d, EMOKIT_VID, EMOKIT_PID, 0) != 0)
+	if(emokit_open(d, EMOKIT_VID, EMOKIT_PID, 1) != 0)
 	{
 		printf("CANNOT CONNECT\n");
 		return 1;
 	}
-	emokit_init_crypto(d);
+/*	emokit_init_crypto(d);*/
 	while(1)
 	{
 		if(emokit_read_data(d) > 0)
