@@ -95,7 +95,7 @@ void emokit_deinit(emokit_device* s) {
 }
 
 int get_level(unsigned char frame[32], const unsigned char bits[14]) {
-	char i;
+	signed char i;
 	char b,o;
 	int level = 0;
     
