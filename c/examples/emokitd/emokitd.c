@@ -14,20 +14,20 @@
 
 int main(int argc, char **argv)
 {
-	FILE *input;
-	FILE *output;
-  
 	struct emokit_device* d;
   
 	d = emokit_create();
 	printf("Current epoc devices connected: %d\n", emokit_get_count(d, EMOKIT_VID, EMOKIT_PID));
-	if(emokit_open(d, EMOKIT_VID, EMOKIT_PID, 0) != 0)
+	int r = emokit_open(d, EMOKIT_VID, EMOKIT_PID, 0);
+	if(r != 0)
 	{
-		printf("CANNOT CONNECT\n");
+		printf("CANNOT CONNECT: %d\n", r);
 		return 1;
 	}
+	printf("Connected\n");
 	while(1)
 	{
+		printf("Starting read\n");
 		if(emokit_read_data(d) > 0)
 		{
 			printf("Read data!\n");

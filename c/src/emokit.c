@@ -14,14 +14,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "emokit/emokit.h"
-#include <hidapi.h>
-#include <mcrypt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "emokit/emokit.h"
+#include "hidapi/hidapi.h"
+#include "mcrypt.h"
 
-#define EMOKIT_SERIALSIZE 16
+#define MAX_STR 255
 
 #define EMOKIT_KEYSIZE 16 /* 128 bits == 16 bytes */
 
@@ -51,7 +51,7 @@ const unsigned char FC5_MASK[14] = {28, 29, 30, 31, 16, 17, 18, 19, 20, 21, 22, 
 
 struct emokit_device {
 	hid_device* _dev;
-	unsigned char serial[16]; // USB Dongle serial number
+	wchar_t serial[MAX_STR]; // USB Dongle serial number
 	int _is_open; // Is device currently open
 	int _is_inited; // Is device current initialized
 	MCRYPT td; // mcrypt context
@@ -94,13 +94,6 @@ int emokit_get_count(struct emokit_device* s, int device_vid, int device_pid)
 	return count;
 }
 
-int emokit_get_serial(hid_device *dev, char *str) {
-	int i;
-	wchar_t buf[EMOKIT_SERIALSIZE];
-	hid_get_serial_number_string(dev, buf, EMOKIT_SERIALSIZE*sizeof(wchar_t));
-	for (i=0; i < EMOKIT_SERIALSIZE; ++i) 
-		str[i] = (char) buf[i];
-}
 
 int emokit_identify_device(hid_device *dev) {
 	/* currently we check to see if the feature report matches the consumer
@@ -110,8 +103,10 @@ int emokit_identify_device(hid_device *dev) {
 	char report_consumer[] = {0x00, 0xa0, 0xff, 0x1f, 0xff, 0x00, 0x00, 0x00, 0x00};
 	buf[0] = EMOKIT_REPORT_ID;
 	nbytes = hid_get_feature_report(dev, buf, sizeof(buf));
-	if (nbytes != EMOKIT_REPORT_SIZE) 
-		printf("warning: got feature report of length %d (expected length %d)\n", nbytes, EMOKIT_REPORT_SIZE);
+	if (nbytes != EMOKIT_REPORT_SIZE)
+	{
+		return -1;
+	}
 	for (i=0; i < nbytes; ++i) {
 		if (buf[i] != report_consumer[i]) {
 			dev_type = EMOKIT_RESEARCH;
@@ -149,7 +144,7 @@ int emokit_open(struct emokit_device* s, int device_vid, int device_pid, unsigne
 	}
 	s->_is_open = 1;
 	dev_type = emokit_identify_device(s->_dev);
-	emokit_get_serial(s->_dev, s->serial);
+	hid_get_serial_number_string(s->_dev, s->serial, MAX_STR);
 	emokit_init_crypto(s, dev_type);
 	return 0;
 }
@@ -174,53 +169,42 @@ EMOKIT_DECLSPEC int emokit_get_crypto_key(struct emokit_device* s, int dev_type)
 	unsigned char type = (unsigned char) dev_type;
 	int i;
 	type &= 0xF;
-	type = (type == 0);
+	type = (type != 0);
 
 	unsigned int l = 16;
 	
-	s->key[0] = s->serial[l-1];
+	s->key[0] = (uint8_t)s->serial[l-1];
 	s->key[1] = '\0';
-	s->key[2] = s->serial[l-2];
+	s->key[2] = (uint8_t)s->serial[l-2];
 	if(type) {
 		s->key[3] = 'H';
-		s->key[4] = s->serial[l-1];
+		s->key[4] = (uint8_t)s->serial[l-1];
 		s->key[5] = '\0';
-		s->key[6] = s->serial[l-2];
+		s->key[6] = (uint8_t)s->serial[l-2];
 		s->key[7] = 'T';
-		s->key[8] = s->serial[l-3];
+		s->key[8] = (uint8_t)s->serial[l-3];
 		s->key[9] = '\x10';
-		s->key[10] = s->serial[l-4];
+		s->key[10] = (uint8_t)s->serial[l-4];
 		s->key[11] = 'B';
 	}
 	else {
 		s->key[3] = 'T';
-		s->key[4] = s->serial[l-3];
+		s->key[4] = (uint8_t)s->serial[l-3];
 		s->key[5] = '\x10';
-		s->key[6] = s->serial[l-4];
+		s->key[6] = (uint8_t)s->serial[l-4];
 		s->key[7] = 'B';
-		s->key[8] = s->serial[l-1];
+		s->key[8] = (uint8_t)s->serial[l-1];
 		s->key[9] = '\0';
-		s->key[10] = s->serial[l-2];
+		s->key[10] = (uint8_t)s->serial[l-2];
 		s->key[11] = 'H';
 	}
-	s->key[12] = s->serial[l-3];
+	s->key[12] = (uint8_t)s->serial[l-3];
 	s->key[13] = '\0';
-	s->key[14] = s->serial[l-4];
+	s->key[14] = (uint8_t)s->serial[l-4];
 	s->key[15] = 'P';
-
-	printf("Serial: ");
-	for(i = 0; i < 16; ++i) {
-		printf("%c", s->serial[i]);
-	}
-	printf("\nKey: ");
-	for(i = 0; i < 16; ++i) {
-		printf("%i (%c) ", s->key[i], s->key[i]);
-	}
-	printf("\n");
 }
 
 EMOKIT_DECLSPEC int emokit_init_crypto(struct emokit_device* s, int dev_type) {
-	printf("Initializing crypto!\n");
 	emokit_get_crypto_key(s, dev_type);
 
 	//libmcrypt initialization
@@ -229,7 +213,7 @@ EMOKIT_DECLSPEC int emokit_init_crypto(struct emokit_device* s, int dev_type) {
     
 	s->block_buffer = malloc(s->blocksize);
 
-	mcrypt_generic_init( s->td, s->key, EMOKIT_KEYSIZE, NULL);
+	mcrypt_generic_init(s->td, s->key, EMOKIT_KEYSIZE, NULL);
 	return 0;
 }
 
