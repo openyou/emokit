@@ -28,10 +28,6 @@
 #define EMOKIT_DECLSPEC __declspec(dllexport)
 #endif
 
-//prototypes so we don't need to include mcrypt at this level
-struct CRYPT_STREAM;
-typedef struct CRYPT_STREAM *MCRYPT;
-
 /// Vendor ID for all emotiv devices
 const static uint32_t EMOKIT_VID = 0x21a1;
 /// Product ID for all emotiv devices

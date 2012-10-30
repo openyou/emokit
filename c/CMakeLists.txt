@@ -10,7 +10,14 @@ SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 FIND_PACKAGE(Mcrypt REQUIRED)
 FIND_PACKAGE(HIDAPI REQUIRED)
 
-SET(LIBS ${Mcrypt_LIBS} ${HIDAPI_LIBRARIES} udev)
+SET(LIBS ${Mcrypt_LIBS} ${HIDAPI_LIBRARIES})
+
+IF(LINUX)
+SET(LIBS ${LIBS} udev)
+ELSEIF(APPLE)
+SET(LIBS ${LIBS} "-framework IOKit" "-framework CoreFoundation")
+ENDIF()
+
 
 MESSAGE(STATUS ${LIBS})
 INCLUDE_DIRECTORIES(${HIDAPI_INCLUDE_DIR} ${Mcrypt_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/include)
@@ -23,6 +30,7 @@ ADD_SUBDIRECTORY(examples/emokitd)
 ##       PKGCONFIG file                ###
 ##########################################
 
+IF(LINUX)
 IF   (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/emokit.pc.in")
   MESSAGE(STATUS "configured ${CMAKE_CURRENT_SOURCE_DIR}/emokit.pc.in --> ${CMAKE_CURRENT_BINARY_DIR}/emokit.pc")
   CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/emokit.pc.in 
@@ -34,4 +42,4 @@ IF   (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/emokit.pc.in")
 		DESTINATION lib/pkgconfig
 		)
 ENDIF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/emokit.pc.in")
-
+ENDIF()
