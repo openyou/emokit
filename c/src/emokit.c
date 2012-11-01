@@ -4,7 +4,7 @@
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -34,7 +34,7 @@
 #define EMOKIT_REPORT_SIZE 9
 
 
-const unsigned char F3_MASK[14] = {10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7}; 
+const unsigned char F3_MASK[14] = {10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7};
 const unsigned char FC6_MASK[14] = {214, 215, 200, 201, 202, 203, 204, 205, 206, 207, 192, 193, 194, 195};
 const unsigned char P7_MASK[14] = {84, 85, 86, 87, 72, 73, 74, 75, 76, 77, 78, 79, 64, 65};
 const unsigned char T8_MASK[14] = {160, 161, 162, 163, 164, 165, 166, 167, 152, 153, 154, 155, 156, 157};
@@ -69,7 +69,7 @@ struct emokit_device* emokit_create()
 	s->_is_open = 0;
 	s->_is_inited = 0;
 	hid_init();
-	s->_is_inited = 1;	
+	s->_is_inited = 1;
 	return s;
 }
 
@@ -89,8 +89,8 @@ int emokit_get_count(struct emokit_device* s, int device_vid, int device_pid)
 		++count;
 		device_cur = device_cur->next;
 	}
-	
-	hid_free_enumeration(devices);	
+
+	hid_free_enumeration(devices);
 	return count;
 }
 
@@ -116,6 +116,19 @@ int emokit_identify_device(hid_device *dev) {
 	return dev_type;
 }
 
+EMOKIT_DECLSPEC int emokit_init_crypto(struct emokit_device* s, int dev_type) {
+	emokit_get_crypto_key(s, dev_type);
+
+	//libmcrypt initialization
+	s->td = mcrypt_module_open(MCRYPT_RIJNDAEL_128, NULL, MCRYPT_ECB, NULL);
+	s->blocksize = mcrypt_enc_get_block_size(s->td); //should return a 16bits blocksize
+
+	s->block_buffer = malloc(s->blocksize);
+
+	mcrypt_generic_init(s->td, s->key, EMOKIT_KEYSIZE, NULL);
+	return 0;
+}
+
 int emokit_open(struct emokit_device* s, int device_vid, int device_pid, unsigned int device_index)
 {
 	int dev_type;
@@ -137,7 +150,7 @@ int emokit_open(struct emokit_device* s, int device_vid, int device_pid, unsigne
 		++count;
 		device_cur = device_cur->next;
 	}
-	
+
 	hid_free_enumeration(devices);
 	if(!s->_dev) {
 		return E_EMOKIT_NOT_OPENED;
@@ -162,17 +175,17 @@ int emokit_close(struct emokit_device* s)
 
 int emokit_read_data(struct emokit_device* s)
 {
-	return hid_read(s->_dev, s->raw_frame, 32);
+	return hid_read(s->_dev, s->raw_frame, 16);
 }
 
-EMOKIT_DECLSPEC int emokit_get_crypto_key(struct emokit_device* s, int dev_type) {
+EMOKIT_DECLSPEC
+void emokit_get_crypto_key(struct emokit_device* s, int dev_type) {
 	unsigned char type = (unsigned char) dev_type;
 	int i;
+	unsigned int l = 16;
 	type &= 0xF;
 	type = (type != 0);
 
-	unsigned int l = 16;
-	
 	s->key[0] = (uint8_t)s->serial[l-1];
 	s->key[1] = '\0';
 	s->key[2] = (uint8_t)s->serial[l-2];
@@ -204,18 +217,6 @@ EMOKIT_DECLSPEC int emokit_get_crypto_key(struct emokit_device* s, int dev_type)
 	s->key[15] = 'P';
 }
 
-EMOKIT_DECLSPEC int emokit_init_crypto(struct emokit_device* s, int dev_type) {
-	emokit_get_crypto_key(s, dev_type);
-
-	//libmcrypt initialization
-	s->td = mcrypt_module_open(MCRYPT_RIJNDAEL_128, NULL, MCRYPT_ECB, NULL);
-	s->blocksize = mcrypt_enc_get_block_size(s->td); //should return a 16bits blocksize
-    
-	s->block_buffer = malloc(s->blocksize);
-
-	mcrypt_generic_init(s->td, s->key, EMOKIT_KEYSIZE, NULL);
-	return 0;
-}
 
 void emokit_deinit(struct emokit_device* s) {
 	mcrypt_generic_deinit (s->td);
@@ -226,12 +227,12 @@ int get_level(unsigned char frame[32], const unsigned char bits[14]) {
 	signed char i;
 	char b,o;
 	int level = 0;
-    
+
 	for (i = 13; i >= 0; --i) {
 		level <<= 1;
 		b = (bits[i] / 8) + 1;
 		o = bits[i] % 8;
-        
+
 		level |= (frame[b] >> o) & 1;
 	}
 	return level;
@@ -248,7 +249,7 @@ EMOKIT_DECLSPEC int emokit_get_next_raw(struct emokit_device* s) {
 	else {
 		return -1;
 	}
-    
+
 	if (memcpy(s->block_buffer, s->raw_frame + s->blocksize, s->blocksize)) {
 		mdecrypt_generic (s->td, s->block_buffer, s->blocksize);
 		memcpy(s->raw_unenc_frame + 16, s->block_buffer, 16);
@@ -259,10 +260,10 @@ EMOKIT_DECLSPEC int emokit_get_next_raw(struct emokit_device* s) {
 	return 0;
 }
 
-EMOKIT_DECLSPEC struct emokit_frame emokit_get_next_frame(struct emokit_device* s) {
-
-	memset(s->raw_unenc_frame, 0, 32);
+EMOKIT_DECLSPEC
+struct emokit_frame emokit_get_next_frame(struct emokit_device* s) {
 	struct emokit_frame k;
+	memset(s->raw_unenc_frame, 0, 32);
 	emokit_get_next_raw(s);
 
 	k.counter = s->raw_unenc_frame[0];
@@ -280,10 +281,10 @@ EMOKIT_DECLSPEC struct emokit_frame emokit_get_next_frame(struct emokit_device* 
 	k.O2 = get_level(s->raw_unenc_frame, O2_MASK);
 	k.O1 = get_level(s->raw_unenc_frame, O1_MASK);
 	k.FC5 = get_level(s->raw_unenc_frame, FC5_MASK);
-    
+
 	k.gyroX = s->raw_unenc_frame[29] - 102;
 	k.gyroY = s->raw_unenc_frame[30] - 104;
-    
+
 	k.battery = 0;
 	return k;
 }

@@ -4,7 +4,7 @@
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -56,14 +56,14 @@ extern "C"
 {
 #endif
 	struct emokit_device;
-	/** 
+	/**
 	 * Kills crypto context. Not meant for public calling, call
 	 * emokit_delete instead.
 	 *
 	 */
 	void emokit_deinit(struct emokit_device* s);
 
-	/** 
+	/**
 	 * Create a new struct emokit_device structure and return a pointer to it.
 	 * Makes sure structure is initialized properly. To delete, call
 	 * emokit_delete().
@@ -73,7 +73,7 @@ extern "C"
 	 */
 	EMOKIT_DECLSPEC struct emokit_device* emokit_create();
 
-	/** 
+	/**
 	 * Return the number of devices currently connected to the system
 	 *
 	 * @param s Inited device structure
@@ -83,21 +83,27 @@ extern "C"
 	 * @return Number of devices currently connected to system, or < 0
 	 * for error
 	 */
-	EMOKIT_DECLSPEC int emokit_get_count(struct emokit_device* s, int device_vid, int device_pid);
+	EMOKIT_DECLSPEC int emokit_get_count(struct emokit_device* s,
+																			 int device_vid,
+																			 int device_pid);
 
-	/** 
+	/**
 	 * Open an inited device
 	 *
 	 * @param s Inited device structure
 	 * @param device_vid VID to look for, usually EMOKIT_VID constant
 	 * @param device_pid PID to look for, usually EMOKIT_PID constant
-	 * @param device_index Index of device to open on the bus (0 for first device found)
+	 * @param device_index Index of device to open on the bus (0 for first device
+	 * found)
 	 *
 	 * @return 0 if successful, < 0 for error
 	 */
-	EMOKIT_DECLSPEC int emokit_open(struct emokit_device* s, int device_vid, int device_pid, unsigned int device_index);
+	EMOKIT_DECLSPEC int emokit_open(struct emokit_device* s,
+																	int device_vid,
+																	int device_pid,
+																	unsigned int device_index);
 
-	/** 
+	/**
 	 * Close an opened device
 	 *
 	 * @param s Currently opened device
@@ -106,14 +112,14 @@ extern "C"
 	 */
 	EMOKIT_DECLSPEC int emokit_close(struct emokit_device* s);
 
-	/** 
+	/**
 	 * Delete an inited device
 	 *
 	 * @param dev Initied device strucure
 	 */
 	EMOKIT_DECLSPEC void emokit_delete(struct emokit_device* dev);
 
-	/** 
+	/**
 	 * Read a single raw report from the device. This function will
 	 * block until a single report is read. We are guarenteed each
 	 * report will be a full message from the device, so we do not need
@@ -125,9 +131,10 @@ extern "C"
 	 */
 	EMOKIT_DECLSPEC int emokit_read_data(struct emokit_device* dev);
 
-	EMOKIT_DECLSPEC struct emokit_frame emokit_get_next_frame(struct emokit_device* dev);
+	EMOKIT_DECLSPEC struct emokit_frame
+	emokit_get_next_frame(struct emokit_device* dev);
 
-	/** 
+	/**
 	 * Given a feature report from the device, extract the serial and
 	 * create the crypto key. Exposed because why not. Sets "key" field
 	 * in device struct.
@@ -137,7 +144,8 @@ extern "C"
 	 *
 	 * @return 0 if successful, < 0 for error
 	 */
-	EMOKIT_DECLSPEC int emokit_get_crypto_key(struct emokit_device* s, int dev_type);
+	EMOKIT_DECLSPEC void emokit_get_crypto_key(struct emokit_device* s,
+																						 int dev_type);
 #ifdef __cplusplus
 };
 #endif
