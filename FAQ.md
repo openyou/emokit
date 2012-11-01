@@ -41,11 +41,12 @@ parity with the C code.
 
 * OPTIONAL READING: The history of the key generation, and why you used to need keys
 
-When emokit first came out, we only knew part of how the encryption
-worked, mainly because Daeken finished the first round, qDot took
-things over, and then neither of them had time to do anything for a
-while. So there was a lot of news that went around of "only certain
-headsets/keys work", so on and so forth.
+When emokit first came out (For more information on this, check out
+Announcement.md in the doc directory), we only knew part of how the
+encryption worked, mainly because Daeken finished the first round,
+qDot took things over, and then neither of them had time to do
+anything for a while. So there was a lot of news that went around of
+"only certain headsets/keys work", so on and so forth.
 
 We managed to get lucky with the method for a while, because Emotiv
 was reusing keys on USB dongles, so one key would work for many
