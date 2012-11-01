@@ -1,5 +1,5 @@
 /* Copyright (c) 2010, Daeken and Skadge
- * Copyright (c) 2011-2012, Kyle Machulis <kyle@nonpolynomial.com>
+ * Copyright (c) 2011-2012, OpenYou Organization (http://openyou.org)
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above

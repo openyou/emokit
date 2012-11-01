@@ -1,11 +1,15 @@
 Emokit
 ======
 
-By Cody Brocious and Kyle Machulis
+Reverse engineering and original code written by
+
+* Cody Brocious (http://github.com/daeken)
+* Kyle Machulis (http://github.com/qdot)
 
 Contributions by
 
-* Severin Lemaignan (Base C Library and mcrypt functionality)
+* Severin Lemaignan - Base C Library and mcrypt functionality
+* Sharif Olorin  (http://github.com/fractalcat) - hidapi support
 
 Description
 ===========
@@ -15,16 +19,24 @@ data from the Emotiv EPOC headset. Note that this will not give you
 processed data (i.e. anything available in the Emo Suites in the
 software), just the raw sensor data.
 
-The C library is currently supported on:
+The C library is backed by hidapi, and should work on any platform
+that hidapi also works on.
 
-* OS X/Linux - Via libusb-1.0
-* Windows - via Win32 HID calls
+The Python library is currently very broken. Fix it!
 
-The Python library is currently supported on:
+Information
+===========
 
-* Linux - udev rules and file system access (no special library required)
-* Windows - pywinhid
-* OS X - Coming soon (via pyusb)
+FAQ (READ BEFORE FILING ISSUES): http://github.com/openyou/emokit/FAQ.md
+
+If you have a problem not covered in the FAQ, file it as an
+issue on the github project.
+
+PLEASE DO NOT EMAIL OR OTHERWISE CONTACT THE DEVELOPERS DIRECTLY.
+Seriously. I'm sick of email and random facebook friendings asking for
+help. What happens on the project stays on the project.
+
+Issues: http://github.com/openyou/emokit/issues
 
 Required Libraries
 ==================
@@ -38,10 +50,9 @@ Python
 C Language
 ----------
 
-* CMake (Required on all platforms) - http://www.cmake.org
-* WDK (Windows Only) - http://www.microsoft.com/whdc/devtools/WDK/default.mspx
-* libusb-1.0 (All non-windows platforms) - http://www.libusb.org
-* libmcrypt (Required on all platforms) - https://sourceforge.net/projects/mcrypt/
+* CMake - http://www.cmake.org
+* libmcrypt - https://sourceforge.net/projects/mcrypt/
+* hidapi - http://www.signal11.us/oss/hidapi/
 
 Usage
 =====
@@ -63,39 +74,17 @@ Python library
   finally:
     headset.close()
 
-Platform Specifics
-==================
-
-OS X
-----
-
-You will need to install the EmotivNullDriver.kext on OS X for
-software to be able to access the EPOC. To do this, copy the
-osx/EmotivNullDriver.kext directory to /System/Library/Extensions/.
-Once this is done, from the terminal, run
-
-sudo kextutil /System/Library/Extensions/EmotivNullDriver.kext
-
-Or else just reboot. This will blacklist the emotiv from the HID
-Manager so it can be read by Emokit. No telling what this will do in
-conjunction with the Emotiv OS X drivers, I haven't tested that yet.
+Platform Specifics Issues
+=========================
 
 Linux
 -----
 
-There are two ways to run Emokit on Linux
-
-* Copy the udev rules to /etc/udev/rules and restart udev, in which
-  case you'll have access to /dev/hidrawX, where X is probably 0 and
-  1. You're interested in whatever the higher number is.
-* Use the libusb driver, which will detach from the HID Manager as
-  long as you run whatever you need in sudo. Otherwise, you'll need to
-  blacklist the VID/PID pair out of the kernel
-
-Windows
--------
-
-No platform specifics. Should just work.
+Due to the way hidapi works, the linux version of emokit can run using
+either hidraw calls or libusb. These will require different udev rules
+for each. We've tried to cover both (as based on hidapi's example udev
+file), but your mileage may vary. If you have problems, please post
+them to the github issues page (http://github.com/openyou/emokit/issues).
 
 Credits - Cody
 ==============
