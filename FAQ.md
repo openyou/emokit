@@ -3,9 +3,11 @@ Emokit FAQ
 
 * What data does emokit give me?
 
-- The raw channels of the headset
-- Battery power of the headset (in development at time of FAQ writing)
-- Signal quality of each connection on the headset (in development at time of FAQ writing)
+The raw channels of the headset
+
+Battery power of the headset (in development at time of FAQ writing)
+
+Signal quality of each connection on the headset (in development at time of FAQ writing)
 
 * What data does emokit not give me?
 
