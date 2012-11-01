@@ -32,6 +32,13 @@ dongles. If it doesn't, file an issue (http://github.com/openyou/emokit/issues).
 
 You shouldn't. It should "just work". So please stop asking.
 
+* Where's the original python code go?
+
+As of 2012-10-31, the python version is seriously broken, and none of
+the main project devs have been working on it. It will live on in a
+branch for the moment, and will come back in when it's fixed and is at
+parity with the C code.
+
 * OPTIONAL READING: The history of the key generation, and why you used to need keys
 
 When emokit first came out, we only knew part of how the encryption
