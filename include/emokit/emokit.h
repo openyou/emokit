@@ -38,16 +38,16 @@ const static uint32_t EMOKIT_OUT_ENDPT = 0x02;
 /// In endpoint for all emotiv devices
 const static uint32_t EMOKIT_IN_ENDPT  = 0x82;
 
-struct emokit_contact_quality {
-	char F3, FC6, P7, T8, F7, F8, T7, P8, AF4, F4, AF3, O2, O1, FC5;
+struct emokit_contact_quality {//values > 4000 are good
+	short F3, FC6, P7, T8, F7, F8, T7, P8, AF4, F4, AF3, O2, O1, FC5;
 };
 
 struct emokit_frame {
-	char counter;
-	int F3, FC6, P7, T8, F7, F8, T7, P8, AF4, F4, AF3, O2, O1, FC5;
+	unsigned char counter; //loops from 0 to 128 (129 values)
+	int F3, FC6, P7, T8, F7, F8, T7, P8, AF4, F4, AF3, O2, O1, FC5; //raw data values
 	struct emokit_contact_quality cq;
 	char gyroX, gyroY;
-	char battery;
+	unsigned char battery; //percentage of full charge, read on counter=128
 };
 
 
