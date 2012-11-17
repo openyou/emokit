@@ -48,7 +48,7 @@ const unsigned char AF3_MASK[14] = {46, 47, 32, 33, 34, 35, 36, 37, 38, 39, 24, 
 const unsigned char O2_MASK[14] = {140, 141, 142, 143, 128, 129, 130, 131, 132, 133, 134, 135, 120, 121};
 const unsigned char O1_MASK[14] = {102, 103, 88, 89, 90, 91, 92, 93, 94, 95, 80, 81, 82, 83};
 const unsigned char FC5_MASK[14] = {28, 29, 30, 31, 16, 17, 18, 19, 20, 21, 22, 23, 8, 9};
-
+const unsigned char QUALITY_MASK[14]={99,100,101,102,103,104,105,106,107,108,109,110,111,112};
 struct emokit_device {
 	hid_device* _dev;
 	wchar_t serial[MAX_STR]; // USB Dongle serial number
@@ -61,11 +61,14 @@ struct emokit_device {
 	struct emokit_frame current_frame; // Last information received from headset
 	unsigned char raw_frame[32]; // Raw encrypted data received from headset
 	unsigned char raw_unenc_frame[32]; // Raw unencrypted data received from headset
+	unsigned char last_battery; //last reported battery value, in percentage of full
+	struct emokit_contact_quality last_quality; //last reported contact quality
 };
 
 struct emokit_device* emokit_create()
 {
 	struct emokit_device* s = (struct emokit_device*)malloc(sizeof(struct emokit_device));
+	memset(s,0,sizeof(struct emokit_device));
 	s->_is_open = 0;
 	s->_is_inited = 0;
 	hid_init();
@@ -99,7 +102,7 @@ int emokit_identify_device(hid_device *dev) {
 	/* currently we check to see if the feature report matches the consumer
 	   model and if not we assume it's a research model.*/
 	int nbytes, i, dev_type = EMOKIT_CONSUMER;
-	char buf[EMOKIT_REPORT_SIZE];
+	unsigned char buf[EMOKIT_REPORT_SIZE];
 	char report_consumer[] = {0x00, 0xa0, 0xff, 0x1f, 0xff, 0x00, 0x00, 0x00, 0x00};
 	buf[0] = EMOKIT_REPORT_ID;
 	nbytes = hid_get_feature_report(dev, buf, sizeof(buf));
@@ -123,7 +126,7 @@ EMOKIT_DECLSPEC int emokit_init_crypto(struct emokit_device* s, int dev_type) {
 	s->td = mcrypt_module_open(MCRYPT_RIJNDAEL_128, NULL, MCRYPT_ECB, NULL);
 	s->blocksize = mcrypt_enc_get_block_size(s->td); //should return a 16bits blocksize
 
-	s->block_buffer = malloc(s->blocksize);
+	s->block_buffer = (unsigned char *)malloc(s->blocksize);
 
 	mcrypt_generic_init(s->td, s->key, EMOKIT_KEYSIZE, NULL);
 	return 0;
@@ -184,7 +187,7 @@ void emokit_get_crypto_key(struct emokit_device* s, int dev_type) {
 	int i;
 	unsigned int l = 16;
 	type &= 0xF;
-	type = (type != 0);
+	type = (type == 0);
 
 	s->key[0] = (uint8_t)s->serial[l-1];
 	s->key[1] = '\0';
@@ -230,7 +233,7 @@ int get_level(unsigned char frame[32], const unsigned char bits[14]) {
 
 	for (i = 13; i >= 0; --i) {
 		level <<= 1;
-		b = (bits[i] / 8) + 1;
+		b = (bits[i] >> 3) + 1;
 		o = bits[i] % 8;
 
 		level |= (frame[b] >> o) & 1;
@@ -240,11 +243,10 @@ int get_level(unsigned char frame[32], const unsigned char bits[14]) {
 
 EMOKIT_DECLSPEC int emokit_get_next_raw(struct emokit_device* s) {
 	//Two blocks of 16 bytes must be read.
-	int i;
 
 	if (memcpy (s->block_buffer, s->raw_frame, s->blocksize)) {
 		mdecrypt_generic (s->td, s->block_buffer, s->blocksize);
-		memcpy(s->raw_unenc_frame, s->block_buffer, 16);
+		memcpy(s->raw_unenc_frame, s->block_buffer, s->blocksize);
 	}
 	else {
 		return -1;
@@ -252,7 +254,7 @@ EMOKIT_DECLSPEC int emokit_get_next_raw(struct emokit_device* s) {
 
 	if (memcpy(s->block_buffer, s->raw_frame + s->blocksize, s->blocksize)) {
 		mdecrypt_generic (s->td, s->block_buffer, s->blocksize);
-		memcpy(s->raw_unenc_frame + 16, s->block_buffer, 16);
+		memcpy(s->raw_unenc_frame + s->blocksize, s->block_buffer, s->blocksize);
 	}
 	else {
 		return -1;
@@ -260,13 +262,172 @@ EMOKIT_DECLSPEC int emokit_get_next_raw(struct emokit_device* s) {
 	return 0;
 }
 
+
+//returns the percentage battery value given the unencrypted report value
+EMOKIT_DECLSPEC unsigned char battery_value(unsigned char in) {
+	
+	if (in>=248) return 100;
+	else {
+		switch(in) {
+			case 247:return 99; break;
+			case 246:return 97; break;
+			case 245:return 93; break;
+			case 244:return 89; break;
+			case 243:return 85; break;
+			case 242:return 82; break;
+			case 241:return 77; break;
+			case 240:return 72; break;
+			case 239:return 66; break;
+			case 238:return 62; break;
+			case 237:return 55; break;
+			case 236:return 46; break;
+			case 235:return 32; break;
+			case 234:return 20; break;
+			case 233:return 12; break;
+			case 232:return 6; break;
+			case 231:return 4 ; break;
+			case 230:return 3; break;
+			case 229:return 2; break;
+			case 228:
+			case 227:
+			case 226:
+				return 1; 
+				break;
+			default:
+				return 0;			
+		}		
+	}
+}
+
+//decode and update the s->last_quality, return s->last_quality
+EMOKIT_DECLSPEC struct emokit_contact_quality handle_quality(struct emokit_device* s) {
+	int current_contact_quality=get_level(s->raw_unenc_frame,QUALITY_MASK);
+	switch(s->raw_unenc_frame[0]) {
+			case 0:
+				s->last_quality.F3=current_contact_quality;
+				break;
+			case 1:
+				s->last_quality.FC5=current_contact_quality;
+				break;
+			case 2:
+				s->last_quality.AF3=current_contact_quality;
+				break;
+			case 3:
+				s->last_quality.F7=current_contact_quality;
+				break;
+			case 4:
+				s->last_quality.T7=current_contact_quality;
+				break;
+			case 5:
+				s->last_quality.P7=current_contact_quality;
+				break;
+			case 6:
+				s->last_quality.O1=current_contact_quality;
+				break;
+			case 7:
+				s->last_quality.O2=current_contact_quality;
+				break;
+			case 8:
+				s->last_quality.P8=current_contact_quality;
+				break;
+			case 9:
+				s->last_quality.T8=current_contact_quality;
+				break;
+			case 10:
+				s->last_quality.F8=current_contact_quality;
+				break;
+			case 11:
+				s->last_quality.AF4=current_contact_quality;
+				break;
+			case 12:
+				s->last_quality.FC6=current_contact_quality;
+				break;
+			case 13:
+				s->last_quality.F4=current_contact_quality;
+				break;
+			case 14:
+				s->last_quality.F8=current_contact_quality;
+				break;
+			case 15:
+				s->last_quality.AF4=current_contact_quality;
+				break;
+			case 64:
+				s->last_quality.F3=current_contact_quality;
+				break;
+			case 65:
+				s->last_quality.FC5=current_contact_quality;
+				break;
+			case 66:
+				s->last_quality.AF3=current_contact_quality;
+				break;
+			case 67:
+				s->last_quality.F7=current_contact_quality;
+				break;
+			case 68:
+				s->last_quality.T7=current_contact_quality;
+				break;
+			case 69:
+				s->last_quality.P7=current_contact_quality;
+				break;
+			case 70:
+				s->last_quality.O1=current_contact_quality;
+				break;
+			case 71:
+				s->last_quality.O2=current_contact_quality;
+				break;
+			case 72:
+				s->last_quality.P8=current_contact_quality;
+				break;
+			case 73:
+				s->last_quality.T8=current_contact_quality;
+				break;
+			case 74:
+				s->last_quality.F8=current_contact_quality;
+				break;
+			case 75:
+				s->last_quality.AF4=current_contact_quality;				
+				break;
+			case 76:
+				s->last_quality.FC6=current_contact_quality;
+				break;
+			case 77:
+				s->last_quality.F4=current_contact_quality;
+				break;
+			case 78:
+				s->last_quality.F8=current_contact_quality;
+				break;
+			case 79:
+				s->last_quality.AF4=current_contact_quality;
+				break;
+			case 80:
+				s->last_quality.FC6=current_contact_quality;
+				break;				
+			default:
+				break;
+	}		
+	return (s->last_quality);
+}
+
+
 EMOKIT_DECLSPEC
 struct emokit_frame emokit_get_next_frame(struct emokit_device* s) {
 	struct emokit_frame k;
 	memset(s->raw_unenc_frame, 0, 32);
-	emokit_get_next_raw(s);
 
-	k.counter = s->raw_unenc_frame[0];
+	if (emokit_get_next_raw(s)<0) {
+		k.counter=0;
+		return k;
+	}
+
+	memset(&k.cq,0,sizeof(struct emokit_contact_quality));
+	if (s->raw_unenc_frame[0] & 128) {
+		k.counter = 128;
+		k.battery = battery_value( s->raw_unenc_frame[0] );
+		s->last_battery=k.battery;
+	} else {
+		k.counter = s->raw_unenc_frame[0];
+		k.battery = s->last_battery;
+	}
 	k.F3 = get_level(s->raw_unenc_frame, F3_MASK);
 	k.FC6 = get_level(s->raw_unenc_frame, FC6_MASK);
 	k.P7 = get_level(s->raw_unenc_frame, P7_MASK);
@@ -285,7 +446,9 @@ struct emokit_frame emokit_get_next_frame(struct emokit_device* s) {
 	k.gyroX = s->raw_unenc_frame[29] - 102;
 	k.gyroY = s->raw_unenc_frame[30] - 104;
 
-	k.battery = 0;
+	k.cq=handle_quality(s);
+	//memcpy(k.unenc,s->raw_unenc_frame,32);
+	
 	return k;
 }
 
