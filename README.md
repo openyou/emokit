@@ -41,6 +41,15 @@ Issues: http://github.com/openyou/emokit/issues
 Required Libraries
 ==================
 
+Python
+------
+
+* pywinhid (Windows Only) - http://code.google.com/p/pywinusb/
+* pyusb (OS X, Optional for Linux) - http://sourceforge.net/projects/pyusb/
+
+C Language
+----------
+
 * CMake - http://www.cmake.org
 * libmcrypt - https://sourceforge.net/projects/mcrypt/
 * hidapi - http://www.signal11.us/oss/hidapi/
@@ -52,6 +61,18 @@ C library
 ---------
 
 See epocd.c example
+
+Python library
+--------------
+
+  import emotiv
+  headset = emotiv.Emotiv()
+  try:
+    while True:
+      for packet in headset.dequeue():
+        print packet.gyroX, packet.gyroY
+  finally:
+    headset.close()
 
 Platform Specifics Issues
 =========================
