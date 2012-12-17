@@ -6,7 +6,8 @@ try:
 except:
 	print 'No psyco.  Expect poor performance.'
 
-import pygame, sys, time, logging
+from pygame import pygame
+import sys, time, logging
 from emotiv import Emotiv
 
 class Grapher(object):

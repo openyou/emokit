@@ -11,6 +11,7 @@ logger = logging.getLogger("emotiv")
 from aes import rijndael
 import struct
 
+from subprocess import check_output
 from threading import Thread
 
 sensorBits = {
@@ -69,12 +70,39 @@ class Emotiv(object):
     
     self._goOn = True
     self.packets = []
-    self.serialNum = "SN201211150798GM"
     if self.setupWin(headsetId) if windows else self.setupPosix(headsetId):
       logger.info("Fine, connected to the Emotiv EPOC receiver")
     else:
       logger.error("Unable to connect to the Emotiv EPOC receiver :-(")
       sys.exit(1)
+
+  def getLinuxSetup(self):
+      rawinputs = []
+      for filename in os.listdir("/sys/class/hidraw"):
+          realInputPath = check_output(["realpath", "/sys/class/hidraw/" + filename])
+          sPaths = realInputPath.split('/')
+          s = len(sPaths)
+          s = s - 4
+          i = 0
+          path = ""
+          while s > i:
+              path = path + sPaths[i] + "/"
+              i += 1
+          rawinputs.append([path, filename])
+      for input in rawinputs:
+          #print input[0] + " Device: " + input[1]
+          try:
+              with open(input[0] + "/manufacturer", 'r') as f:
+                  manufacturer = f.readline()
+                  f.close()
+              if "Emotiv Systems Inc." in manufacturer:
+                  with open (input[0] + "/serial", 'r') as f:
+                      serial = f.readline().strip()
+                      f.close()
+                  print "Serial: " + serial + " HIDraw: " + input[1]
+                  return [serial, input[1],]
+          except IOError as e:
+              print "Couldn't open file"
   
   def setupWin(self, headsetId):
     filter = hid.HidDeviceFilter(vendor_id=0x21A1, product_name='Brain Waves')
@@ -98,10 +126,12 @@ class Emotiv(object):
       _os_decryption = True
       self.hidraw = open("/dev/eeg/raw")
     else:
-      if os.path.exists("/dev/hidraw4"):
-        self.hidraw = open("/dev/hidraw4")
+      setup = self.getLinuxSetup()
+      self.serialNum = setup[0]
+      if os.path.exists("/dev/" + setup[1]):
+        self.hidraw = open("/dev/" + setup[1])
       else:
-        self.hidraw = open("/dev/hidraw5")
+        self.hidraw = open("/dev/hidraw3")
     self.setupCrypto(self.serialNum, 0)        
     while self._goOn:
       try: 
