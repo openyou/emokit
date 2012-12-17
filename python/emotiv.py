@@ -69,7 +69,7 @@ class Emotiv(object):
     
     self._goOn = True
     self.packets = []
-    
+    self.serialNum = "SN201211150798GM"
     if self.setupWin(headsetId) if windows else self.setupPosix(headsetId):
       logger.info("Fine, connected to the Emotiv EPOC receiver")
     else:
@@ -98,11 +98,11 @@ class Emotiv(object):
       _os_decryption = True
       self.hidraw = open("/dev/eeg/raw")
     else:
-      if os.path.exists("/dev/hidraw5"):
-        self.hidraw = open("/dev/hidraw5")
+      if os.path.exists("/dev/hidraw4"):
+        self.hidraw = open("/dev/hidraw4")
       else:
         self.hidraw = open("/dev/hidraw5")
-        
+    self.setupCrypto(self.serialNum, 0)        
     while self._goOn:
       try: 
         data = self.hidraw.read(32)
@@ -119,7 +119,7 @@ class Emotiv(object):
   def setupCrypto(self, sn, feature):
     type = 0 #feature[5]
     type &= 0xF
-    type = type == 0
+    type = 0
 
     k = ['\0'] * 16
     k[0] = sn[-1]
