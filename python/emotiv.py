@@ -89,6 +89,8 @@ class Emotiv(object):
               path = path + sPaths[i] + "/"
               i += 1
           rawinputs.append([path, filename])
+      hiddevices = []
+      #TODO: Add support for multiple USB sticks
       for input in rawinputs:
           #print input[0] + " Device: " + input[1]
           try:
@@ -99,8 +101,14 @@ class Emotiv(object):
                   with open (input[0] + "/serial", 'r') as f:
                       serial = f.readline().strip()
                       f.close()
-                  print "Serial: " + serial + " HIDraw: " + input[1]
-                  return [serial, input[1],]
+                  print "Serial: " + serial + " Device: " + input[1]
+ 		  #Great we found it. But we need to use the second one...
+                  hidraw = input[1]
+                  id_hidraw = int(hidraw[-1]) 
+                  id_hidraw += 1
+                  hidraw = "hidraw" + id_hidraw.__str__()
+                  print "Serial: " + serial + " Device: " + hidraw + " (Active)"
+                  return [serial, hidraw,]
           except IOError as e:
               print "Couldn't open file"
   
@@ -128,10 +136,11 @@ class Emotiv(object):
     else:
       setup = self.getLinuxSetup()
       self.serialNum = setup[0]
+      #self.hidraw = open("/dev/hidraw4")
       if os.path.exists("/dev/" + setup[1]):
         self.hidraw = open("/dev/" + setup[1])
       else:
-        self.hidraw = open("/dev/hidraw3")
+        self.hidraw = open("/dev/hidraw4")
     self.setupCrypto(self.serialNum, 0)        
     while self._goOn:
       try: 
