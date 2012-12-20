@@ -10,6 +10,7 @@ Contributions by
 
 * Severin Lemaignan - Base C Library and mcrypt functionality
 * Sharif Olorin  (http://github.com/fractalcat) - hidapi support
+* Bill Schumacher (http://github.com/bschumacher) - Fixed the python library, well almost.
 
 Description
 ===========
@@ -22,7 +23,7 @@ software), just the raw sensor data.
 The C library is backed by hidapi, and should work on any platform
 that hidapi also works on.
 
-The Python library is currently very broken. Fix it!
+The Python library is currently broken. Fix it!
 
 Information
 ===========
@@ -46,6 +47,9 @@ Python
 
 * pywinhid (Windows Only) - http://code.google.com/p/pywinusb/
 * pyusb (OS X, Optional for Linux) - http://sourceforge.net/projects/pyusb/
+* pycrypto - https://www.dlitz.net/software/pycrypto/
+* gevent - http://gevent.org
+* realpath - http://?   sudo apt-get install realpath
 
 C Language
 ----------

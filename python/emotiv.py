@@ -1,3 +1,4 @@
+import gevent
 try:
   import pywinusb.hid as hid
   windows = True
@@ -6,13 +7,15 @@ except:
 
 import sys, os
 import logging
+from gevent.queue import Queue
+from gevent import Greenlet
+
+#Do we really need this logger? Seems like a waste. Too much data to log anyhow.
 logger = logging.getLogger("emotiv")
 
-from aes import rijndael
-import struct
-
 from subprocess import check_output
-from threading import Thread
+from Crypto.Cipher import AES
+from Crypto import Random
 
 sensorBits = {
   'F3': [10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7], 
@@ -32,6 +35,7 @@ sensorBits = {
 }
 
 g_battery = 0
+tasks = Queue()
 
 class EmotivPacket(object):
   def __init__(self, data):
@@ -53,28 +57,55 @@ class EmotivPacket(object):
         level <<= 1
         b, o = (bits[i] / 8) + 1, bits[i] % 8
         level |= (ord(data[b]) >> o) & 1
+      #TODO: Fix this.
       strength = 4#(ord(data[j]) >> 3) & 1
       setattr(self, name, (level, strength))
-  
+
   def __repr__(self):
     return 'EmotivPacket(counter=%i, battery=%i, gyroX=%i, gyroY=%i, F3=%i)' % (
       self.counter,
       self.battery,
       self.gyroX,
       self.gyroY,
-      self.F3[0]
-      )
+      self.F3[0],
+    )
 
 class Emotiv(object):
-  def __init__(self, headsetId=0, research_headset = True):
-    
+  def __init__(self,displayOutput=True, headsetId=0, research_headset = True):
     self._goOn = True
     self.packets = []
-    if self.setupWin(headsetId) if windows else self.setupPosix(headsetId):
-      logger.info("Fine, connected to the Emotiv EPOC receiver")
+    self.packetsRecieved = 0
+    self.packetsProcessed = 0
+    if windows:
+      self.setupWin(headsetId) 
     else:
-      logger.error("Unable to connect to the Emotiv EPOC receiver :-(")
-      sys.exit(1)
+      self.setupPosix()
+
+  def updateStdout(self):
+    while self._goOn:
+      if windows:
+        os.system('cls')
+      else:
+        os.system('clear')
+      #TODO: Make this more elegant?
+      print "Total Packets: %i Packets Processed: %i" % (self.packetsRecieved, self.packetsProcessed)
+      print "Current Sensor States"
+      print "F3 Reading:  %i Strength: %i" % (self.lastPacket.F3[0], self.lastPacket.F3[1]) 
+      print "FC6 Reading:  %i Strength: %i" % (self.lastPacket.FC6[0], self.lastPacket.FC6[1])
+      print "P7 Reading:  %i Strength: %i" % (self.lastPacket.P7[0], self.lastPacket.P7[1])
+      print "T8 Reading:  %i Strength: %i" % (self.lastPacket.T8[0], self.lastPacket.T8[1])
+      print "F7 Reading:  %i Strength: %i" % (self.lastPacket.F7[0], self.lastPacket.F7[1])
+      print "F8 Reading:  %i Strength: %i" % (self.lastPacket.F8[0], self.lastPacket.F8[1])
+      print "T7 Reading:  %i Strength: %i" % (self.lastPacket.T7[0], self.lastPacket.T7[1])
+      print "P8 Reading:  %i Strength: %i" % (self.lastPacket.P8[0], self.lastPacket.P8[1])
+      print "AF4 Reading:  %i Strength: %i" % (self.lastPacket.AF4[0], self.lastPacket.AF4[1])
+      print "F4 Reading:  %i Strength: %i" % (self.lastPacket.F4[0], self.lastPacket.F4[1])
+      print "AF3 Reading:  %i Strength: %i" % (self.lastPacket.AF3[0], self.lastPacket.AF3[1])
+      print "O2 Reading:  %i Strength: %i" % (self.lastPacket.O2[0], self.lastPacket.O2[1])
+      print "O1 Reading:  %i Strength: %i" % (self.lastPacket.O1[0], self.lastPacket.O1[1])
+      print "FC5 Reading:  %i Strength: %i" % (self.lastPacket.FC5[0], self.lastPacket.FC5[1])
+      print "Gyro X: %i, Gyro Y: %i Battery: %i" % (self.lastPacket.gyroX, self.lastPacket.gyroY, self.lastPacket.battery)
+      gevent.sleep(1)
 
   def getLinuxSetup(self):
       rawinputs = []
@@ -90,30 +121,31 @@ class Emotiv(object):
               i += 1
           rawinputs.append([path, filename])
       hiddevices = []
-      #TODO: Add support for multiple USB sticks
+      #TODO: Add support for multiple USB sticks? make a bit more elegant
       for input in rawinputs:
-          #print input[0] + " Device: " + input[1]
-          try:
-              with open(input[0] + "/manufacturer", 'r') as f:
-                  manufacturer = f.readline()
-                  f.close()
-              if "Emotiv Systems Inc." in manufacturer:
-                  with open (input[0] + "/serial", 'r') as f:
-                      serial = f.readline().strip()
-                      f.close()
-                  print "Serial: " + serial + " Device: " + input[1]
- 		  #Great we found it. But we need to use the second one...
-                  hidraw = input[1]
-                  id_hidraw = int(hidraw[-1]) 
-                  id_hidraw += 1
-                  hidraw = "hidraw" + id_hidraw.__str__()
-                  print "Serial: " + serial + " Device: " + hidraw + " (Active)"
-                  return [serial, hidraw,]
-          except IOError as e:
-              print "Couldn't open file"
+        #print input[0] + " Device: " + input[1]
+        try:
+          with open(input[0] + "/manufacturer", 'r') as f:
+            manufacturer = f.readline()
+            f.close()
+          if "Emotiv Systems Inc." in manufacturer:
+            with open (input[0] + "/serial", 'r') as f:
+              serial = f.readline().strip()
+              f.close()
+            print "Serial: " + serial + " Device: " + input[1]
+            #Great we found it. But we need to use the second one...
+            hidraw = input[1]
+            id_hidraw = int(hidraw[-1])
+            #The dev headset might use the first device, or maybe if more than one are connected they might. 
+            id_hidraw += 1
+            hidraw = "hidraw" + id_hidraw.__str__()
+            print "Serial: " + serial + " Device: " + hidraw + " (Active)"
+            return [serial, hidraw,]
+        except IOError as e:
+          print "Couldn't open file: %s" % e
   
   def setupWin(self, headsetId):
-    filter = hid.HidDeviceFilter(vendor_id=0x21A1, product_name='Brain Waves')
+    filter = hid.HidDeviceFilter(vendor_id=0x21A1, product_name='Brain Waves')#This doesn't seem right... I'm not using windows though so w/e
     devices = filter.get_devices()
     assert len(devices) > headsetId
     self.device = devices[headsetId]
@@ -121,13 +153,13 @@ class Emotiv(object):
     feature = self.device.find_feature_reports()[0]
     self.setupCrypto(self.device.serial_number, feature.get())
 
-    def handle(data):
-      assert data[0] == 0
-      self.gotData(''.join(map(chr, data[1:])))
+  def handle(data):
+    assert data[0] == 0
+    self.gotData(''.join(map(chr, data[1:])))
     self.device.set_raw_data_handler(handle)
     return True
   
-  def setupPosix(self, headsetId):
+  def setupPosix(self):
     _os_decryption = False
     if os.path.exists('/dev/eeg/raw'):
       #The decrpytion is handled by the Linux epoc daemon. We don't need to handle it there.
@@ -141,7 +173,8 @@ class Emotiv(object):
         self.hidraw = open("/dev/" + setup[1])
       else:
         self.hidraw = open("/dev/hidraw4")
-    self.setupCrypto(self.serialNum, 0)        
+      gevent.spawn(self.setupCrypto, self.serialNum)
+      gevent.spawn(self.updateStdout)
     while self._goOn:
       try: 
         data = self.hidraw.read(32)
@@ -149,17 +182,19 @@ class Emotiv(object):
           if _os_decryption:
             self.packets.append(EmotivPacket(data))
           else:
-            #Decrypt it!
-            self.gotData(data)
+            #Queue it!
+            self.packetsRecieved += 1
+            tasks.put_nowait(data)
+            gevent.sleep(0)
       except KeyboardInterrupt:
         self._goOn = False          
     return True
   
-  def setupCrypto(self, sn, feature):
-    type = 0 #feature[5]
+  def setupCrypto(self, sn):
+    type = 0 #feature[5] 
     type &= 0xF
     type = 0
-
+    #I believe type == True is for the Dev headset, I'm not using that. That's the point of this library in the first place I thought. 
     k = ['\0'] * 16
     k[0] = sn[-1]
     k[1] = '\0'
@@ -184,20 +219,28 @@ class Emotiv(object):
       k[9] = '\0'
       k[10] = sn[-2]
       k[11] = 'H'
-    
     k[12] = sn[-3]
     k[13] = '\0'
     k[14] = sn[-4]
     k[15] = 'P'
-    self.rijn = rijndael(''.join(k), 16)
+    #The rijndael was slowing us down... Even using PyCrypto the old code was sloooow. Crypto needs to be handled in a seperate thread/microthread/greenlet.
+    #Normal threads might have worked well(haven't tested), but I like gevent.
+    #It also doesn't make sense to have more than one greenlet handling this as data needs to be in order anyhow. I guess you could assign an ID or something
+    #to each packet but that seems like a waste also or is it? The ID might be useful if your using multiple headsets or usb sticks.
+    #It should be noted that I am basing all this off of the performance of the Raspberry Pi. Other platforms might have run just fine.
+    key = ''.join(k)
+    iv = Random.new().read(AES.block_size)
+    cipher = AES.new(key, AES.MODE_ECB, iv)
     for i in k: print "0x%.02x " % (ord(i))
-
-
-  def gotData(self, data):
-    assert len(data) == 32
-    data = self.rijn.decrypt(data[:16]) + self.rijn.decrypt(data[16:])
-    print EmotivPacket(data)
-    
+    while self._goOn:
+      while not tasks.empty():
+        task = tasks.get()
+        data = cipher.decrypt(task[:16]) + cipher.decrypt(task[16:])
+        self.lastPacket = EmotivPacket(data)
+        self.packets.append(self.lastPacket)
+        self.packetsProcessed += 1
+        gevent.sleep(0)
+      gevent.sleep(0)
   
   def dequeue(self):
     while len(self.packets):
@@ -209,16 +252,11 @@ class Emotiv(object):
     else:
       self._goOn = False
       self._dataReader.join()
-      
       self.hidraw.close()
 
-
-def main():
-  try:
-    e = Emotiv()
-  except KeyboardInterrupt:
-    e.close()
-  return 0
-
 if __name__ == "__main__":
-  sys.exit(main())
+  try:
+    a = Emotiv()
+  except KeyboardInterrupt:
+    a.close()
+    gevent.shutdown()
