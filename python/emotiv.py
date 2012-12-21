@@ -31,7 +31,8 @@ sensorBits = {
   'AF3': [46, 47, 32, 33, 34, 35, 36, 37, 38, 39, 24, 25, 26, 27], 
   'O2': [140, 141, 142, 143, 128, 129, 130, 131, 132, 133, 134, 135, 120, 121], 
   'O1': [102, 103, 88, 89, 90, 91, 92, 93, 94, 95, 80, 81, 82, 83], 
-  'FC5': [28, 29, 30, 31, 16, 17, 18, 19, 20, 21, 22, 23, 8, 9]
+  'FC5': [28, 29, 30, 31, 16, 17, 18, 19, 20, 21, 22, 23, 8, 9],
+  'QUALITY': [ 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112]
 }
 
 g_battery = 0
@@ -58,8 +59,58 @@ class EmotivPacket(object):
         b, o = (bits[i] / 8) + 1, bits[i] % 8
         level |= (ord(data[b]) >> o) & 1
       #TODO: Fix this.
-      strength = 4#(ord(data[j]) >> 3) & 1
-      setattr(self, name, (level, strength))
+      quality = 4#(ord(data[j]) >> 3) & 1
+      setattr(self, name, (level, quality))
+  
+  def battery_percent(self):
+    if self.battery > 248:
+      return 100
+    elif self.battery == 247:
+      return 99
+    elif self.battery == 246:
+      return 97
+    elif self.battery == 245:
+      return 93
+    elif self.battery == 244:
+      return 89
+    elif self.battery == 243:
+      return 85
+    elif self.battery == 242:
+      return 82
+    elif self.battery == 241:
+      return 77
+    elif self.battery == 240:
+      return 72
+    elif self.battery == 239:
+      return 66
+    elif self.battery == 238:
+      return 62
+    elif self.battery == 237:
+      return 55
+    elif self.battery == 236:
+      return 46
+    elif self.battery == 235:
+      return 32
+    elif self.battery == 234:
+      return 20
+    elif self.battery == 233:
+      return 12
+    elif self.battery == 232:
+      return 6
+    elif self.battery == 231:
+      return 4
+    elif self.battery == 230:
+      return 3
+    elif self.battery == 229:
+      return 2
+    elif self.battery == 228:
+      return 2
+    elif self.battery == 227:
+      return 2
+    elif self.battery == 226:
+      return 1
+    else:
+      return 0
 
   def __repr__(self):
     return 'EmotivPacket(counter=%i, battery=%i, gyroX=%i, gyroY=%i, F3=%i)' % (
@@ -104,7 +155,7 @@ class Emotiv(object):
       print "O2 Reading:  %i Strength: %i" % (self.lastPacket.O2[0], self.lastPacket.O2[1])
       print "O1 Reading:  %i Strength: %i" % (self.lastPacket.O1[0], self.lastPacket.O1[1])
       print "FC5 Reading:  %i Strength: %i" % (self.lastPacket.FC5[0], self.lastPacket.FC5[1])
-      print "Gyro X: %i, Gyro Y: %i Battery: %i" % (self.lastPacket.gyroX, self.lastPacket.gyroY, self.lastPacket.battery)
+      print "Gyro X: %i, Gyro Y: %i Battery: %i" % (self.lastPacket.gyroX, self.lastPacket.gyroY, self.lastPacket.battery_percent())
       gevent.sleep(1)
 
   def getLinuxSetup(self):
