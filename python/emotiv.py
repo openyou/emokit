@@ -28,7 +28,7 @@ sensorBits = {
     'F8': [178, 179, 180, 181, 182, 183, 168, 169, 170, 171, 172, 173, 174, 175],
     'AF4': [196, 197, 198, 199, 184, 185, 186, 187, 188, 189, 190, 191, 176, 177],
     'FC6': [214, 215, 200, 201, 202, 203, 204, 205, 206, 207, 192, 193, 194, 195],
-    'F4': [216, 217, 218, 219, 220, 221, 222, 223, 208, 209, 210, 211, 212, 213],
+    'F4': [216, 217, 218, 219, 220, 221, 222, 223, 208, 209, 210, 211, 212, 213]
 }
 quality_bits = [99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112]
 
@@ -248,16 +248,17 @@ class Emotiv(object):
             print "F8 Reading:  %i Strength: %i" % (self.sensors['F8']['value'], self.sensors['F8']['quality'])
             print "T7 Reading:  %i Strength: %i" % (self.sensors['T7']['value'], self.sensors['T7']['quality'])
             print "P8 Reading:  %i Strength: %i" % (self.sensors['P8']['value'], self.sensors['P8']['quality'])
-            print "AF4 Reading:  %i Strength: %i" % (self.sensors['AF8']['value'], self.sensors['AF8']['quality'])
+            print "AF4 Reading:  %i Strength: %i" % (self.sensors['AF4']['value'], self.sensors['AF4']['quality'])
             print "F4 Reading:  %i Strength: %i" % (self.sensors['F4']['value'], self.sensors['F4']['quality'])
-            print "AF3 Reading:  %i Strength: %i" % (self.sensors['AF7']['value'], self.sensors['AF7']['quality'])
+            print "AF3 Reading:  %i Strength: %i" % (self.sensors['AF3']['value'], self.sensors['AF3']['quality'])
             print "O2 Reading:  %i Strength: %i" % (self.sensors['O2']['value'], self.sensors['O2']['quality'])
             print "O1 Reading:  %i Strength: %i" % (self.sensors['O1']['value'], self.sensors['O1']['quality'])
             print "FC5 Reading:  %i Strength: %i" % (self.sensors['FC5']['value'], self.sensors['FC5']['quality'])
-            print "Unknown Reading:  %i Strength: %i" % (self.sensors['Unknown']['value'], self.sensors['Unknown']['quality'])
-            print "Gyro X: %i, Gyro Y: %i, Battery: %i" % (
-            self.sensors['X']['value'], self.sensors['Y']['value'], g_battery)
-            gevent.sleep(0)
+            print "Unknown Reading:  %i Strength: %i" % (
+            self.sensors['Unknown']['value'], self.sensors['Unknown']['quality'])
+            print "Gyro X: %i, Gyro Y: %i Battery: %i" % (
+                self.sensors['X']['value'], self.sensors['Y']['value'], g_battery)
+            gevent.sleep(1)
 
     def getLinuxSetup(self):
         rawinputs = []
@@ -297,14 +298,40 @@ class Emotiv(object):
                 print "Couldn't open file: %s" % e
 
     def setupWin(self, headsetId):
+        hidrawDevices = []
+        #filter = hid.HidDeviceFilter(vendor_id=0x21A1,
+        #   product_name='EPOC BCI')#This device doesn't receive any input
         filter = hid.HidDeviceFilter(vendor_id=0x21A1,
-            product_name='Brain Waves')#This doesn't seem right... I'm not using windows though so w/e
+            product_name='00000000000')
+        #devices = filter.get_devices()
+        #for device in devices:
+        #hidrawDevices.append(device)
+        #filter = hid.HidDeviceFilter(vendor_id=0x21A1,
+        #       product_name='00000000000')
         devices = filter.get_devices()
-        assert len(devices) > headsetId
-        self.device = devices[headsetId]
+        for device in devices:
+            self.device = device
         self.device.open()
-        feature = self.device.find_feature_reports()[0]
-        self.setupCrypto(self.device.serial_number, feature.get())
+        self.device.set_raw_data_handler(self.handler)
+        self.serialNum = self.device.serial_number
+        #self.device.find_feature_reports()[0]
+        gevent.spawn(self.setupCrypto, self.serialNum)
+        gevent.spawn(self.updateStdout)
+
+        while self._goOn:
+            try:
+                gevent.sleep(0)
+            except KeyboardInterrupt:
+                self._goOn = False
+                for device in hidrawDevices:
+                    device.close()
+
+    def handler(self, data):
+        assert data[0] == 0
+        tasks.put_nowait(''.join(map(chr, data[1:])))
+        self.packetsReceived += 1
+        self.device.set_raw_data_handler(self.handler)
+        return True
 
     def setupPosix(self):
         _os_decryption = False
@@ -315,7 +342,6 @@ class Emotiv(object):
         else:
             setup = self.getLinuxSetup()
             self.serialNum = setup[0]
-            #self.hidraw = open("/dev/hidraw4")
             if os.path.exists("/dev/" + setup[1]):
                 self.hidraw = open("/dev/" + setup[1])
             else:
