@@ -10,10 +10,6 @@ except:
 import os
 import logging
 from gevent.queue import Queue
-
-#Do we really need this logger? Seems like a waste. Too much data to log anyhow.
-logger = logging.getLogger("emotiv")
-
 from subprocess import check_output
 from Crypto.Cipher import AES
 from Crypto import Random
