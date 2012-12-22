@@ -20,19 +20,29 @@ from Crypto import Random
 
 sensorBits = {
     'F3': [10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7],
-    'FC6': [214, 215, 200, 201, 202, 203, 204, 205, 206, 207, 192, 193, 194, 195],
-    'P7': [84, 85, 86, 87, 72, 73, 74, 75, 76, 77, 78, 79, 64, 65],
-    'T8': [160, 161, 162, 163, 164, 165, 166, 167, 152, 153, 154, 155, 156, 157],
-    'F7': [48, 49, 50, 51, 52, 53, 54, 55, 40, 41, 42, 43, 44, 45],
-    'F8': [178, 179, 180, 181, 182, 183, 168, 169, 170, 171, 172, 173, 174, 175],
-    'T7': [66, 67, 68, 69, 70, 71, 56, 57, 58, 59, 60, 61, 62, 63],
-    'P8': [158, 159, 144, 145, 146, 147, 148, 149, 150, 151, 136, 137, 138, 139],
-    'AF4': [196, 197, 198, 199, 184, 185, 186, 187, 188, 189, 190, 191, 176, 177],
-    'F4': [216, 217, 218, 219, 220, 221, 222, 223, 208, 209, 210, 211, 212, 213],
-    'AF3': [46, 47, 32, 33, 34, 35, 36, 37, 38, 39, 24, 25, 26, 27],
-    'O2': [140, 141, 142, 143, 128, 129, 130, 131, 132, 133, 134, 135, 120, 121],
-    'O1': [102, 103, 88, 89, 90, 91, 92, 93, 94, 95, 80, 81, 82, 83],
     'FC5': [28, 29, 30, 31, 16, 17, 18, 19, 20, 21, 22, 23, 8, 9],
+    'AF7': [46, 47, 32, 33, 34, 35, 36, 37, 38, 39, 24, 25, 26, 27],
+    'F7': [48, 49, 50, 51, 52, 53, 54, 55, 40, 41, 42, 43, 44, 45],
+    'T7': [66, 67, 68, 69, 70, 71, 56, 57, 58, 59, 60, 61, 62, 63],
+    'P7': [84, 85, 86, 87, 72, 73, 74, 75, 76, 77, 78, 79, 64, 65],
+    'O1': [102, 103, 88, 89, 90, 91, 92, 93, 94, 95, 80, 81, 82, 83],
+    #'TP7': [104, 105, 106, 107, 108, 109, 110, 111, 96, 97, 98, 99, 100, 101],
+    #'TP7': [96, 97, 98, 99, 100, 101, 104, 105, 106, 107, 109, 110, 111, 112],
+    #'TP7': [106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119],
+    #'TP7': [114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127],
+    #'TP7': [104, 105, 106, 107, 108, 109, 110, 111, 96, 97, 98, 99, 100, 101],
+    #'TP7': [122, 123, 124, 125, 126, 127, 112, 113, 114, 115, 116, 117, 118, 119],
+    #'TP7': [122, 123, 124, 125, 126, 127, 119, 96, 97, 98, 99, 100, 101, 104],
+    'Accel': [137, 138, 129, 128, 115, 116, 117, 118, 119, 120, 105, 106, 91, 92], 
+    #'TP7': [11, 100, 100, 100, 126, 127, 100, 100, 100, 100, 100, 100, 118, 119],
+    'O2': [140, 141, 142, 143, 128, 129, 130, 131, 132, 133, 134, 135, 120, 121],
+    'P8': [158, 159, 144, 145, 146, 147, 148, 149, 150, 151, 136, 137, 138, 139],
+    'T8': [160, 161, 162, 163, 164, 165, 166, 167, 152, 153, 154, 155, 156, 157],
+    'F8': [178, 179, 180, 181, 182, 183, 168, 169, 170, 171, 172, 173, 174, 175],
+    'AF8': [196, 197, 198, 199, 184, 185, 186, 187, 188, 189, 190, 191, 176, 177],
+    'FC6': [214, 215, 200, 201, 202, 203, 204, 205, 206, 207, 192, 193, 194, 195],
+    'F4': [216, 217, 218, 219, 220, 221, 222, 223, 208, 209, 210, 211, 212, 213],
+    'TP8': [224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237]
 }
 quality_bits = [99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112]
 
@@ -77,7 +87,7 @@ class EmotivPacket(object):
         elif sensor == 1:
             sensors['FC5']['quality'] = current_contact_quality
         elif sensor == 2:
-            sensors['AF3']['quality'] = current_contact_quality
+            sensors['AF7']['quality'] = current_contact_quality
         elif sensor == 3:
             sensors['F7']['quality'] = current_contact_quality
         elif sensor == 4:
@@ -95,7 +105,7 @@ class EmotivPacket(object):
         elif sensor == 10:
             sensors['F8']['quality'] = current_contact_quality
         elif sensor == 11:
-            sensors['AF4']['quality'] = current_contact_quality
+            sensors['AF8']['quality'] = current_contact_quality
         elif sensor == 12:
             sensors['FC6']['quality'] = current_contact_quality
         elif sensor == 13:
@@ -103,13 +113,13 @@ class EmotivPacket(object):
         elif sensor == 14:
             sensors['F8']['quality'] = current_contact_quality
         elif sensor == 15:
-            sensors['AF4']['quality'] = current_contact_quality
+            sensors['AF8']['quality'] = current_contact_quality
         elif sensor == 64:
             sensors['F3']['quality'] = current_contact_quality
         elif sensor == 65:
             sensors['FC5']['quality'] = current_contact_quality
         elif sensor == 66:
-            sensors['AF3']['quality'] = current_contact_quality
+            sensors['AF7']['quality'] = current_contact_quality
         elif sensor == 67:
             sensors['F7']['quality'] = current_contact_quality
         elif sensor == 68:
@@ -127,7 +137,7 @@ class EmotivPacket(object):
         elif sensor == 74:
             sensors['F8']['quality'] = current_contact_quality
         elif sensor == 75:
-            sensors['AF4']['quality'] = current_contact_quality
+            sensors['AF8']['quality'] = current_contact_quality
         elif sensor == 76:
             sensors['FC6']['quality'] = current_contact_quality
         elif sensor == 77:
@@ -135,9 +145,12 @@ class EmotivPacket(object):
         elif sensor == 78:
             sensors['F8']['quality'] = current_contact_quality
         elif sensor == 79:
-            sensors['AF4']['quality'] = current_contact_quality
+            sensors['AF8']['quality'] = current_contact_quality
         elif sensor == 80:
             sensors['FC6']['quality'] = current_contact_quality
+        else:
+            sensors['Unknown']['quality'] = current_contact_quality
+            sensors['Unknown']['value'] = sensor
         return current_contact_quality
 
     def battery_percent(self):
@@ -217,14 +230,18 @@ class Emotiv(object):
             'F8': {'value': 0, 'quality': 0},
             'T7': {'value': 0, 'quality': 0},
             'P8': {'value': 0, 'quality': 0},
-            'AF4': {'value': 0, 'quality': 0},
+            'TP7': {'value': 0, 'quality': 0},
+            'AF8': {'value': 0, 'quality': 0},
             'F4': {'value': 0, 'quality': 0},
-            'AF3': {'value': 0, 'quality': 0},
+            'AF7': {'value': 0, 'quality': 0},
             'O2': {'value': 0, 'quality': 0},
             'O1': {'value': 0, 'quality': 0},
             'FC5': {'value': 0, 'quality': 0},
+            'TP8': {'value': 0, 'quality': 0},
             'X': {'value': 0, 'quality': 0},
-            'Y': {'value': 0, 'quality': 0}
+            'Y': {'value': 0, 'quality': 0},
+            'Accel': {'value': 0, 'quality': 0},
+            'Unknown': {'value': 0, 'quality': 0}
         }
 
         if windows:
@@ -248,14 +265,17 @@ class Emotiv(object):
             print "F8 Reading:  %i Strength: %i" % (self.sensors['F8']['value'], self.sensors['F8']['quality'])
             print "T7 Reading:  %i Strength: %i" % (self.sensors['T7']['value'], self.sensors['T7']['quality'])
             print "P8 Reading:  %i Strength: %i" % (self.sensors['P8']['value'], self.sensors['P8']['quality'])
-            print "AF4 Reading:  %i Strength: %i" % (self.sensors['AF4']['value'], self.sensors['AF4']['quality'])
+            print "AF8 Reading:  %i Strength: %i" % (self.sensors['AF8']['value'], self.sensors['AF8']['quality'])
+            print "TP7 Reading:  %i Strength: %i" % (self.sensors['TP7']['value'], self.sensors['TP7']['quality'])
             print "F4 Reading:  %i Strength: %i" % (self.sensors['F4']['value'], self.sensors['F4']['quality'])
-            print "AF3 Reading:  %i Strength: %i" % (self.sensors['AF3']['value'], self.sensors['AF3']['quality'])
+            print "AF7 Reading:  %i Strength: %i" % (self.sensors['AF7']['value'], self.sensors['AF7']['quality'])
             print "O2 Reading:  %i Strength: %i" % (self.sensors['O2']['value'], self.sensors['O2']['quality'])
             print "O1 Reading:  %i Strength: %i" % (self.sensors['O1']['value'], self.sensors['O1']['quality'])
             print "FC5 Reading:  %i Strength: %i" % (self.sensors['FC5']['value'], self.sensors['FC5']['quality'])
-            print "Gyro X: %i, Gyro Y: %i Battery: %i" % (
-            self.sensors['X']['value'], self.sensors['Y']['value'], g_battery)
+            print "TP8 Reading:  %i Strength: %i" % (self.sensors['TP8']['value'], self.sensors['TP8']['quality'])
+            print "Unknown Reading:  %i Strength: %i" % (self.sensors['Unknown']['value'], self.sensors['Unknown']['quality'])
+            print "Gyro X: %i, Gyro Y: %i, Accel: %i Battery: %i" % (
+            self.sensors['X']['value'], self.sensors['Y']['value'], self.sensors['Accel']['value'], g_battery)
             gevent.sleep(1)
 
     def getLinuxSetup(self):
@@ -402,4 +422,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         a.close()
         gevent.shutdown()
+
 
