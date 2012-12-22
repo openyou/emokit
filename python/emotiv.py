@@ -230,7 +230,6 @@ class Emotiv(object):
             'TP8': {'value': 0, 'quality': 0},
             'X': {'value': 0, 'quality': 0},
             'Y': {'value': 0, 'quality': 0},
-            'Accel': {'value': 0, 'quality': 0},
             'Unknown': {'value': 0, 'quality': 0}
         }
 
@@ -264,7 +263,7 @@ class Emotiv(object):
             print "FC5 Reading:  %i Strength: %i" % (self.sensors['FC5']['value'], self.sensors['FC5']['quality'])
             print "TP8 Reading:  %i Strength: %i" % (self.sensors['TP8']['value'], self.sensors['TP8']['quality'])
             print "Unknown Reading:  %i Strength: %i" % (self.sensors['Unknown']['value'], self.sensors['Unknown']['quality'])
-            print "Gyro X: %i, Gyro Y: %i, Accel: %i Battery: %i" % (
+            print "Gyro X: %i, Gyro Y: %i, Battery: %i" % (
             self.sensors['X']['value'], self.sensors['Y']['value'], g_battery)
             gevent.sleep(0)
 
