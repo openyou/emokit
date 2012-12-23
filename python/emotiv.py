@@ -8,7 +8,6 @@ except:
     windows = False
 
 import os
-import logging
 from gevent.queue import Queue
 from subprocess import check_output
 from Crypto.Cipher import AES
@@ -46,9 +45,8 @@ class EmotivPacket(object):
             g_battery = self.battery_percent()
             self.counter = 128
         self.sync = self.counter == 0xe9
-        self.gyroX = ord(data[29]) - 102
-        self.gyroY = ord(data[30]) - 104
-        #assert ord(data[15]) == 0
+        self.gyroX = ord(data[29]) - 106
+        self.gyroY = ord(data[30]) - 105
         sensors['X']['value'] = self.gyroX
         sensors['Y']['value'] = self.gyroY
         for name, bits in sensorBits.items():
@@ -56,6 +54,12 @@ class EmotivPacket(object):
             setattr(self, name, (value,))
             sensors[name]['value'] = value
         self.handle_quality(sensors)
+
+    class __metaclass__(type):
+        def __iter__(self):
+            for attr in dir(EmotivPacket):
+                if not attr.startswith("__"):
+                    yield attr
 
     def get_level(self, data, bits):
         level = 0
@@ -197,16 +201,22 @@ class EmotivPacket(object):
             self.gyroY,
             self.F3[0],
             )
+    def __iter__(self):
+        return [self.battery, self.gyroX
 
+
+        ]
 
 class Emotiv(object):
     def __init__(self, displayOutput=True, headsetId=0, research_headset=True):
         self._goOn = True
-        self.packets = []
+        self.packets = Queue()
         self.packetsReceived = 0
         self.packetsProcessed = 0
         self.battery = 0
         self.displayOutput = displayOutput
+        self.headsetId = headsetId
+        self.research_headset = research_headset
         self.sensors = {
             'F3': {'value': 0, 'quality': 0},
             'FC6': {'value': 0, 'quality': 0},
@@ -227,37 +237,40 @@ class Emotiv(object):
             'Unknown': {'value': 0, 'quality': 0}
         }
 
+    def setup(self, headsetId=0):
         if windows:
+            print "windows = true"
             self.setupWin(headsetId)
         else:
             self.setupPosix()
 
     def updateStdout(self):
         while self._goOn:
-            if windows:
-                os.system('cls')
-            else:
-                os.system('clear')
-                #TODO: Make this more elegant?
-            print "Packets Received: %s Packets Processed: %s" % (self.packetsReceived, self.packetsProcessed)
-            print "F3 Reading:  %i Strength: %i" % (self.sensors['F3']['value'], self.sensors['F3']['quality'])
-            print "FC6 Reading:  %i Strength: %i" % (self.sensors['FC6']['value'], self.sensors['FC6']['quality'])
-            print "P7 Reading:  %i Strength: %i" % (self.sensors['P7']['value'], self.sensors['P7']['quality'])
-            print "T8 Reading:  %i Strength: %i" % (self.sensors['T8']['value'], self.sensors['T8']['quality'])
-            print "F7 Reading:  %i Strength: %i" % (self.sensors['F7']['value'], self.sensors['F7']['quality'])
-            print "F8 Reading:  %i Strength: %i" % (self.sensors['F8']['value'], self.sensors['F8']['quality'])
-            print "T7 Reading:  %i Strength: %i" % (self.sensors['T7']['value'], self.sensors['T7']['quality'])
-            print "P8 Reading:  %i Strength: %i" % (self.sensors['P8']['value'], self.sensors['P8']['quality'])
-            print "AF4 Reading:  %i Strength: %i" % (self.sensors['AF4']['value'], self.sensors['AF4']['quality'])
-            print "F4 Reading:  %i Strength: %i" % (self.sensors['F4']['value'], self.sensors['F4']['quality'])
-            print "AF3 Reading:  %i Strength: %i" % (self.sensors['AF3']['value'], self.sensors['AF3']['quality'])
-            print "O2 Reading:  %i Strength: %i" % (self.sensors['O2']['value'], self.sensors['O2']['quality'])
-            print "O1 Reading:  %i Strength: %i" % (self.sensors['O1']['value'], self.sensors['O1']['quality'])
-            print "FC5 Reading:  %i Strength: %i" % (self.sensors['FC5']['value'], self.sensors['FC5']['quality'])
-            print "Unknown Reading:  %i Strength: %i" % (
-            self.sensors['Unknown']['value'], self.sensors['Unknown']['quality'])
-            print "Gyro X: %i, Gyro Y: %i Battery: %i" % (
-                self.sensors['X']['value'], self.sensors['Y']['value'], g_battery)
+            if self.displayOutput:
+                if windows:
+                    os.system('cls')
+                else:
+                    os.system('clear')
+                    #TODO: Make this more elegant?
+                print "Packets Received: %s Packets Processed: %s" % (self.packetsReceived, self.packetsProcessed)
+                print "F3 Reading:  %i Strength: %i" % (self.sensors['F3']['value'], self.sensors['F3']['quality'])
+                print "FC6 Reading:  %i Strength: %i" % (self.sensors['FC6']['value'], self.sensors['FC6']['quality'])
+                print "P7 Reading:  %i Strength: %i" % (self.sensors['P7']['value'], self.sensors['P7']['quality'])
+                print "T8 Reading:  %i Strength: %i" % (self.sensors['T8']['value'], self.sensors['T8']['quality'])
+                print "F7 Reading:  %i Strength: %i" % (self.sensors['F7']['value'], self.sensors['F7']['quality'])
+                print "F8 Reading:  %i Strength: %i" % (self.sensors['F8']['value'], self.sensors['F8']['quality'])
+                print "T7 Reading:  %i Strength: %i" % (self.sensors['T7']['value'], self.sensors['T7']['quality'])
+                print "P8 Reading:  %i Strength: %i" % (self.sensors['P8']['value'], self.sensors['P8']['quality'])
+                print "AF4 Reading:  %i Strength: %i" % (self.sensors['AF4']['value'], self.sensors['AF4']['quality'])
+                print "F4 Reading:  %i Strength: %i" % (self.sensors['F4']['value'], self.sensors['F4']['quality'])
+                print "AF3 Reading:  %i Strength: %i" % (self.sensors['AF3']['value'], self.sensors['AF3']['quality'])
+                print "O2 Reading:  %i Strength: %i" % (self.sensors['O2']['value'], self.sensors['O2']['quality'])
+                print "O1 Reading:  %i Strength: %i" % (self.sensors['O1']['value'], self.sensors['O1']['quality'])
+                print "FC5 Reading:  %i Strength: %i" % (self.sensors['FC5']['value'], self.sensors['FC5']['quality'])
+                print "Unknown Reading:  %i Strength: %i" % (
+                self.sensors['Unknown']['value'], self.sensors['Unknown']['quality'])
+                print "Gyro X: %i, Gyro Y: %i Battery: %i" % (
+                    self.sensors['X']['value'], self.sensors['Y']['value'], g_battery)
             gevent.sleep(1)
 
     def getLinuxSetup(self):
@@ -353,7 +366,7 @@ class Emotiv(object):
                 data = self.hidraw.read(32)
                 if data != "":
                     if _os_decryption:
-                        self.packets.append(EmotivPacket(data))
+                        self.packets.put_nowait(EmotivPacket(data))
                     else:
                         #Queue it!
                         self.packetsReceived += 1
@@ -407,14 +420,16 @@ class Emotiv(object):
                 task = tasks.get()
                 data = cipher.decrypt(task[:16]) + cipher.decrypt(task[16:])
                 self.lastPacket = EmotivPacket(data, self.sensors)
-                self.packets.append(self.lastPacket)
+                self.packets.put_nowait(self.lastPacket)
                 self.packetsProcessed += 1
                 gevent.sleep(0)
             gevent.sleep(0)
 
     def dequeue(self):
-        while len(self.packets):
-            yield self.packets.pop(0)
+        try:
+            return self.packets.get()
+        except Exception, e:
+            print e
 
     def close(self):
         if windows:
