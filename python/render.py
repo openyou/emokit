@@ -29,7 +29,7 @@ class Grapher(object):
     def update(self, packet):
         if len(self.buffer) == 800 - self.xoff:
             self.buffer = self.buffer[1:]
-        self.buffer.append(getattr(packet, self.name))
+        self.buffer.append([packet.sensors[self.name]['value'], packet.sensors[self.name]['quality'], ])
 
     def calcY(self, val):
         return int(val / self.range * gheight)
@@ -38,18 +38,17 @@ class Grapher(object):
         if len(self.buffer) == 0:
             return
         pos = self.xoff, self.calcY(self.buffer[0][0]) + self.y
-        strength = 3
-        for i, (x) in enumerate(self.buffer):
-            y = self.calcY(x[0]) + self.y
-            if strength == 0:
+        for i, (value, quality ) in enumerate(self.buffer):
+            y = self.calcY(value) + self.y
+            if quality == 0:
                 color = (0, 0, 0)
-            elif strength == 1:
+            elif quality == 1:
                 color = (255, 0, 0)
-            elif strength == 2:
+            elif quality == 2:
                 color = (255, 165, 0)
-            elif strength == 3:
+            elif quality == 3:
                 color = (255, 255, 0)
-            elif strength == 4:
+            elif quality == 4:
                 color = (0, 255, 0)
             else:
                 color = (255, 255, 255)
@@ -62,6 +61,9 @@ def main(debug=False):
     pygame.init()
     screen = pygame.display.set_mode((1600, 900))
     graphers = []
+    recordings = []
+    recording = False
+    record_packets = []
     updated = False
     curX, curY = 400, 300
 
@@ -87,7 +89,14 @@ def main(debug=False):
                     else:
                         screen = pygame.display.set_mode((1600,900), FULLSCREEN, 16)
                         fullscreen = True
-
+                elif (event.key == pygame.K_r):
+                    if not recording:
+                        record_packets = []
+                        recording = True
+                    else:
+                        recording = False
+                        recordings.append(list(record_packets))
+                        record_packets = None
         packetsInQueue = 0
         try:
             while packetsInQueue < 8:
@@ -99,6 +108,8 @@ def main(debug=False):
                     curY += packet.gyroY
                     curY = max(0, min(curY, 900))
                 map(lambda x: x.update(packet), graphers)
+                if recording:
+                    record_packets.append(packet)
                 updated = True
                 packetsInQueue += 1
         except Exception, e:

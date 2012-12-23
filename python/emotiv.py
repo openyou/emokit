@@ -54,6 +54,7 @@ class EmotivPacket(object):
             setattr(self, name, (value,))
             sensors[name]['value'] = value
         self.handle_quality(sensors)
+        self.sensors = sensors
 
     def get_level(self, data, bits):
         level = 0
@@ -64,7 +65,7 @@ class EmotivPacket(object):
         return level
 
     def handle_quality(self, sensors):
-        current_contact_quality = self.get_level(self.rawData, quality_bits)
+        current_contact_quality = self.get_level(self.rawData, quality_bits) / 540
         sensor = ord(self.rawData[0])
         if sensor == 0:
             sensors['F3']['quality'] = current_contact_quality
