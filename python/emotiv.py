@@ -298,34 +298,39 @@ class Emotiv(object):
             except IOError as e:
                 print "Couldn't open file: %s" % e
 
-    def setupWin(self, headsetId):
-        hidrawDevices = []
-        #filter = hid.HidDeviceFilter(vendor_id=0x21A1,
-        #   product_name='EPOC BCI')#This device doesn't receive any input
-        filter = hid.HidDeviceFilter(vendor_id=0x21A1,
-            product_name='00000000000')
-        #devices = filter.get_devices()
-        #for device in devices:
-        #hidrawDevices.append(device)
-        #filter = hid.HidDeviceFilter(vendor_id=0x21A1,
-        #       product_name='00000000000')
-        devices = filter.get_devices()
-        for device in devices:
-            self.device = device
-        self.device.open()
-        self.device.set_raw_data_handler(self.handler)
-        self.serialNum = self.device.serial_number
-        #self.device.find_feature_reports()[0]
-        gevent.spawn(self.setupCrypto, self.serialNum)
-        gevent.spawn(self.updateStdout)
-
-        while self._goOn:
-            try:
-                gevent.sleep(0)
-            except KeyboardInterrupt:
-                self._goOn = False
-                for device in hidrawDevices:
-                    device.close()
+    def setupWin(self):
+        devices = []
+        try:
+            for device in hid.find_all_hid_devices():
+                if device.vendor_id != 0x21A1:
+                    continue
+                if device.product_name == 'Brain Waves':
+                    devices.append(device)
+                    device.open()
+                    self.serialNum = device.serial_number
+                    device.set_raw_data_handler(self.handler)
+                elif device.product_name == 'EPOC BCI':
+                    devices.append(device)
+                    device.open()
+                    self.serialNum = device.serial_number
+                    device.set_raw_data_handler(self.handler)
+                elif device.product_name == '00000000000':
+                    devices.append(device)
+                    device.open()
+                    self.serialNum = device.serial_number
+                    device.set_raw_data_handler(self.handler)
+            gevent.spawn(self.setupCrypto, self.serialNum)
+            gevent.spawn(self.updateStdout)
+            while self._goOn:
+                try:
+                    gevent.sleep(0)
+                except KeyboardInterrupt:
+                    self._goOn = False
+                    for device in devices:
+                        device.close()
+        finally:
+            for device in devices:
+                device.close()
 
     def handler(self, data):
         assert data[0] == 0
@@ -433,5 +438,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         a.close()
         gevent.shutdown()
-
-
