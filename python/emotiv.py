@@ -198,7 +198,7 @@ class EmotivPacket(object):
             )
 
 class Emotiv(object):
-    def __init__(self, displayOutput=True, headsetId=0, research_headset=True):
+    def __init__(self, displayOutput=False, headsetId=0, research_headset=True):
         self._goOn = True
         self.packets = Queue()
         self.packetsReceived = 0
