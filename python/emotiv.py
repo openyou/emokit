@@ -198,7 +198,7 @@ class EmotivPacket(object):
             )
 
 class Emotiv(object):
-    def __init__(self, displayOutput=False, headsetId=0, research_headset=True):
+    def __init__(self, displayOutput=True, headsetId=0, research_headset=True):
         self._goOn = True
         self.packets = Queue()
         self.packetsReceived = 0
@@ -229,7 +229,7 @@ class Emotiv(object):
 
     def setup(self, headsetId=0):
         if windows:
-            self.setupWin(headsetId)
+            self.setupWin()
         else:
             self.setupPosix()
 
@@ -240,26 +240,9 @@ class Emotiv(object):
                     os.system('cls')
                 else:
                     os.system('clear')
-                    #TODO: Make this more elegant?
                 print "Packets Received: %s Packets Processed: %s" % (self.packetsReceived, self.packetsProcessed)
-                print "F3 Reading:  %i Strength: %i" % (self.sensors['F3']['value'], self.sensors['F3']['quality'])
-                print "FC6 Reading:  %i Strength: %i" % (self.sensors['FC6']['value'], self.sensors['FC6']['quality'])
-                print "P7 Reading:  %i Strength: %i" % (self.sensors['P7']['value'], self.sensors['P7']['quality'])
-                print "T8 Reading:  %i Strength: %i" % (self.sensors['T8']['value'], self.sensors['T8']['quality'])
-                print "F7 Reading:  %i Strength: %i" % (self.sensors['F7']['value'], self.sensors['F7']['quality'])
-                print "F8 Reading:  %i Strength: %i" % (self.sensors['F8']['value'], self.sensors['F8']['quality'])
-                print "T7 Reading:  %i Strength: %i" % (self.sensors['T7']['value'], self.sensors['T7']['quality'])
-                print "P8 Reading:  %i Strength: %i" % (self.sensors['P8']['value'], self.sensors['P8']['quality'])
-                print "AF4 Reading:  %i Strength: %i" % (self.sensors['AF4']['value'], self.sensors['AF4']['quality'])
-                print "F4 Reading:  %i Strength: %i" % (self.sensors['F4']['value'], self.sensors['F4']['quality'])
-                print "AF3 Reading:  %i Strength: %i" % (self.sensors['AF3']['value'], self.sensors['AF3']['quality'])
-                print "O2 Reading:  %i Strength: %i" % (self.sensors['O2']['value'], self.sensors['O2']['quality'])
-                print "O1 Reading:  %i Strength: %i" % (self.sensors['O1']['value'], self.sensors['O1']['quality'])
-                print "FC5 Reading:  %i Strength: %i" % (self.sensors['FC5']['value'], self.sensors['FC5']['quality'])
-                print "Unknown Reading:  %i Strength: %i" % (
-                self.sensors['Unknown']['value'], self.sensors['Unknown']['quality'])
-                print "Gyro X: %i, Gyro Y: %i Battery: %i" % (
-                    self.sensors['X']['value'], self.sensors['Y']['value'], g_battery)
+                print('\n'.join("%s Reading: %s Strength: %s" % (k[1], self.sensors[k[1]]['value'],self.sensors[k[1]]['quality']) for k in enumerate(self.sensors)))
+                print "Battery: %i" % g_battery
             gevent.sleep(1)
 
     def getLinuxSetup(self):
@@ -336,7 +319,6 @@ class Emotiv(object):
         assert data[0] == 0
         tasks.put_nowait(''.join(map(chr, data[1:])))
         self.packetsReceived += 1
-        self.device.set_raw_data_handler(self.handler)
         return True
 
     def setupPosix(self):
@@ -438,3 +420,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         a.close()
         gevent.shutdown()
+
+
