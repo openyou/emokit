@@ -127,23 +127,23 @@ An Overview of the 256-bit Packet Layout:
 | 0:7   | Counter/Battery
 | 8:21  | F3 Data
 | 22:35 | FC5 Data
-| 36:49 | AF7 Data
+| 36:49 | AF3 Data
 | 50:63 | F7 Data
 | 64:77 | T7 Data
 | 78:91 | P7 Data
 | 92:105 | O1 Data
 | 107:120 | Connection Quality (Rotating)
-| 121:133 | TP7 Data
+| 121:133 | ?
 | 134:147 | O2 Data
 | 148:161 | P8 Data
 | 162:175 | T8 Data
 | 176:189 | F8 Data
-| 190:203 | AF8 Data
+| 190:203 | AF4 Data
 | 204:217 | FC6 Data
 | 218:231 | F4 Data
 | 233:239 | Gyro X
 | 240:247 | Gyro Y
-| 248:255 | TP8 Data
+| 248:255 | ?
 |=============================
 
 === Counter and Battery

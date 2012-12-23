@@ -10,7 +10,7 @@ Contributions by
 
 * Severin Lemaignan - Base C Library and mcrypt functionality
 * Sharif Olorin  (http://github.com/fractalcat) - hidapi support
-* Bill Schumacher (http://github.com/bschumacher) - Fixed the python library, well almost.
+* Bill Schumacher (http://github.com/bschumacher) - Fixed the Python library
 
 Description
 ===========
@@ -22,8 +22,6 @@ software), just the raw sensor data.
 
 The C library is backed by hidapi, and should work on any platform
 that hidapi also works on.
-
-The Python library is currently broken. Fix it!
 
 Information
 ===========
@@ -70,12 +68,19 @@ Python library
 --------------
 
   import emotiv
+
   headset = emotiv.Emotiv()
+
   try:
+
     while True:
+
       for packet in headset.dequeue():
+
         print packet.gyroX, packet.gyroY
+
   finally:
+
     headset.close()
 
 Platform Specifics Issues
@@ -89,6 +94,9 @@ either hidraw calls or libusb. These will require different udev rules
 for each. We've tried to cover both (as based on hidapi's example udev
 file), but your mileage may vary. If you have problems, please post
 them to the github issues page (http://github.com/openyou/emokit/issues).
+
+Your kernel may not support /dev/hidraw devices by default, such as an RPi. 
+To fix that re-comiple your kernel with /dev/hidraw support
 
 Credits - Cody
 ==============
