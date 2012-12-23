@@ -67,21 +67,19 @@ See epocd.c example
 Python library
 --------------
 
-  import emotiv
+  [import emotiv
+  import gevent
 
   headset = emotiv.Emotiv()
-
+  gevent.spawn(headset.setup)
+  gevent.sleep(1)
   try:
-
     while True:
-
-      for packet in headset.dequeue():
-
-        print packet.gyroX, packet.gyroY
-
+      packet = headset.dequeue():
+      print packet.gyroX, packet.gyroY
+      gevent.sleep(0)
   finally:
-
-    headset.close()
+    headset.close()]
 
 Platform Specifics Issues
 =========================
