@@ -15,7 +15,7 @@ The code is available on github on the [daeken/Emokit](http://github.com/daeken/
 Where things are right now
 ==========================
 
-You can access raw EEG data from the Emotiv EPOC on Windows, Linux, and OS X from Python.  While it's not known exactly which sensors are which in the data (read below for more info), it's close to being useful already.  Word of warning: this project is less than 48 hours old (I just got hardware in my hands Saturday night) and has only been run by me on Windows due to a dead Linux box.  It's very much alpha quality right now -- don't trust it.
+You can access raw EEG data from the Emotiv EPOC on Windows, Linux, and OS X from Python. Sensor locations can be found at https://github.com/bschumacher/emokit-1/wiki/Sensor-Locations.  Word of warning: this project is less than 48 hours old (I just got hardware in my hands Saturday night) and has only been run by me on Windows due to a dead Linux box.  It's very much alpha quality right now -- don't trust it.
 
 How it happened
 ===============
