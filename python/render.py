@@ -10,7 +10,7 @@ except:
 import pygame
 from pygame import FULLSCREEN
 import gevent
-import sys, logging
+import sys
 from emotiv import Emotiv
 
 class Grapher(object):
@@ -57,9 +57,6 @@ class Grapher(object):
             pos = (self.xoff + i, y)
         self.screen.blit(self.text, self.textpos)
 
-
-
-
 def main(debug=False):
     global gheight
     pygame.init()
@@ -79,16 +76,17 @@ def main(debug=False):
             if event.type == pygame.QUIT:
                 emotiv.close()
                 return
-            elif event.type == pygame.K_f:
-                if fullscreen:
-                    screen = pygame.display.set_mode((1600, 900))
-                    fullscreen = False
-                else:
-                    screen = pygame.display.set_mode((1600,900), FULLSCREEN, 16)
-                    fullscreen = True
-
-
-
+            if (event.type == pygame.KEYDOWN):
+                if (event.key == pygame.K_ESCAPE):
+                    emotiv.close()
+                    return
+                elif (event.key == pygame.K_f):
+                    if fullscreen:
+                        screen = pygame.display.set_mode((1600, 900))
+                        fullscreen = False
+                    else:
+                        screen = pygame.display.set_mode((1600,900), FULLSCREEN, 16)
+                        fullscreen = True
 
         packetsInQueue = 0
         try:
@@ -115,10 +113,6 @@ def main(debug=False):
         gevent.sleep(0)
 
 try:
-    logger = logging.getLogger('emotiv')
-    logger.setLevel(logging.INFO)
-    log_handler = logging.StreamHandler()
-    logger.addHandler(log_handler)
     gheight = 600 / 14
     hgheight = gheight >> 1
     main(*sys.argv[1:])

@@ -55,12 +55,6 @@ class EmotivPacket(object):
             sensors[name]['value'] = value
         self.handle_quality(sensors)
 
-    class __metaclass__(type):
-        def __iter__(self):
-            for attr in dir(EmotivPacket):
-                if not attr.startswith("__"):
-                    yield attr
-
     def get_level(self, data, bits):
         level = 0
         for i in range(13, -1, -1):
@@ -201,14 +195,9 @@ class EmotivPacket(object):
             self.gyroY,
             self.F3[0],
             )
-    def __iter__(self):
-        return [self.battery, self.gyroX
-
-
-        ]
 
 class Emotiv(object):
-    def __init__(self, displayOutput=True, headsetId=0, research_headset=True):
+    def __init__(self, displayOutput=False, headsetId=0, research_headset=True):
         self._goOn = True
         self.packets = Queue()
         self.packetsReceived = 0
@@ -239,7 +228,6 @@ class Emotiv(object):
 
     def setup(self, headsetId=0):
         if windows:
-            print "windows = true"
             self.setupWin(headsetId)
         else:
             self.setupPosix()
@@ -289,7 +277,6 @@ class Emotiv(object):
         hiddevices = []
         #TODO: Add support for multiple USB sticks? make a bit more elegant
         for input in rawinputs:
-            #print input[0] + " Device: " + input[1]
             try:
                 with open(input[0] + "/manufacturer", 'r') as f:
                     manufacturer = f.readline()
@@ -441,6 +428,7 @@ class Emotiv(object):
 if __name__ == "__main__":
     try:
         a = Emotiv()
+        a.setup()
     except KeyboardInterrupt:
         a.close()
         gevent.shutdown()
