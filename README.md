@@ -37,6 +37,8 @@ help. What happens on the project stays on the project.
 
 Issues: http://github.com/openyou/emokit/issues
 
+If you are using the Python library and a research headset you may have to change the type in emotiv.py's setupCrypto function. 
+
 Required Libraries
 ==================
 
