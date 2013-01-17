@@ -1,0 +1,50 @@
+CMAKE
+Download : http://www.cmake.org/cmake/resources/software.html
+Go in the download folder and execute :
+
+tar xzvf cmake-2.8.10.2.tar.gz
+cd cmake-2.8.10.2.tar.gz
+./bootstrap
+make
+sudo make install
+
+
+MCRYPT
+First install the dependencies :
+sudo apt-get install libmcrypt-dev libmhash-dev git
+
+Download : http://sourceforge.net/projects/mcrypt/files/latest/download
+Go in the download folder and execute :
+
+tar xzvf mcrypt-2.6.8.tar.gz
+cd mcrypt-2.6.8.tar.gz
+./configure
+make
+make install
+
+
+HIPAPI
+First install the dependencies :
+sudo apt-get install libudev-dev libusb-1.0-0-dev libtool
+
+Download : https://github.com/signal11/hidapi/archive/master.zip
+IT WILL NOT WORK if you downloaded from: hidapi-0.7.0.zip from https://github.com/signal11/hidapi/downloads or the command git clone git://github.com/signal11/hidapi.git
+Extract the zip file and use the following commands :
+
+unzip hidapid-master.zip
+cd hidapid-master
+./bootstrap
+./configure
+make
+sudo make install
+
+
+EMOKIT 
+Download https://github.com/openyou/emokit/archive/master.zip
+
+unzip emokit-master.zip
+cd emokit-master
+cmake . 
+make
+
+
