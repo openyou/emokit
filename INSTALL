@@ -1,3 +1,5 @@
+Installation instructions for Linux (assuming ubuntu/debian packages)
+
 CMAKE
 Download : http://www.cmake.org/cmake/resources/software.html
 Go in the download folder and execute :
