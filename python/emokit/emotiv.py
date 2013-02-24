@@ -161,10 +161,13 @@ class EmotivPacket(object):
             g_battery = self.battery_percent()
             self.counter = 128
         self.sync = self.counter == 0xe9
-        self.gyroX = ord(data[29]) - 106
-        self.gyroY = ord(data[30]) - 105
+
+        # the RESERVED byte stores the least significant 4 bits for gyroX and gyroY
+        self.gyroX = ((ord(data[29]) << 4) | (ord(data[31]) >> 4))
+        self.gyroY = ((ord(data[30]) << 4) | (ord(data[31]) & 0xFF))
         sensors['X']['value'] = self.gyroX
         sensors['Y']['value'] = self.gyroY
+
         for name, bits in sensorBits.items():
             value = self.get_level(self.rawData, bits)
             setattr(self, name, (value,))
