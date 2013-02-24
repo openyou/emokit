@@ -259,7 +259,7 @@ class Emotiv(object):
                 i += 1
             rawinputs.append([path, filename])
         hiddevices = []
-        #TODO: Add support for multiple USB sticks? make a bit more elegant
+        # TODO: Add support for multiple USB sticks? make a bit more elegant
         for input in rawinputs:
             try:
                 with open(input[0] + "/manufacturer", 'r') as f:
@@ -270,10 +270,10 @@ class Emotiv(object):
                         serial = f.readline().strip()
                         f.close()
                     print "Serial: " + serial + " Device: " + input[1]
-                    #Great we found it. But we need to use the second one...
+                    # Great we found it. But we need to use the second one...
                     hidraw = input[1]
                     id_hidraw = int(hidraw[-1])
-                    #The dev headset might use the first device, or maybe if more than one are connected they might.
+                    # The dev headset might use the first device, or maybe if more than one are connected they might.
                     id_hidraw += 1
                     hidraw = "hidraw" + id_hidraw.__str__()
                     print "Serial: " + serial + " Device: " + hidraw + " (Active)"
@@ -324,7 +324,7 @@ class Emotiv(object):
     def setupPosix(self):
         _os_decryption = False
         if os.path.exists('/dev/eeg/raw'):
-            #The decrpytion is handled by the Linux epoc daemon. We don't need to handle it there.
+            # The decrpytion is handled by the Linux epoc daemon. We don't need to handle it there.
             _os_decryption = True
             self.hidraw = open("/dev/eeg/raw")
         else:
@@ -343,7 +343,7 @@ class Emotiv(object):
                     if _os_decryption:
                         self.packets.put_nowait(EmotivPacket(data))
                     else:
-                        #Queue it!
+                        # Queue it!
                         self.packetsReceived += 1
                         tasks.put_nowait(data)
                         gevent.sleep(0)
@@ -352,10 +352,10 @@ class Emotiv(object):
         return True
 
     def setupCrypto(self, sn):
-        type = 0 #feature[5]
+        type = 0 # feature[5]
         type &= 0xF
         type = 0
-        #I believe type == True is for the Dev headset, I'm not using that. That's the point of this library in the first place I thought.
+        # I believe type == True is for the Dev headset, I'm not using that. That's the point of this library in the first place I thought.
         k = ['\0'] * 16
         k[0] = sn[-1]
         k[1] = '\0'
@@ -384,8 +384,8 @@ class Emotiv(object):
         k[13] = '\0'
         k[14] = sn[-4]
         k[15] = 'P'
-        #It doesn't make sense to have more than one greenlet handling this as data needs to be in order anyhow. I guess you could assign an ID or something
-        #to each packet but that seems like a waste also or is it? The ID might be useful if your using multiple headsets or usb sticks.
+        # It doesn't make sense to have more than one greenlet handling this as data needs to be in order anyhow. I guess you could assign an ID or something
+        # to each packet but that seems like a waste also or is it? The ID might be useful if your using multiple headsets or usb sticks.
         key = ''.join(k)
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(key, AES.MODE_ECB, iv)
