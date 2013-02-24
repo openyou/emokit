@@ -3,10 +3,10 @@ import ctypes
 from ctypes import cdll
 
 import sys
-import  platform
+import platform
 import gevent
 
-from emotiv import Emotiv
+from emokit.emotiv import Emotiv
 
 class Xlib:
     def __init__(self):
