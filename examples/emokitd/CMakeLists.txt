@@ -4,7 +4,7 @@
 
 add_executable (emokitd emokitd.c)
 ADD_DEPENDENCIES(emokitd emokit)
-target_link_libraries (emokitd emokit ${LIBS})
+target_link_libraries (emokitd emokit ${LIBS} pthread)
 
 SET_TARGET_PROPERTIES(emokitd PROPERTIES
 	INSTALL_RPATH_USE_LINK_PATH TRUE

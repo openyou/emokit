@@ -146,6 +146,14 @@ extern "C"
 	 */
 	EMOKIT_DECLSPEC void emokit_get_crypto_key(struct emokit_device* s,
 																						 int dev_type);
+	
+	/**
+	 * Given an emokit_device and an unsigned char array of not
+	 * fewer than 32 bytes, load the most recent unencrypted data
+	 * frame into the array. Does not return a value.
+	*/ 
+	EMOKIT_DECLSPEC void emokit_get_raw_frame(struct emokit_device *dev, unsigned char *buf);
+
 #ifdef __cplusplus
 };
 #endif

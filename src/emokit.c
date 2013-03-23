@@ -447,7 +447,6 @@ struct emokit_frame emokit_get_next_frame(struct emokit_device* s) {
 	k.gyroY = s->raw_unenc_frame[30] - 104;
 
 	k.cq=handle_quality(s);
-	//memcpy(k.unenc,s->raw_unenc_frame,32);
 	
 	return k;
 }
@@ -456,4 +455,8 @@ EMOKIT_DECLSPEC void emokit_delete(struct emokit_device* dev)
 {
 	emokit_deinit(dev);
 	free(dev);
+}
+
+EMOKIT_DECLSPEC void emokit_get_raw_frame(struct emokit_device* dev, unsigned char buf[32]) {
+	memcpy(buf, dev->raw_unenc_frame, 32);
 }
