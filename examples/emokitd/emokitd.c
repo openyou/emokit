@@ -117,7 +117,7 @@ void daemonize() {
 	fd2 = dup(fd0);
 
 	openlog(DAEMON_IDENT, LOG_CONS, LOG_DAEMON);
-	syslog(LOG_INFO, "nervend running; decrypted EEG data will be written to %s.", FIFO_PATH);
+	syslog(LOG_INFO, "emokitd running; decrypted EEG data will be written to %s.", FIFO_PATH);
 
 }
 
@@ -137,9 +137,9 @@ void dbg_stream(emokit_device *eeg) {
 
 void decrypt_loop(emokit_device *eeg) {
 	int i;
-	FILE *nervend_fifo;
-	nervend_fifo = fopen(FIFO_PATH, "wb");
-	if (!nervend_fifo) {
+	FILE *emokitd_fifo;
+	emokitd_fifo = fopen(FIFO_PATH, "wb");
+	if (!emokitd_fifo) {
 		fatal_err("cannot open FIFO for writing.");
 	}
 	for (;;) {
@@ -147,7 +147,7 @@ void decrypt_loop(emokit_device *eeg) {
 			emokit_get_next_frame(eeg);
 			unsigned char raw_frame[32];
 			emokit_get_raw_frame(eeg, raw_frame);
-			fwrite(raw_frame, 1, EMOKIT_PKT_SIZE, nervend_fifo);
+			fwrite(raw_frame, 1, EMOKIT_PKT_SIZE, emokitd_fifo);
 		}
 	}
 }
@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
 	if (!DEBUG) {
 		daemonize();
 		if (daemon_running()) {
-			syslog(LOG_INFO, "Looks like nervend is already running.\n");
+			syslog(LOG_INFO, "Looks like emokitd is already running.\n");
 			exit(1);
 		}
 	}
