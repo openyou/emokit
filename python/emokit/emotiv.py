@@ -34,7 +34,123 @@ quality_bits = [99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 
 g_battery = 0
 tasks = Queue()
 
+# this is useful for further reverse engineering for EmotivPacket
+byte_names = {
+    "saltie-sdk": [ # also clamshell-v1.3-sydney
+        "INTERPOLATED",
+        "COUNTER",
+        "BATTERY",
+        "FC6",
+        "F8",
+        "T8",
+        "PO4",
+        "F4",
+        "AF4",
+        "FP2",
+        "OZ",
+        "P8",
+        "FP1",
+        "AF3",
+        "F3",
+        "P7",
+        "T7",
+        "F7",
+        "FC5",
+        "GYRO_X",
+        "GYRO_Y",
+        "RESERVED",
+        "ETE1",
+        "ETE2",
+        "ETE3",
+    ],
+    "clamshell-v1.3-san-francisco": [ # amadi ?
+        "INTERPOLATED",
+        "COUNTER",
+        "BATTERY",
+        "F8",
+        "UNUSED",
+        "AF4",
+        "T8",
+        "UNUSED",
+        "T7",
+        "F7",
+        "F3",
+        "F4",
+        "P8",
+        "PO4",
+        "FC6",
+        "P7",
+        "AF3",
+        "FC5",
+        "OZ",
+        "GYRO_X",
+        "GYRO_Y",
+        "RESERVED",
+        "ETE1",
+        "ETE2",
+        "ETE3",
+    ],
+    "clamshell-v1.5": [
+        "INTERPOLATED",
+        "COUNTER",
+        "BATTERY",
+        "F3",
+        "FC5",
+        "AF3",
+        "F7",
+        "T7",
+        "P7",
+        "O1",
+        "SQ_WAVE",
+        "UNUSED",
+        "O2",
+        "P8",
+        "T8",
+        "F8",
+        "AF4",
+        "FC6",
+        "F4",
+        "GYRO_X",
+        "GYRO_Y",
+        "RESERVED",
+        "ETE1",
+        "ETE2",
+        "ETE3",
+    ],
+    "clamshell-v3.0": [
+        "INTERPOLATED",
+        "COUNTER",
+        "BATTERY",
+        "F3",
+        "FC5",
+        "AF3",
+        "F7",
+        "T7",
+        "P7",
+        "O1",
+        "SQ_WAVE",
+        "UNUSED",
+        "O2",
+        "P8",
+        "T8",
+        "F8",
+        "AF4",
+        "FC6",
+        "F4",
+        "GYRO_X",
+        "GYRO_Y",
+        "RESERVED",
+        "ETE1",
+        "ETE2",
+        "ETE3",
+    ],
+}
+
 class EmotivPacket(object):
+    """
+    Basic semantics for input bytes.
+    """
+
     def __init__(self, data, sensors):
         global g_battery
         self.rawData = data
@@ -45,10 +161,13 @@ class EmotivPacket(object):
             g_battery = self.battery_percent()
             self.counter = 128
         self.sync = self.counter == 0xe9
-        self.gyroX = ord(data[29]) - 106
-        self.gyroY = ord(data[30]) - 105
+
+        # the RESERVED byte stores the least significant 4 bits for gyroX and gyroY
+        self.gyroX = ((ord(data[29]) << 4) | (ord(data[31]) >> 4))
+        self.gyroY = ((ord(data[30]) << 4) | (ord(data[31]) & 0xFF))
         sensors['X']['value'] = self.gyroX
         sensors['Y']['value'] = self.gyroY
+
         for name, bits in sensorBits.items():
             value = self.get_level(self.rawData, bits)
             setattr(self, name, (value,))
@@ -259,7 +378,7 @@ class Emotiv(object):
                 i += 1
             rawinputs.append([path, filename])
         hiddevices = []
-        #TODO: Add support for multiple USB sticks? make a bit more elegant
+        # TODO: Add support for multiple USB sticks? make a bit more elegant
         for input in rawinputs:
             try:
                 with open(input[0] + "/manufacturer", 'r') as f:
@@ -270,10 +389,10 @@ class Emotiv(object):
                         serial = f.readline().strip()
                         f.close()
                     print "Serial: " + serial + " Device: " + input[1]
-                    #Great we found it. But we need to use the second one...
+                    # Great we found it. But we need to use the second one...
                     hidraw = input[1]
                     id_hidraw = int(hidraw[-1])
-                    #The dev headset might use the first device, or maybe if more than one are connected they might.
+                    # The dev headset might use the first device, or maybe if more than one are connected they might.
                     id_hidraw += 1
                     hidraw = "hidraw" + id_hidraw.__str__()
                     print "Serial: " + serial + " Device: " + hidraw + " (Active)"
@@ -324,7 +443,7 @@ class Emotiv(object):
     def setupPosix(self):
         _os_decryption = False
         if os.path.exists('/dev/eeg/raw'):
-            #The decrpytion is handled by the Linux epoc daemon. We don't need to handle it there.
+            # The decrpytion is handled by the Linux epoc daemon. We don't need to handle it there.
             _os_decryption = True
             self.hidraw = open("/dev/eeg/raw")
         else:
@@ -343,7 +462,7 @@ class Emotiv(object):
                     if _os_decryption:
                         self.packets.put_nowait(EmotivPacket(data))
                     else:
-                        #Queue it!
+                        # Queue it!
                         self.packetsReceived += 1
                         tasks.put_nowait(data)
                         gevent.sleep(0)
@@ -352,10 +471,10 @@ class Emotiv(object):
         return True
 
     def setupCrypto(self, sn):
-        type = 0 #feature[5]
+        type = 0 # feature[5]
         type &= 0xF
         type = 0
-        #I believe type == True is for the Dev headset, I'm not using that. That's the point of this library in the first place I thought.
+        # I believe type == True is for the Dev headset, I'm not using that. That's the point of this library in the first place I thought.
         k = ['\0'] * 16
         k[0] = sn[-1]
         k[1] = '\0'
@@ -384,8 +503,8 @@ class Emotiv(object):
         k[13] = '\0'
         k[14] = sn[-4]
         k[15] = 'P'
-        #It doesn't make sense to have more than one greenlet handling this as data needs to be in order anyhow. I guess you could assign an ID or something
-        #to each packet but that seems like a waste also or is it? The ID might be useful if your using multiple headsets or usb sticks.
+        # It doesn't make sense to have more than one greenlet handling this as data needs to be in order anyhow. I guess you could assign an ID or something
+        # to each packet but that seems like a waste also or is it? The ID might be useful if your using multiple headsets or usb sticks.
         key = ''.join(k)
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(key, AES.MODE_ECB, iv)

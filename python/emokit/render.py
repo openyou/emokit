@@ -11,7 +11,8 @@ import pygame
 from pygame import FULLSCREEN
 import gevent
 import sys
-from emotiv import Emotiv
+
+from emokit.emotiv import Emotiv
 
 class Grapher(object):
     def __init__(self, screen, name, i):
