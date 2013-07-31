@@ -19,7 +19,7 @@ Download : http://sourceforge.net/projects/mcrypt/files/latest/download
 Go in the download folder and execute :
 
 tar xzvf mcrypt-2.6.8.tar.gz
-cd mcrypt-2.6.8.tar.gz
+cd mcrypt-2.6.8/
 ./configure
 make
 make install
