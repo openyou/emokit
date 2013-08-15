@@ -164,7 +164,7 @@ class EmotivPacket(object):
 
         # the RESERVED byte stores the least significant 4 bits for gyroX and gyroY
         self.gyroX = ((ord(data[29]) << 4) | (ord(data[31]) >> 4))
-        self.gyroY = ((ord(data[30]) << 4) | (ord(data[31]) & 0xFF))
+        self.gyroY = ((ord(data[30]) << 4) | (ord(data[31]) & 0x0F))
         sensors['X']['value'] = self.gyroX
         sensors['Y']['value'] = self.gyroY
 
