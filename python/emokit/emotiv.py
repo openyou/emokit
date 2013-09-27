@@ -404,7 +404,7 @@ class Emotiv(object):
         devices = []
         try:
             for device in hid.find_all_hid_devices():
-                if device.vendor_id != 0x21A1:
+                if device.vendor_id != 0x21A1 and device.vendor_id != 0x1234:
                     continue
                 if device.product_name == 'Brain Waves':
                     devices.append(device)
@@ -417,6 +417,11 @@ class Emotiv(object):
                     self.serialNum = device.serial_number
                     device.set_raw_data_handler(self.handler)
                 elif device.product_name == '00000000000':
+                    devices.append(device)
+                    device.open()
+                    self.serialNum = device.serial_number
+                    device.set_raw_data_handler(self.handler)
+                elif device.product_name == 'Emotiv RAW DATA':
                     devices.append(device)
                     device.open()
                     self.serialNum = device.serial_number
