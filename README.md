@@ -26,7 +26,7 @@ that hidapi also works on.
 Information
 ===========
 
-FAQ (READ BEFORE FILING ISSUES): http://github.com/openyou/emokit/FAQ.md
+FAQ (READ BEFORE FILING ISSUES): https://github.com/openyou/emokit/blob/master/FAQ.md
 
 If you have a problem not covered in the FAQ, file it as an
 issue on the github project.
