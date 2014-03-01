@@ -45,7 +45,7 @@ Required Libraries
 Python
 ------
 
-* pywinhid (Windows Only) - http://code.google.com/p/pywinusb/
+* pywinhid (Windows Only) - https://pypi.python.org/pypi/pywinusb/
 * pyusb (OS X, Optional for Linux) - http://sourceforge.net/projects/pyusb/
 * pycrypto - https://www.dlitz.net/software/pycrypto/
 * gevent - http://gevent.org
