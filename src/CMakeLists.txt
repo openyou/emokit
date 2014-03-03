@@ -3,7 +3,7 @@
 ##########################################
 
 # Create a library called "libemokit"
-ADD_LIBRARY (emokit STATIC emokit.c) 
+ADD_LIBRARY (emokit emokit.c) 
 target_link_libraries (emokit ${LIBS}) 
 
 INSTALL (TARGETS emokit
