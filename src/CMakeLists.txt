@@ -1,8 +1,8 @@
 ##########################################
-##              libepoc                ###
+##              libemokit              ###
 ##########################################
 
-# Create a library called "libepoc"
+# Create a library called "libemokit"
 ADD_LIBRARY (emokit STATIC emokit.c) 
 target_link_libraries (emokit ${LIBS}) 
 
