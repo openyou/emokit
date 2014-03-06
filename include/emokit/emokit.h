@@ -127,7 +127,7 @@ extern "C"
 	 *
 	 * @param dev Opened device structure
 	 *
-	 * @return 0 if successful, < 0 for error
+	 * @return <0 for error, otherwise return the number of bytes read. 
 	 */
 	EMOKIT_DECLSPEC int emokit_read_data(struct emokit_device* dev);
 
