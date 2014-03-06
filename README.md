@@ -88,6 +88,11 @@ Python library
       finally:
         headset.close()
 
+Bindings
+========
+
+Go: https://github.com/fractalcat/emogo
+
 Platform Specifics Issues
 =========================
 
