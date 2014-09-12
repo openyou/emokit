@@ -356,7 +356,7 @@ class Emotiv(object):
     """
     Receives, decrypts and stores packets received from Emotiv Headsets.
     """
-    def __init__(self, display_output=True, is_research=False):
+    def __init__(self, display_output=True, serial_number="", is_research=False):
         """
         Sets up initial values.
         """
@@ -386,7 +386,7 @@ class Emotiv(object):
             'Y': {'value': 0, 'quality': 0},
             'Unknown': {'value': 0, 'quality': 0}
         }
-        self.serial_number = ""  # You will need to set this manually for OS X.
+        self.serial_number = serial_number  # You will need to set this manually for OS X.
         self.old_model = False
 
     def setup(self):
