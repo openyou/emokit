@@ -1,12 +1,13 @@
 #!/usr/bin/python
+# Example of using the gyro values to control mouse movement.
 import ctypes
 from ctypes import cdll
 
-import sys
 import platform
 import gevent
 
 from emokit.emotiv import Emotiv
+
 
 class Xlib:
     def __init__(self):
@@ -42,43 +43,39 @@ class WinMouse:
         ctypes.windll.user32.SetCursorPos(x, y)
 
 
-def main(debug=False):
+def main():
     if not platform.system() == 'Windows':
         screen = Xlib()
-        width = screen.width
-        height = screen.height
     else:
         screen = WinMouse()
-        width = screen.width
-        height = screen.height
+    width = screen.width
+    height = screen.height
 
-        curX, curY = width / 2, height / 2
-        while True:
-            updated = False
-            packet = emotiv.dequeue()
-            if abs(packet.gyroX) > 1:
-                curX -= packet.gyroX
-                updated = True
-            if abs(packet.gyroY) > 1:
-                curY += packet.gyroY
-                updated = True
-            curX = max(0, min(curX, width))
-            curY = max(0, min(curY, height))
-            if updated:
-                screen.move_mouse(curX, curY)
-            gevent.sleep(0)
+    cursor_x, cursor_y = width / 2, height / 2
+    while True:
+        updated = False
+        packet = headset.dequeue()
+        if abs(packet.gyro_x) > 1:
+            cursor_x -= packet.gyro_x
+            updated = True
+        if abs(packet.gyro_y) > 1:
+            cursor_y += packet.gyro_y
+            updated = True
+        cursor_x = max(0, min(cursor_x, width))
+        cursor_y = max(0, min(cursor_y, height))
+        if updated:
+            screen.move_mouse(cursor_x, cursor_y)
+        gevent.sleep(0)
 
 
-emotiv = None
+headset = None
 if __name__ == "__main__":
     try:
-        emotiv = Emotiv()
-        gevent.spawn(emotiv.setup)
-        gevent.sleep(1)
-        main(*sys.argv[1:])
+        headset = Emotiv()
+        gevent.spawn(headset.setup)
+        gevent.sleep(0)
+        main()
 
     finally:
-        if emotiv:
-            emotiv.close()
-
-
+        if headset:
+            headset.close()

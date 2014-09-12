@@ -15,4 +15,3 @@ __license__ = "???"
 __copyright__ = "Copyright 2013 Bryan Bishop"
 
 from . import emotiv
-from . import mouse_control
