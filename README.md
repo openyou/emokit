@@ -90,6 +90,12 @@ Python library
       finally:
         headset.close()
 
+
+Bindings
+========
+
+Go: https://github.com/fractalcat/emogo
+
 Platform Specifics Issues
 =========================
 
@@ -134,3 +140,13 @@ Kyle would like to thank Cody for doing the hard part.
 He would also like to thank emotiv for putting emo on the front of
 everything because it's god damn hilarious. I mean, really, Emo
 Suites? Saddest hotel EVER.
+
+# Frequently asked questions
+
+ - *What unit is the data I'm getting back in? How do I get volts out of
+ it?*
+
+ One least-significant-bit of the fourteen-bit value you get back is
+ 0.51 microvolts. See the
+ [specification](http://emotiv.com/upload/manual/EPOCSpecifications.pdf)
+ for more details.
