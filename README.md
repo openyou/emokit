@@ -37,7 +37,8 @@ help. What happens on the project stays on the project.
 
 Issues: http://github.com/openyou/emokit/issues
 
-If you are using the Python library and a research headset you may have to change the type in emotiv.py's setupCrypto function. 
+If you are using the Python library and a research headset you may have
+to change the is_research variable in emotiv.py's setup_crypto function.
 
 Required Libraries
 ==================
@@ -46,7 +47,8 @@ Python
 ------
 
 * pywinhid (Windows Only) - https://pypi.python.org/pypi/pywinusb/
-* pyusb (OS X, Optional for Linux) - http://sourceforge.net/projects/pyusb/
+* (OS X) HIDAPI - http://www.signal11.us/oss/hidapi/
+* (OS X) cython-hidapi - https://github.com/gbishop/cython-hidapi
 * pycrypto - https://www.dlitz.net/software/pycrypto/
 * gevent - http://gevent.org
 * realpath - http://?   sudo apt-get install realpath
@@ -77,16 +79,17 @@ Python library
     if __name__ == "__main__":
       headset = emotiv.Emotiv()    
       gevent.spawn(headset.setup)
-      gevent.sleep(1)
+      gevent.sleep(0)
       try:
         while True:
           packet = headset.dequeue()
-          print packet.gyroX, packet.gyroY
+          print packet.gyro_x, packet.gyro_y
           gevent.sleep(0)
       except KeyboardInterrupt:
         headset.close()
       finally:
         headset.close()
+
 
 Bindings
 ========
@@ -107,6 +110,15 @@ them to the github issues page (http://github.com/openyou/emokit/issues).
 
 Your kernel may not support /dev/hidraw devices by default, such as an RPi. 
 To fix that re-comiple your kernel with /dev/hidraw support
+
+OS X
+----
+Recent OS versions no longer allow usb devices to become unclaimed by the kernel.
+You must use a HIDAPI library.
+
+The render.py file uses pygame, visit http://pygame.org/wiki/MacCompile
+Do not export the architecture compiler flags for recent 64bit versions of OS X.
+
 
 Credits - Cody
 ==============
@@ -132,9 +144,9 @@ Suites? Saddest hotel EVER.
 # Frequently asked questions
 
  - *What unit is the data I'm getting back in? How do I get volts out of
-   it?*
+ it?*
 
-   One least-significant-bit of the fourteen-bit value you get back is
-   0.51 microvolts. See the
-   [specification](http://emotiv.com/upload/manual/EPOCSpecifications.pdf)
-   for more details.
+ One least-significant-bit of the fourteen-bit value you get back is
+ 0.51 microvolts. See the
+ [specification](http://emotiv.com/upload/manual/EPOCSpecifications.pdf)
+ for more details.
