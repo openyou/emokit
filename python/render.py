@@ -7,7 +7,10 @@ except ImportError:
     print 'No psyco. Expect poor performance. Not really...'
 
 import pygame
+import platform
 from pygame import FULLSCREEN
+if platform.system() == "Windows":
+    import socket  # Needed to prevent gevent crashing on Windows. (surfly / gevent issue #459)
 import gevent
 from emokit.emotiv import Emotiv
 
