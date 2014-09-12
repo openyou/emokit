@@ -15,7 +15,7 @@ from subprocess import check_output
 # How long to gevent-sleep if there is no data on the EEG.
 # To be precise, this is not the frequency to poll on the input device
 # (which happens with a blocking read), but how often the gevent thread
-# polls the real threading queue that reads the data in a separete thread
+# polls the real threading queue that reads the data in a separate thread
 # to not block gevent with the file read().
 # This is the main latency control.
 # Setting it to 1ms takes about 10% CPU on a Core i5 mobile.
