@@ -74,6 +74,9 @@ Python library
   Code:
   
     import emotiv
+    import platform
+    if platform.system() == "Windows":
+        import socket
     import gevent
 
     if __name__ == "__main__":

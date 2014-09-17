@@ -2,6 +2,9 @@
 # and printing the gyro x and y values to the console. 
 
 from emokit.emotiv import Emotiv
+import platform
+if platform.system() == "Windows":
+    import socket  # Needed to prevent gevent crashing on Windows. (surfly / gevent issue #459)
 import gevent
 
 if __name__ == "__main__":
