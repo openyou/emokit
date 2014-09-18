@@ -67,7 +67,7 @@ class Grapher(object):
         """
         Calculates line height from value.
         """
-        return (val / 1.1) - self.y_offset + gheight
+        return val - self.y_offset + gheight
 
     def draw(self):
         """
@@ -77,7 +77,7 @@ class Grapher(object):
             return
 
         if self.first_packet:
-            self.y_offset = self.buffer[0][0] / 1.1
+            self.y_offset = self.buffer[0][0]
             self.first_packet = False
         pos = self.x_offset, self.calc_y(self.buffer[0][0]) + self.y
         for i, (value, quality, old_model) in enumerate(self.buffer):

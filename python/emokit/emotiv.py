@@ -288,7 +288,8 @@ class EmotivPacket(object):
         sensors['X']['value'] = self.gyro_x
         sensors['Y']['value'] = self.gyro_y
         for name, bits in sensor_bits.items():
-            value = get_level(self.raw_data, bits) * 0.51
+            #Get Level for sensors subtract 8192 to get signed value
+            value = get_level(self.raw_data, bits) - 8192
             setattr(self, name, (value,))
             sensors[name]['value'] = value
         self.old_model = model
