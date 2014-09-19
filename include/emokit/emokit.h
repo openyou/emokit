@@ -131,6 +131,17 @@ extern "C"
 	 */
 	EMOKIT_DECLSPEC int emokit_read_data(struct emokit_device* dev);
 
+	/**
+	 * Read a single raw report from the device.
+	 *
+	 * @param dev Opened device structure
+	 * @param timeout Max wait time in ms
+	 *
+	 * @return <0 for error, otherwise return the number of bytes read.
+	 */
+	EMOKIT_DECLSPEC int emokit_read_data_timeout(struct emokit_device* dev,
+																							 unsigned timeout);
+
 	EMOKIT_DECLSPEC struct emokit_frame
 	emokit_get_next_frame(struct emokit_device* dev);
 

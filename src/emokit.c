@@ -136,6 +136,7 @@ int emokit_open(struct emokit_device* s, int device_vid, int device_pid, unsigne
 {
 	int dev_type;
 	int count = 0;
+	int found = 0;
 	struct hid_device_info* devices;
 	struct hid_device_info* device_cur;
 	if (!s->_is_inited)
@@ -145,14 +146,25 @@ int emokit_open(struct emokit_device* s, int device_vid, int device_pid, unsigne
 	devices = hid_enumerate(device_vid, device_pid);
 
 	device_cur = devices;
+	if(!devices) {
+		fprintf(stderr, "libemokit: No Matching Devices, check USB ID\n");
+		return E_EMOKIT_NOT_OPENED;
+	}
+
 	while(device_cur) {
 		if(count == device_index) {
 			s->_dev = hid_open_path(device_cur->path);
+			if(!s->_dev)
+				fprintf(stderr, "libemokit: Failed to open device #%d, insuffient permissions?\n", count+1);
+			found = 1;
 			break;
 		}
 		++count;
 		device_cur = device_cur->next;
 	}
+
+	if(found == 0)
+		fprintf(stderr, "libemokit: Insuffient Devices Found For #%d out of %d\n", device_index+1, count);
 
 	hid_free_enumeration(devices);
 	if(!s->_dev) {
@@ -179,6 +191,11 @@ int emokit_close(struct emokit_device* s)
 int emokit_read_data(struct emokit_device* s)
 {
 	return hid_read(s->_dev, s->raw_frame, 32);
+}
+
+int emokit_read_data_timeout(struct emokit_device* s, unsigned timeout)
+{
+	return hid_read_timeout(s->_dev, s->raw_frame, 32, timeout);
 }
 
 EMOKIT_DECLSPEC
