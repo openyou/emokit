@@ -64,7 +64,7 @@ Usage
 C library
 ---------
 
-See epocd.c example
+See emokitd.c example
 
 Python library
 --------------
