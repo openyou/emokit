@@ -277,11 +277,10 @@ class EmotivPacket(object):
         global g_battery
         self.raw_data = data
         self.counter = ord(data[0])
-        self.battery = g_battery
         if self.counter > 127:
-            self.battery = self.counter
-            g_battery = battery_values[str(self.battery)]
+            g_battery = battery_values[str(self.counter)]
             self.counter = 128
+        self.battery = g_battery
         self.sync = self.counter == 0xe9
         self.gyro_x = ord(data[29]) - 106
         self.gyro_y = ord(data[30]) - 105
