@@ -48,7 +48,7 @@ Python
 
 * pywinhid (Windows Only) - https://pypi.python.org/pypi/pywinusb/
 * (OS X) HIDAPI - http://www.signal11.us/oss/hidapi/
-* (OS X) cython-hidapi - https://github.com/gbishop/cython-hidapi
+* (OS X) pyhidapi - https://github.com/NF6X/pyhidapi
 * pycrypto - https://www.dlitz.net/software/pycrypto/
 * gevent - http://gevent.org
 * realpath - http://?   sudo apt-get install realpath
