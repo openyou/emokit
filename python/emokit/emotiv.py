@@ -5,7 +5,7 @@ system_platform = platform.system()
 if system_platform == "Windows":
     import socket  # Needed to prevent gevent crashing on Windows. (surfly / gevent issue #459)
     import pywinusb.hid as hid
-if system_platform == "Darwin" or system_platform == "Linux":
+else:
     import hidapi
     hidapi.hid_init()
 
@@ -13,7 +13,6 @@ import gevent
 from Crypto.Cipher import AES
 from Crypto import Random
 from gevent.queue import Queue
-from subprocess import check_output
 
 # How long to gevent-sleep if there is no data on the EEG.
 # To be precise, this is not the frequency to poll on the input device
@@ -214,6 +213,60 @@ def is_old_model(serial_number):
         return True
 
 
+def hid_enumerate():
+    """
+    Loops over all devices in the hidapi and attempts to locate the emotiv headset.
+
+    Since hidapi ultimately uses the path there is no reason to get the vendor id or product id.
+
+    Although, they may be useful in locating the device.
+
+    :returns
+        path - the path to the device
+        serial_number - the serial number of the device
+    """
+    path = ""
+    serial_number = ""
+    is_emotiv = False
+    devices = hidapi.hid_enumerate()
+    for device in devices:
+        try:
+            if "Emotiv" in device.manufacturer_string:
+                is_emotiv = True
+            if "Emotiv" in device.product_string:
+                is_emotiv = True
+            if "EPOC" in device.product_string:
+                is_emotiv = True
+            if "Brain Waves" in device.product_string:
+                is_emotiv = True
+            if is_emotiv:
+                serial_number = device.serial_number
+                path = device.path
+                is_emotiv = False
+        except:
+            pass
+    return path, serial_number
+
+
+def print_hid_enumerate():
+    """
+    Loops over all devices in the hidapi and attempts prints information.
+
+    This is a fall back method that give the user information to give the developers when opening an issue.
+    """
+    devices = hidapi.hid_enumerate()
+    print "-------------------------"
+    for device in devices:
+        print device.manufacturer_string
+        print device.product_string
+        print device.path
+        print device.vendor_id
+        print device.product_id
+        print device.serial_number
+        print "-------------------------"
+    print "Please include this information if you open a new issue."
+
+
 class EmotivPacket(object):
     """
     Basic semantics for input bytes.
@@ -348,8 +401,8 @@ class Emotiv(object):
         print system_platform + " detected."
         if system_platform == "Windows":
             self.setup_windows()
-        elif system_platform == "Darwin" or system_platform == "Linux":
-            self.setup_darwin()
+        else:
+            self.setup_not_windows()
 
     def setup_windows(self):
         """
@@ -403,51 +456,22 @@ class Emotiv(object):
         self.packets_received += 1
         return True
 
-    def setup_posix(self):
+    def setup_not_windows(self):
         """
-        Setup for headset on the Linux platform.
+        Setup for headset on a non-windows platform.
         Receives packets from headset and sends them to a Queue to be processed
         by the crypto greenlet.
-
-	TODO: 
-		Move functionality to setup_darwin
-		Rename setup_darwin to something more suitable.
-		
         """
         _os_decryption = False
         if os.path.exists('/dev/eeg/raw'):
             # The decryption is handled by the Linux epoc daemon. We don't need to handle it.
             _os_decryption = True
             hidraw = open("/dev/eeg/raw")
-        while self.running:
-            try:
-                data = hidraw.read(32)
-                if data != "":
-                    if _os_decryption:
-                        self.packets.put_nowait(EmotivPacket(data))
-                    gevent.sleep(0)
-                else:
-                    # No new data from the device; yield
-                    # We cannot sleep(0) here because that would go 100% CPU if both queues are empty
-                    gevent.sleep(DEVICE_POLL_INTERVAL)
-            except KeyboardInterrupt:
-                self.running = False
-        hidraw.close()
-        if not _os_decryption:
-            gevent.kill(crypto, KeyboardInterrupt)
-        gevent.kill(console_updater, KeyboardInterrupt)
-
-    def setup_darwin(self):
-        """
-        Setup for headset on the OS X platform.
-        Receives packets from headset and sends them to a Queue to be processed
-        by the crypto greenlet.
-        """
-        _os_decryption = False
-        path, serial_number = self.hid_enumerate()
+        path, serial_number = hid_enumerate()
         if len(path) == 0:
             print "Could not find device."
-            self.print_hid_enumerate()
+            print_hid_enumerate()
+            sys.exit()
         self.serial_number = serial_number
         device = hidapi.hid_open_path(path)
         crypto = gevent.spawn(self.setup_crypto, self.serial_number)
@@ -455,85 +479,36 @@ class Emotiv(object):
         console_updater = gevent.spawn(self.update_console)
         while self.running:
             try:
-                # Doesn't seem to matter how big we make the buffer 32 returned every time, 33 for other platforms
-                data = hidapi.hid_read(device, 34)
-                if len(data) == 32:
-                    # Most of the time the 0 is truncated? That's ok we'll add it...
-                    data.insert(0, 0)
-                if data != "":
-                    if _os_decryption:
-                        self.packets.put_nowait(EmotivPacket(data))
-                    else:
-                        # Queue it!
-                        tasks.put_nowait(''.join(map(chr, data[1:])))
-                        self.packets_received += 1
-                    gevent.sleep(DEVICE_POLL_INTERVAL)
+                if _os_decryption:
+                    data = hidraw.read(32)
+                    if data != "":
+                            self.packets.put_nowait(EmotivPacket(data))
                 else:
-                    # No new data from the device; yield
-                    # We cannot sleep(0) here because that would go 100% CPU if both queues are empty.
-                    gevent.sleep(DEVICE_POLL_INTERVAL)
+                    # Doesn't seem to matter how big we make the buffer 32 returned every time, 33 for other platforms
+                    data = hidapi.hid_read(device, 34)
+                    if len(data) == 32:
+                        # Most of the time the 0 is truncated? That's ok we'll add it...
+                        data.insert(0, 0)
+                    if data != "":
+                        if _os_decryption:
+                            self.packets.put_nowait(EmotivPacket(data))
+                        else:
+                            # Queue it!
+                            tasks.put_nowait(''.join(map(chr, data[1:])))
+                            self.packets_received += 1
+                gevent.sleep(DEVICE_POLL_INTERVAL)
             except KeyboardInterrupt:
                 self.running = False
             except Exception, ex:
-                print "Setup (line=478): " + ex.message
+                print "Setup emotiv.py(line=503): " + ex.message
                 self.running = False
             gevent.sleep(DEVICE_POLL_INTERVAL)
-        hidapi.hid_close(device)
+        if _os_decryption:
+            hidraw.close()
+        else:
+            hidapi.hid_close(device)
         gevent.kill(crypto, KeyboardInterrupt)
         gevent.kill(console_updater, KeyboardInterrupt)
-
-    def hid_enumerate(self):
-        """
-        Loops over all devices in the hidapi and attempts to locate the emotiv headset.
-
-        Since hidapi ultimately uses the path there is no reason to get the vendor id or product id.
-
-        Although, they may be useful in locating the device.
-
-        :returns
-            path - the path to the device
-            serial_number - the serial number of the device
-        """
-        path = ""
-        serial_number = ""
-        is_emotiv = False
-        devices = hidapi.hid_enumerate()
-        for device in devices:
-            try:
-                if "Emotiv" in device.manufacturer_string:
-                    is_emotiv = True
-                if "Emotiv" in device.product_string:
-                    is_emotiv = True
-                if "EPOC" in device.product_string:
-                    is_emotiv = True
-                if "Brain Waves" in device.product_string:
-                    is_emotiv = True
-                if is_emotiv:
-                    serial_number = device.serial_number
-                    path = device.path
-                    is_emotiv = False
-            except:
-                pass
-        return path, serial_number
-
-    def print_hid_enumerate(self):
-        """
-        Loops over all devices in the hidapi and attempts prints information.
-
-        This is a fall back method that give the user information to give the developers when opening an issue.
-        """
-        devices = hidapi.hid_enumerate()
-        print "-------------------------"
-        for device in devices:
-            print device.manufacturer_string
-            print device.product_string
-            print device.path
-            print device.vendor_id
-            print device.product_id
-            print device.serial_number
-            print "-------------------------"
-        print "Please include this information if you open a new issue."
-        sys.exit()
 
     def setup_crypto(self, sn):
         """
@@ -584,7 +559,7 @@ class Emotiv(object):
                         self.packets.put_nowait(EmotivPacket(data, self.sensors, self.old_model))
                         self.packets_processed += 1
                     except Exception, ex:
-                        print "Crypto (line=587): " + ex.message
+                        print "Crypto emotiv.py(line=562): " + ex.message
                 gevent.sleep(DEVICE_POLL_INTERVAL)
             gevent.sleep(DEVICE_POLL_INTERVAL)
 
@@ -597,7 +572,7 @@ class Emotiv(object):
                 return self.packets.get()
             return None
         except Exception, e:
-            print "Dequeue (line=650): " + e.message
+            print "Dequeue emotiv.py(line=575): " + e.message
 
     def close(self):
         """
