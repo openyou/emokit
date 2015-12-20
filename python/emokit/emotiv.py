@@ -5,7 +5,7 @@ system_platform = platform.system()
 if system_platform == "Windows":
     import socket  # Needed to prevent gevent crashing on Windows. (surfly / gevent issue #459)
     import pywinusb.hid as hid
-if system_platform == "Darwin":
+if system_platform == "Darwin" or system_platform == "Linux":
     import hidapi
     hidapi.hid_init()
 
@@ -208,44 +208,6 @@ def get_level(data, bits):
     return level
 
 
-def get_linux_setup():
-    """
-    Returns hidraw device path and headset serial number.
-    """
-    raw_inputs = []
-    for filename in os.listdir("/sys/class/hidraw"):
-        real_path = check_output(["realpath", "/sys/class/hidraw/" + filename])
-        split_path = real_path.split('/')
-        s = len(split_path)
-        s -= 4
-        i = 0
-        path = ""
-        while s > i:
-            path = path + split_path[i] + "/"
-            i += 1
-        raw_inputs.append([path, filename])
-    for input in raw_inputs:
-        try:
-            with open(input[0] + "/manufacturer", 'r') as f:
-                manufacturer = f.readline()
-                f.close()
-            if "Emotiv Systems" in manufacturer:
-                with open(input[0] + "/serial", 'r') as f:
-                    serial = f.readline().strip()
-                    f.close()
-                print "Serial: " + serial + " Device: " + input[1]
-                # Great we found it. But we need to use the second one...
-                hidraw = input[1]
-                hidraw_id = int(hidraw[-1])
-                # The dev headset might use the first device, or maybe if more than one are connected they might.
-                hidraw_id += 1
-                hidraw = "hidraw" + hidraw_id.__str__()
-                print "Serial: " + serial + " Device: " + hidraw + " (Active)"
-                return [serial, hidraw, ]
-        except IOError as e:
-            print "Couldn't open file: %s" % e
-
-
 def is_old_model(serial_number):
         if "GM" in serial_number[-2:]:
                 return False
@@ -386,9 +348,7 @@ class Emotiv(object):
         print system_platform + " detected."
         if system_platform == "Windows":
             self.setup_windows()
-        elif system_platform == "Linux":
-            self.setup_posix()
-        elif system_platform == "Darwin":
+        elif system_platform == "Darwin" or system_platform == "Linux":
             self.setup_darwin()
 
     def setup_windows(self):
@@ -448,31 +408,23 @@ class Emotiv(object):
         Setup for headset on the Linux platform.
         Receives packets from headset and sends them to a Queue to be processed
         by the crypto greenlet.
+
+	TODO: 
+		Move functionality to setup_darwin
+		Rename setup_darwin to something more suitable.
+		
         """
         _os_decryption = False
         if os.path.exists('/dev/eeg/raw'):
             # The decryption is handled by the Linux epoc daemon. We don't need to handle it.
             _os_decryption = True
             hidraw = open("/dev/eeg/raw")
-        else:
-            serial, hidraw_filename = get_linux_setup()
-            self.serial_number = serial
-            if os.path.exists("/dev/" + hidraw_filename):
-                hidraw = open("/dev/" + hidraw_filename)
-            else:
-                hidraw = open("/dev/hidraw4")
-            crypto = gevent.spawn(self.setup_crypto, self.serial_number)
-        console_updater = gevent.spawn(self.update_console)
         while self.running:
             try:
                 data = hidraw.read(32)
                 if data != "":
                     if _os_decryption:
                         self.packets.put_nowait(EmotivPacket(data))
-                    else:
-                        #Queue it!
-                        self.packets_received += 1
-                        tasks.put_nowait(data)
                     gevent.sleep(0)
                 else:
                     # No new data from the device; yield
@@ -493,7 +445,7 @@ class Emotiv(object):
         """
         _os_decryption = False
         path, serial_number = self.hid_enumerate()
-        if path != "":
+        if len(path) == 0:
             print "Could not find device."
             self.print_hid_enumerate()
         self.serial_number = serial_number
@@ -505,8 +457,6 @@ class Emotiv(object):
             try:
                 # Doesn't seem to matter how big we make the buffer 32 returned every time, 33 for other platforms
                 data = hidapi.hid_read(device, 34)
-                print data
-                print len(data)
                 if len(data) == 32:
                     # Most of the time the 0 is truncated? That's ok we'll add it...
                     data.insert(0, 0)
@@ -525,7 +475,7 @@ class Emotiv(object):
             except KeyboardInterrupt:
                 self.running = False
             except Exception, ex:
-                print "Setup (line=528): " + ex.message
+                print "Setup (line=478): " + ex.message
                 self.running = False
             gevent.sleep(DEVICE_POLL_INTERVAL)
         hidapi.hid_close(device)
@@ -634,7 +584,7 @@ class Emotiv(object):
                         self.packets.put_nowait(EmotivPacket(data, self.sensors, self.old_model))
                         self.packets_processed += 1
                     except Exception, ex:
-                        print "Crypto (line=637): " + ex.message
+                        print "Crypto (line=587): " + ex.message
                 gevent.sleep(DEVICE_POLL_INTERVAL)
             gevent.sleep(DEVICE_POLL_INTERVAL)
 
