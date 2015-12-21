@@ -239,6 +239,8 @@ def hid_enumerate():
                 is_emotiv = True
             if "Brain Waves" in device.product_string:
                 is_emotiv = True
+            if device.product_string == '00000000000':
+                is_emotiv = True
             if is_emotiv:
                 serial_number = device.serial_number
                 path = device.path
@@ -408,31 +410,26 @@ class Emotiv(object):
         """
         Setup for headset on the Windows platform. 
         """
+        is_emotiv = False
         devices = []
         try:
             for device in hid.find_all_hid_devices():
-                if device.vendor_id != 0x21A1 and device.vendor_id != 0xED02:
-                    continue
-                if device.product_name == 'Brain Waves':
+                if "Emotiv" in device.manufacturer_string:
+                    is_emotiv = True
+                if "Emotiv" in device.product_string:
+                    is_emotiv = True
+                if "EPOC" in device.product_string:
+                    is_emotiv = True
+                if "Brain Waves" in device.product_string:
+                    is_emotiv = True
+                if device.product_name == '00000000000':
+                    is_emotiv = True
+                if is_emotiv:
                     devices.append(device)
                     device.open()
                     self.serial_number = device.serial_number
                     device.set_raw_data_handler(self.handler)
-                elif device.product_name == 'EPOC BCI':
-                    devices.append(device)
-                    device.open()
-                    self.serial_number = device.serial_number
-                    device.set_raw_data_handler(self.handler)
-                elif device.product_name == '00000000000':
-                    devices.append(device)
-                    device.open()
-                    self.serial_number = device.serial_number
-                    device.set_raw_data_handler(self.handler)
-                elif device.product_name == 'Emotiv RAW DATA':
-                    devices.append(device)
-                    device.open()
-                    self.serial_number = device.serial_number
-                    device.set_raw_data_handler(self.handler)
+                    break  # We might need the second device (if there is one), so this needs to be tested.
             crypto = gevent.spawn(self.setup_crypto, self.serial_number)
             console_updater = gevent.spawn(self.update_console)
             while self.running:
