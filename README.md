@@ -50,7 +50,7 @@ Python
 * gevent - http://gevent.org
 
 Windows
-* pywinusb (Windows Only) - https://pypi.python.org/pypi/pywinusb/
+* pywinusb - https://pypi.python.org/pypi/pywinusb/
 
 Linux / OS X
 * hidapi - http://www.signal11.us/oss/hidapi/
