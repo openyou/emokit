@@ -414,34 +414,48 @@ class Emotiv(object):
         devices = []
         try:
             for device in hid.find_all_hid_devices():
-                if "Emotiv" in device.manufacturer_string:
+                if "Emotiv" in device.vendor_name:
                     is_emotiv = True
-                if "Emotiv" in device.product_string:
+                if "Emotiv" in device.product_name:
                     is_emotiv = True
-                if "EPOC" in device.product_string:
+                if "EPOC" in device.product_name:
                     is_emotiv = True
-                if "Brain Waves" in device.product_string:
+                if "Brain Waves" in device.product_name:
                     is_emotiv = True
                 if device.product_name == '00000000000':
                     is_emotiv = True
                 if is_emotiv:
                     devices.append(device)
-                    device.open()
-                    self.serial_number = device.serial_number
-                    device.set_raw_data_handler(self.handler)
-                    break  # We might need the second device (if there is one), so this needs to be tested.
-            crypto = gevent.spawn(self.setup_crypto, self.serial_number)
-            console_updater = gevent.spawn(self.update_console)
-            while self.running:
-                try:
-                    gevent.sleep(0)
-                except KeyboardInterrupt:
-                    self.running = False
+            if len(devices) > 0:
+                device = devices[1]
+                device.open()
+                self.serial_number = device.serial_number
+                device.set_raw_data_handler(self.handler)
+                crypto = gevent.spawn(self.setup_crypto, self.serial_number)
+                console_updater = gevent.spawn(self.update_console)
+                while self.running:
+                    try:
+                        gevent.sleep(DEVICE_POLL_INTERVAL)
+                    except KeyboardInterrupt:
+                        self.running = False
+            else:
+                print "Could not find device"
+                print "-------------------------"
+                for device in hid.find_all_hid_devices():
+                    print device.vendor_name
+                    print device.product_name
+                    print device.vendor_id
+                    print device.product_id
+                    print device.serial_number
+                    print "-------------------------"
+                print "Please include this information if you open a new issue."
+        except Exception, ex:
+            print ex.message
         finally:
-            for device in devices:
-                device.close()
-            gevent.kill(crypto, KeyboardInterrupt)
-            gevent.kill(console_updater, KeyboardInterrupt)
+            if len(devices) > 0:
+                devices[1].close()
+                gevent.kill(crypto, KeyboardInterrupt)
+                gevent.kill(console_updater, KeyboardInterrupt)
 
     def handler(self, data):
         """
