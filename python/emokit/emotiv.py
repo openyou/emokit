@@ -511,7 +511,7 @@ class Emotiv(object):
             except KeyboardInterrupt:
                 self.running = False
             except Exception, ex:
-                print "Setup emotiv.py(line=503): " + ex.message
+                print "Setup emotiv.py(line=514): " + ex.message
                 self.running = False
             gevent.sleep(DEVICE_POLL_INTERVAL)
         if _os_decryption:
@@ -570,7 +570,7 @@ class Emotiv(object):
                         self.packets.put_nowait(EmotivPacket(data, self.sensors, self.old_model))
                         self.packets_processed += 1
                     except Exception, ex:
-                        print "Crypto emotiv.py(line=562): " + ex.message
+                        print "Crypto emotiv.py(line=573): " + ex.message
                 gevent.sleep(DEVICE_POLL_INTERVAL)
             gevent.sleep(DEVICE_POLL_INTERVAL)
 
@@ -583,7 +583,7 @@ class Emotiv(object):
                 return self.packets.get()
             return None
         except Exception, e:
-            print "Dequeue emotiv.py(line=575): " + e.message
+            print "Dequeue emotiv.py(line=586): " + e.message
 
     def close(self):
         """
