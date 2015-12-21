@@ -227,9 +227,9 @@ def hid_enumerate():
     """
     path = ""
     serial_number = ""
-    is_emotiv = False
     devices = hidapi.hid_enumerate()
     for device in devices:
+        is_emotiv = False
         try:
             if "Emotiv" in device.manufacturer_string:
                 is_emotiv = True
@@ -244,7 +244,6 @@ def hid_enumerate():
             if is_emotiv:
                 serial_number = device.serial_number
                 path = device.path
-                is_emotiv = False
         except:
             pass
     return path, serial_number
@@ -293,7 +292,7 @@ class EmotivPacket(object):
         sensors['X']['value'] = self.gyro_x
         sensors['Y']['value'] = self.gyro_y
         for name, bits in sensor_bits.items():
-            #Get Level for sensors subtract 8192 to get signed value
+            # Get Level for sensors subtract 8192 to get signed value
             value = get_level(self.raw_data, bits) - 8192
             setattr(self, name, (value,))
             sensors[name]['value'] = value
@@ -410,10 +409,10 @@ class Emotiv(object):
         """
         Setup for headset on the Windows platform. 
         """
-        is_emotiv = False
         devices = []
         try:
             for device in hid.find_all_hid_devices():
+                is_emotiv = False
                 if "Emotiv" in device.vendor_name:
                     is_emotiv = True
                 if "Emotiv" in device.product_name:
