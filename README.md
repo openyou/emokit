@@ -46,12 +46,16 @@ Required Libraries
 Python
 ------
 
-* pywinhid (Windows Only) - https://pypi.python.org/pypi/pywinusb/
-* (OS X) HIDAPI - http://www.signal11.us/oss/hidapi/
-* (OS X) cython-hidapi - https://github.com/gbishop/cython-hidapi
 * pycrypto - https://www.dlitz.net/software/pycrypto/
 * gevent - http://gevent.org
-* realpath - http://?   sudo apt-get install realpath
+
+Windows
+* pywinusb - https://pypi.python.org/pypi/pywinusb/
+
+Linux / OS X
+* hidapi - http://www.signal11.us/oss/hidapi/
+* pyhidapi - https://github.com/NF6X/pyhidapi
+
 
 C Language
 ----------
@@ -111,7 +115,7 @@ for each. We've tried to cover both (as based on hidapi's example udev
 file), but your mileage may vary. If you have problems, please post
 them to the github issues page (http://github.com/openyou/emokit/issues).
 
-Your kernel may not support /dev/hidraw devices by default, such as an RPi. 
+Your kernel may not support /dev/hidraw devices by default, such as an RPi.
 To fix that re-comiple your kernel with /dev/hidraw support
 
 OS X
