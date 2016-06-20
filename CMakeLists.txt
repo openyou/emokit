@@ -32,7 +32,7 @@ INCLUDE_DIRECTORIES(${HIDAPI_INCLUDE_DIR} ${Mcrypt_INCLUDE_DIR} ${CMAKE_SOURCE_D
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(examples/emokitd)
 ADD_SUBDIRECTORY(examples/contact)
-# ADD_SUBDIRECTORY(examples/emokit_osc)
+ADD_SUBDIRECTORY(examples/emokit_osc)
 
 ##########################################
 ##       PKGCONFIG file                ###
