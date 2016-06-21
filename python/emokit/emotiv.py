@@ -472,6 +472,7 @@ class Emotiv(object):
             'FC5': {'value': 0, 'quality': 0},
             'X': {'value': 0, 'quality': 0},
             'Y': {'value': 0, 'quality': 0},
+            'Z': {'value': '?', 'quality': 0},
             'Unknown': {'value': 0, 'quality': 0}
         }
         self.serial_number = serial_number  # You will need to set this manually for OS X.
