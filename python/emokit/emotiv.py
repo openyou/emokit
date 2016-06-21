@@ -1,18 +1,22 @@
+# -*- coding: utf-8 -*-
 import os
-import sys
 import platform
+import sys
+
 system_platform = platform.system()
 if system_platform == "Windows":
-    import socket  # Needed to prevent gevent crashing on Windows. (surfly / gevent issue #459)
     import pywinusb.hid as hid
 else:
     import hidapi
+
     hidapi.hid_init()
 
 import gevent
 from Crypto.Cipher import AES
 from Crypto import Random
 from gevent.queue import Queue
+from datetime import datetime
+import csv
 
 # How long to gevent-sleep if there is no data on the EEG.
 # To be precise, this is not the frequency to poll on the input device
@@ -208,9 +212,9 @@ def get_level(data, bits):
 
 
 def is_old_model(serial_number):
-        if "GM" in serial_number[-2:]:
-                return False
-        return True
+    if "GM" in serial_number[-2:]:
+        return False
+    return True
 
 
 def hid_enumerate():
@@ -241,6 +245,9 @@ def hid_enumerate():
                 is_emotiv = True
             if device.product_string == '00000000000':
                 is_emotiv = True
+            if "EEG Signals" in device.product_string:
+                is_emotiv = True
+
             if is_emotiv:
                 serial_number = device.serial_number
                 path = device.path
@@ -268,6 +275,58 @@ def print_hid_enumerate():
     print "Please include this information if you open a new issue."
 
 
+class EmotivWriter(object):
+    """
+    Write data from headset to output. CSV file for now.
+    """
+
+    def __init__(self, file_name, mode="csv", **kwds):
+        self.mode = mode
+        self.file = open(file_name, 'wb')
+        if self.mode == "csv":
+            self.writer = csv.writer(self.file, quoting=csv.QUOTE_ALL)
+        else:
+            self.writer = None
+
+    def write_csv(self, data):
+        self.writer.writerow(data)
+
+    def write(self, data):
+        if self.mode == "csv":
+            self.write_csv(data)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.writer:
+            self.writer.close()
+        self.file.close()
+
+
+class EmotivReader(object):
+    """
+    Read data from file. Only CSV for now.
+    """
+
+    def __init__(self, file_name, mode="csv", **kwds):
+        self.mode = mode
+        self.file = open(file_name, 'rb')
+        if self.mode == "csv":
+            self.reader = csv.reader(self.file, quoting=csv.QUOTE_ALL)
+        else:
+            self.reader = None
+
+    def read_csv(self):
+        return self.reader.next()
+
+    def read(self):
+        if self.mode == "csv":
+            return self.read_csv()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.reader:
+            self.reader.close()
+        self.file.close()
+
+
 class EmotivPacket(object):
     """
     Basic semantics for input bytes.
@@ -277,6 +336,10 @@ class EmotivPacket(object):
         """
         Initializes packet data. Sets the global battery value.
         Updates each sensor with current sensor value from the packet data.
+
+        :param data - Values decrypted to be processed
+        :param sensors - Reference to sensors dict in Emotiv class.
+        :param model - Is headset old model? Old is relative now I guess.
         """
         global g_battery
         self.raw_data = data
@@ -288,8 +351,10 @@ class EmotivPacket(object):
         self.sync = self.counter == 0xe9
         self.gyro_x = ord(data[29]) - 106
         self.gyro_y = ord(data[30]) - 105
+        self.gyro_z = '?'
         sensors['X']['value'] = self.gyro_x
         sensors['Y']['value'] = self.gyro_y
+        sensors['Z']['value'] = self.gyro_z
         for name, bits in sensor_bits.items():
             # Get Level for sensors subtract 8192 to get signed value
             value = get_level(self.raw_data, bits) - 8192
@@ -303,6 +368,9 @@ class EmotivPacket(object):
         """
         Sets the quality value for the sensor from the quality bits in the packet data.
         Optionally will return the value.
+
+        :param sensors - reference to sensors dict in Emotiv class.
+
         """
         if self.old_model:
             current_contact_quality = get_level(self.raw_data, quality_bits) / 540
@@ -350,20 +418,35 @@ class EmotivPacket(object):
         """
         Returns custom string representation of the Emotiv Packet.
         """
-        return 'EmotivPacket(counter=%i, battery=%i, gyro_x=%i, gyro_y=%i)' % (
+        return 'EmotivPacket(counter=%i, battery=%i, gyro_x=%i, gyro_y=%i, gyro_z=%s)' % (
             self.counter,
             self.battery,
             self.gyro_x,
-            self.gyro_y)
+            self.gyro_y,
+            self.gyro_z)
 
 
 class Emotiv(object):
     """
-    Receives, decrypts and stores packets received from Emotiv Headsets.
+    Receives, decrypts and stores packets received from Emotiv Headsets and other sources.
     """
-    def __init__(self, display_output=True, serial_number="", is_research=False):
+
+    def __init__(self, display_output=True, serial_number="", is_research=False, write=False, io_type="csv",
+                 write_raw=True, read_raw=True, other_input_source=None):
         """
         Sets up initial values.
+
+        :param display_output - Should non-error output be displayed to console?
+        :param serial_number - Specify serial_number, needed to decrypt packets for raw data reader and special cases.
+        :param is_research - Is EPOC headset research edition? Doesn't seem to work even if it is.
+        :param write - Write data to io_type.
+        :param io_type - Type of source/destination for EmotivReader/Writer
+        :param write_raw - Write unencrypted data
+        :param read_raw - Read unencrypted data (requires serial_number)
+        :param other_input_source - Source to read from, should be filename or other source (not implemented)
+
+        Obviously, the read_raw needs to match the write_raw value used to capture the data.
+        Expect performance to suffer when writing data to a csv.
         """
         self.running = True
         self.packets = Queue()
@@ -389,20 +472,131 @@ class Emotiv(object):
             'FC5': {'value': 0, 'quality': 0},
             'X': {'value': 0, 'quality': 0},
             'Y': {'value': 0, 'quality': 0},
+            'Z': {'value': '?', 'quality': 0},
             'Unknown': {'value': 0, 'quality': 0}
         }
         self.serial_number = serial_number  # You will need to set this manually for OS X.
         self.old_model = False
+        self.write = write
+        if self.write and other_input_source is None:
+            if io_type == "csv":
+                self.writer = EmotivWriter('emotiv_dump_%s.csv' % str(datetime.now()), mode=io_type)
+            else:
+                self.writer = None
+                self.write = False
+            self.write_raw = write_raw
+        else:
+            self.write = False
+        self.other_input_source = other_input_source
+        if other_input_source and self.serial_number:
+            self.read_raw = read_raw
+            if self.serial_number == "" and self.read_raw:
+                print("You must specify a serial number when not reading directly from the headset using raw data!")
+                sys.exit()
+            self.reader = EmotivReader(other_input_source, mode=io_type)
 
     def setup(self):
         """
         Runs setup function depending on platform.
         """
-        print system_platform + " detected."
-        if system_platform == "Windows":
-            self.setup_windows()
+        if self.display_output:
+            print("%s detected." % system_platform)
+        if self.other_input_source is None:
+            if system_platform == "Windows":
+                self.setup_windows()
+            else:
+                self.setup_not_windows()
         else:
-            self.setup_not_windows()
+            self.setup_reader()
+
+    def setup_reader(self):
+        """
+        Read from EmotivReader only.
+        """
+        if is_old_model(self.serial_number):
+            self.old_model = True
+        if self.display_output:
+            print self.old_model
+        k = ['\0'] * 16
+        k[0] = self.serial_number[-1]
+        k[1] = '\0'
+        k[2] = self.serial_number[-2]
+        if self.is_research:
+            k[3] = 'H'
+            k[4] = self.serial_number[-1]
+            k[5] = '\0'
+            k[6] = self.serial_number[-2]
+            k[7] = 'T'
+            k[8] = self.serial_number[-3]
+            k[9] = '\x10'
+            k[10] = self.serial_number[-4]
+            k[11] = 'B'
+        else:
+            k[3] = 'T'
+            k[4] = self.serial_number[-3]
+            k[5] = '\x10'
+            k[6] = self.serial_number[-4]
+            k[7] = 'B'
+            k[8] = self.serial_number[-1]
+            k[9] = '\0'
+            k[10] = self.serial_number[-2]
+            k[11] = 'H'
+        k[12] = self.serial_number[-3]
+        k[13] = '\0'
+        k[14] = self.serial_number[-4]
+        k[15] = 'P'
+        key = ''.join(k)
+        iv = Random.new().read(AES.block_size)
+        cipher = AES.new(key, AES.MODE_ECB, iv)
+        if self.display_output:
+            for i in k:
+                print("0x%.02x " % (ord(i)))
+        while self.running:
+            try:
+                data = self.reader.read()
+                if self.read_raw:
+                    if len(data):
+                        if len(data) == 32:
+                            # Most of the time the 0 is truncated? That's ok we'll add it...
+                            data.insert(0, 0)
+                        if len(data) == 33:
+                            data = [int(item) for item in data]
+                            data = ''.join(map(chr, data[1:]))
+                            try:
+                                data = cipher.decrypt(data[:16]) + cipher.decrypt(data[16:])
+                                self.packets.put_nowait(EmotivPacket(data, self.sensors, self.old_model))
+                                self.packets_processed += 1
+                            except Exception, ex:
+                                print("Crypto emotiv.py(line=568): %s" % ex.message)
+                                # Discards packets not divisible by 16 and == 32 with the extra 0,
+                                # maybe they are for something though? #TODO: Look into this.
+                else:
+                    if len(data):
+                        print data
+                        pos = 0
+                        for char in data:
+                            if char == '':
+                                data[pos] = ' '
+                            pos += 1
+                        data = ''.join(data)
+                        self.packets.put_nowait(EmotivPacket(data, self.sensors, self.old_model))
+                        self.packets_processed += 1
+
+                if self.display_output:
+                    if system_platform == "Windows":
+                        os.system('cls')
+                    else:
+                        os.system('clear')
+
+                    print("Packets Received: %s Packets Processed: %s" %
+                          (self.packets_received, self.packets_processed))
+                    print('\n'.join("%s Reading: %s Quality: %s" %
+                                    (k[1], self.sensors[k[1]]['value'],
+                                     self.sensors[k[1]]['quality']) for k in enumerate(self.sensors)))
+                    print("Battery: %i" % g_battery)
+                gevent.sleep(DEVICE_POLL_INTERVAL)
+            except KeyboardInterrupt:
+                self.running = False
 
     def setup_windows(self):
         """
@@ -422,6 +616,8 @@ class Emotiv(object):
                     is_emotiv = True
                 if device.product_name == '00000000000':
                     is_emotiv = True
+                if "EEG Signals" in device.product_name:
+                    is_emotiv = True
                 if is_emotiv:
                     devices.append(device)
             if len(devices) > 0:
@@ -437,18 +633,18 @@ class Emotiv(object):
                     except KeyboardInterrupt:
                         self.running = False
             else:
-                print "Could not find device"
-                print "-------------------------"
+                print("Could not find device")
+                print("-------------------------")
                 for device in hid.find_all_hid_devices():
-                    print device.vendor_name
-                    print device.product_name
-                    print device.vendor_id
-                    print device.product_id
-                    print device.serial_number
-                    print "-------------------------"
-                print "Please include this information if you open a new issue."
+                    print(device.vendor_name)
+                    print(device.product_name)
+                    print(device.vendor_id)
+                    print(device.product_id)
+                    print(device.serial_number)
+                    print("-------------------------")
+                print("Please include this information if you open a new issue.")
         except Exception, ex:
-            print ex.message
+            print(ex.message)
         finally:
             if len(devices) > 0:
                 devices[1].close()
@@ -461,6 +657,8 @@ class Emotiv(object):
         by the crypto greenlet.
         """
         assert data[0] == 0
+        if self.write and self.write_raw:
+            self.write_data(data)
         tasks.put_nowait(''.join(map(chr, data[1:])))
         self.packets_received += 1
         return True
@@ -478,7 +676,7 @@ class Emotiv(object):
             hidraw = open("/dev/eeg/raw")
         path, serial_number = hid_enumerate()
         if len(path) == 0:
-            print "Could not find device."
+            print("Could not find device.")
             print_hid_enumerate()
             sys.exit()
         self.serial_number = serial_number
@@ -491,25 +689,27 @@ class Emotiv(object):
                 if _os_decryption:
                     data = hidraw.read(32)
                     if data != "":
-                            self.packets.put_nowait(EmotivPacket(data))
+                        self.packets.put_nowait(EmotivPacket(data, self.sensors, self.old_model))
                 else:
                     # Doesn't seem to matter how big we make the buffer 32 returned every time, 33 for other platforms
                     data = hidapi.hid_read(device, 34)
                     if len(data) == 32:
-                        # Most of the time the 0 is truncated? That's ok we'll add it...
+                        # Most of the time the 0 is truncated? That's ok we'll add it... Could probably not do this...
                         data.insert(0, 0)
                     if data != "":
                         if _os_decryption:
-                            self.packets.put_nowait(EmotivPacket(data))
+                            self.packets.put_nowait(EmotivPacket(data, self.sensors, self.old_model))
                         else:
                             # Queue it!
+                            if self.write and self.write_raw:
+                                self.write_data(data)
                             tasks.put_nowait(''.join(map(chr, data[1:])))
                             self.packets_received += 1
                 gevent.sleep(DEVICE_POLL_INTERVAL)
             except KeyboardInterrupt:
                 self.running = False
             except Exception, ex:
-                print "Setup emotiv.py(line=514): " + ex.message
+                print("Setup emotiv.py(line=710): %s" % ex.message)
                 self.running = False
             gevent.sleep(DEVICE_POLL_INTERVAL)
         if _os_decryption:
@@ -525,7 +725,8 @@ class Emotiv(object):
         """
         if is_old_model(sn):
             self.old_model = True
-        print self.old_model
+        if self.display_output:
+            print(self.old_model)
         k = ['\0'] * 16
         k[0] = sn[-1]
         k[1] = '\0'
@@ -557,18 +758,22 @@ class Emotiv(object):
         key = ''.join(k)
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(key, AES.MODE_ECB, iv)
-        for i in k:
-            print "0x%.02x " % (ord(i))
+        if self.display_output:
+            for i in k:
+                print("0x%.02x " % (ord(i)))
         while self.running:
             while not tasks.empty():
                 task = tasks.get()
                 if len(task):
                     try:
                         data = cipher.decrypt(task[:16]) + cipher.decrypt(task[16:])
+                        if self.write:
+                            if not self.write_raw:
+                                self.write_data(data)
                         self.packets.put_nowait(EmotivPacket(data, self.sensors, self.old_model))
                         self.packets_processed += 1
                     except Exception, ex:
-                        print "Crypto emotiv.py(line=573): " + ex.message
+                        print("Crypto emotiv.py(line=774): %s" % ex.message)
                 gevent.sleep(DEVICE_POLL_INTERVAL)
             gevent.sleep(DEVICE_POLL_INTERVAL)
 
@@ -581,7 +786,7 @@ class Emotiv(object):
                 return self.packets.get()
             return None
         except Exception, e:
-            print "Dequeue emotiv.py(line=586): " + e.message
+            print("Dequeue emotiv.py(line=787): %s" % e.message)
 
     def close(self):
         """
@@ -599,12 +804,16 @@ class Emotiv(object):
                     os.system('cls')
                 else:
                     os.system('clear')
-                print "Packets Received: %s Packets Processed: %s" % (self.packets_received, self.packets_processed)
+                print("Packets Received: %s Packets Processed: %s" % (self.packets_received, self.packets_processed))
                 print('\n'.join("%s Reading: %s Quality: %s" %
                                 (k[1], self.sensors[k[1]]['value'],
                                  self.sensors[k[1]]['quality']) for k in enumerate(self.sensors)))
-                print "Battery: %i" % g_battery
+                print("Battery: %i" % g_battery)
                 gevent.sleep(DEVICE_POLL_INTERVAL)
+
+    def write_data(self, data):
+        if self.writer:
+            self.writer.write(data)
 
 if __name__ == "__main__":
     a = Emotiv()
