@@ -49,6 +49,16 @@ Python
 * pycrypto - https://www.dlitz.net/software/pycrypto/
 * gevent - http://gevent.org
 
+Should be able to install using:  
+pip install -r requirements.txt --upgrade  
+  
+  
+You should also be able to install emokit using:  
+pip install emokit  
+  
+  
+These vary by OS and should be install manually.  
+  
 Windows
 * pywinusb - https://pypi.python.org/pypi/pywinusb/
 
@@ -156,4 +166,25 @@ Suites? Saddest hotel EVER.
  One least-significant-bit of the fourteen-bit value you get back is
  0.51 microvolts. See the
  [specification](http://emotiv.com/upload/manual/EPOCSpecifications.pdf)
- for more details.
+ for more details. (Broken Link)
+ 
+ - *What should my output look like?*
+ 
+ Idling, not on someone's head it should look something like this:  
+ Y Reading: 0 Quality: 0  
+ F3 Reading: 259 Quality: 0  
+ F4 Reading: 576 Quality: 0  
+ P7 Reading: 258 Quality: 0  
+ FC6 Reading: 878 Quality: 0  
+ F7 Reading: 118 Quality: 0  
+ F8 Reading: 1060 Quality: 0  
+ T7 Reading: 252 Quality: 0  
+ P8 Reading: -51 Quality: 0  
+ FC5 Reading: 1112 Quality: 0  
+ AF4 Reading: 481 Quality: 0  
+ Unknown Reading: 30 Quality: 1  
+ T8 Reading: 614 Quality: 0  
+ X Reading: 0 Quality: 0  
+ O2 Reading: 337 Quality: 0  
+ O1 Reading: -198 Quality: 0  
+ AF3 Reading: 146 Quality: 0  
