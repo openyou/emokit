@@ -57,7 +57,7 @@ You should also be able to install emokit using:
 pip install emokit  
   
   
-These vary by OS and should be install manually.  
+These vary by OS and should be installed manually.  
   
 Windows
 * pywinusb - https://pypi.python.org/pypi/pywinusb/
