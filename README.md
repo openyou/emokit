@@ -20,8 +20,14 @@ data from the Emotiv EPOC headset. Note that this will not give you
 processed data (i.e. anything available in the Emo Suites in the
 software), just the raw sensor data.
 
-The C library is backed by hidapi, and should work on any platform
-that hidapi also works on.
+C Library
+=========
+
+Please note that the python and C libraries are now in different
+repos. If you would like to use the C version of emokit, the repo
+is at
+
+http://www.github.com/openyou/emokit-c
 
 Information
 ===========
@@ -67,20 +73,8 @@ Linux / OS X
 * pyhidapi - https://github.com/NF6X/pyhidapi
 
 
-C Language
-----------
-
-* CMake - http://www.cmake.org
-* libmcrypt - https://sourceforge.net/projects/mcrypt/
-* hidapi - http://www.signal11.us/oss/hidapi/
-
 Usage
 =====
-
-C library
----------
-
-See emokitd.c example
 
 Python library
 --------------
@@ -130,12 +124,9 @@ To fix that re-comiple your kernel with /dev/hidraw support
 
 OS X
 ----
-Recent OS versions no longer allow usb devices to become unclaimed by the kernel.
-You must use a HIDAPI library.
 
 The render.py file uses pygame, visit http://pygame.org/wiki/MacCompile
 Do not export the architecture compiler flags for recent 64bit versions of OS X.
-
 
 Credits - Cody
 ==============
