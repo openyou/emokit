@@ -55,15 +55,6 @@ Python
 * pycrypto - https://www.dlitz.net/software/pycrypto/
 * gevent - http://gevent.org
 
-Should be able to install using:  
-pip install -r requirements.txt --upgrade  
-  
-  
-You should also be able to install emokit using:  
-pip install emokit  
-  
-  
-These vary by OS and should be installed manually.  
   
 Windows
 * pywinusb - https://pypi.python.org/pypi/pywinusb/
@@ -71,6 +62,17 @@ Windows
 Linux / OS X
 * hidapi - http://www.signal11.us/oss/hidapi/
 * pyhidapi - https://github.com/NF6X/pyhidapi
+
+
+You should be able to install emokit and the required python libraries using:  
+
+pip install emokit
+
+OR
+
+python setup.py install
+
+hidapi will still need to be installed manually on Linux and OS X.
 
 
 Usage
