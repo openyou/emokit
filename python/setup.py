@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import platform
+
 from setuptools import setup
 
 import emokit
@@ -10,7 +12,12 @@ packages = [
 ]
 
 requirements = open("requirements.txt", "r").read().split("\n")
+system_platform = platform.system()
 
+if system_platform == "Windows":
+    requirements += ['pywinusb']
+else:
+    requirements += ['pyhidapi']
 setup(
     name="emokit",
     version=emokit.__version__,

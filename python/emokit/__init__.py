@@ -9,9 +9,9 @@ emokit - emotiv epoc reverse engineering
 """
 
 __title__ = "emokit"
-__version__ = "0.0.3"
-__build__ = 0x000003
-__author__ = "Cody Brocious <cody.brocious@gmail.com>/Kyle Machulis <kyle@machul.is>"
+__version__ = "0.0.4"
+__build__ = 0x000004
+__author__ = "Cody Brocious / Kyle Machulis"
 __license__ = "Public Domain, See LICENSE"
 __copyright__ = "Copyright (c) 2010-2012, Cody Brocious, Kyle Machulis/Nonpolynomial Labs," \
                 " Copyright 2013 Bryan Bishop, Copyright 2012-2016 Bill Schumacher/Cerebral Power"
