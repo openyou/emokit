@@ -23,7 +23,7 @@ setup(
     version=emokit.__version__,
     url="https://github.com/openyou/emokit",
     license="Public Domain, SEE LICENSE",
-    author="Cody Brocious/Kyle Machulis",
+    author="Cody Brocious",
     author_email="cody.brocious@gmail.com",
     maintainer="Bill Schumacher",
     maintainer_email="bill@servernet.co",
