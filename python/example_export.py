@@ -15,10 +15,11 @@ if __name__ == "__main__":
     headset = Emotiv(write=True, write_raw=True)
     gevent.spawn(headset.setup)
     gevent.sleep(0)
+    print("Serial Number: %s" % headset.serial_number)
+    print("Exporting data... press control+c to stop.")
     try:
         while True:
             packet = headset.dequeue()
-            print packet.gyro_x, packet.gyro_y
             gevent.sleep(0)
     except KeyboardInterrupt:
         headset.close()
