@@ -12,16 +12,11 @@ if platform.system() == "Windows":
 import gevent
 
 if __name__ == "__main__":
-    headset = Emotiv(write=True, write_raw=True)
-    gevent.spawn(headset.setup)
-    gevent.sleep(0)
-    print("Serial Number: %s" % headset.serial_number)
-    print("Exporting data... press control+c to stop.")
-    try:
+    with Emotiv(write=True, write_raw=True) as headset:
+        gevent.spawn(headset.setup)
+        gevent.sleep(0.001)
+        print("Serial Number: %s" % headset.serial_number)
+        print("Exporting data... press control+c to stop.")
         while True:
             packet = headset.dequeue()
-            gevent.sleep(0)
-    except KeyboardInterrupt:
-        headset.close()
-    finally:
-        headset.close()
+            gevent.sleep(0.001)
