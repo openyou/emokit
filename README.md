@@ -53,8 +53,9 @@ Python
 ------
 
 * pycrypto - https://www.dlitz.net/software/pycrypto/
-* gevent - http://gevent.org
 
+2.x
+* future - pip install future
   
 Windows
 * pywinusb - https://pypi.python.org/pypi/pywinusb/
@@ -84,24 +85,18 @@ Python library
   Code:
   
     import emotiv
-    import platform
-    if platform.system() == "Windows":
-        import socket
-    import gevent
 
     if __name__ == "__main__":
-      headset = emotiv.Emotiv()    
-      gevent.spawn(headset.setup)
-      gevent.sleep(0)
-      try:
-        while True:
-          packet = headset.dequeue()
-          print packet.gyro_x, packet.gyro_y
-          gevent.sleep(0)
-      except KeyboardInterrupt:
-        headset.close()
-      finally:
-        headset.close()
+      with emotiv.Emotiv() as headset:
+        try:
+          while True:
+            packet = headset.dequeue()
+            if packet is not None:
+              print('%s %s' % (str(packet.sensors['X']['value']), str(packet.sensors['Y']['value'])))
+        except KeyboardInterrupt:
+          headset.close()
+        finally:
+          headset.close()
 
 
 Bindings
