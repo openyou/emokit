@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
-from emokit import battery
-from emokit import emotiv
-from emokit import packet
-from emokit import sensors
-from emokit import util
 
-__all__ = ['battery', 'sensors', 'emotiv', 'packet', 'util']
+__all__ = ['battery', 'decrypter', 'sensors', 'emotiv', 'packet', 'util', 'reader']
 """
 emokit - emotiv epoc reverse engineering
 ~~~~~~~~~~~~~~~
@@ -16,7 +11,7 @@ emokit - emotiv epoc reverse engineering
 """
 
 __title__ = "emokit"
-__version__ = "0.0.5a8"
+__version__ = "0.0.5a9"
 __build__ = 0x000005
 __author__ = "Cody Brocious / Kyle Machulis"
 __license__ = "Public Domain, See LICENSE"

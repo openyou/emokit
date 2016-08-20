@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import csv
 import sys
 
@@ -192,6 +193,8 @@ class EmotivWriter(object):
             self.writer = None
 
     def write_csv(self, data):
+        if sys.version_info >= (3, 0):
+            data = bytes(data, encoding='latin-1')
         self.writer.writerow(data)
 
     def write(self, data):
@@ -201,30 +204,4 @@ class EmotivWriter(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if self.writer:
             self.writer.close()
-        self.file.close()
-
-
-class EmotivReader(object):
-    """
-    Read data from file. Only CSV for now.
-    """
-
-    def __init__(self, file_name, mode="csv", **kwargs):
-        self.mode = mode
-        self.file = open(file_name, 'rb')
-        if self.mode == "csv":
-            self.reader = csv.reader(self.file, quoting=csv.QUOTE_ALL)
-        else:
-            self.reader = None
-
-    def read_csv(self):
-        return self.reader.next()
-
-    def read(self):
-        if self.mode == "csv":
-            return self.read_csv()
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if self.reader:
-            self.reader.close()
         self.file.close()
