@@ -23,7 +23,7 @@ class Emotiv(object):
     Receives, decrypts and stores packets received from Emotiv Headsets and other sources.
     """
 
-    def __init__(self, display_output=False, serial_number=None, is_research=False, write=False, io_type="hid",
+    def __init__(self, display_output=False, serial_number=None, is_research=False, write=False,
                  write_encrypted=False, write_values=False, read_encrypted=False, input_source="emotiv",
                  sys_platform=system_platform, verbose=False):
         """
@@ -32,12 +32,12 @@ class Emotiv(object):
         :param display_output - Should non-error output be displayed to console?
         :param serial_number - Specify serial_number, needed to decrypt packets for raw data reader and special cases.
         :param is_research - Is EPOC headset research edition? Doesn't seem to work even if it is.
-        :param write - Write data to io_type.
-        :param io_type - Type of source/destination for EmotivReader/Writer
+        :param write - Write data to csv.
         :param write_encrypted - Write encrypted data
         :param write_values - Write decrypted sensor data, True overwrites exporting data from dongle pre-processing.
         :param read_encrypted - Read encrypted data (requires serial_number)
-        :param input_source - Source to read from, emotiv or file
+        :param input_source - Source to read from, emotiv or a file name
+                   (must be a csv, exported from emokit or following our format)
         :param sys_platform - Operating system, to avoid global statement
 
         Obviously, the read_encrypted needs to match the write_encrypted value used to capture the data.
@@ -61,12 +61,7 @@ class Emotiv(object):
         self.packets_processed = 0
         self.input_source = input_source
         if self.write and self.input_source == "emotiv":
-            if io_type == "csv":
-                self.writer = EmotivWriter('emotiv_dump_%s.csv' % str(datetime.now()), mode=io_type)
-            else:
-                self.writer = None
-                self.write = False
-
+            self.writer = EmotivWriter('emotiv_dump_%s.csv' % str(datetime.now()), mode="csv")
             if self.write_values:
                 if self.writer is None:
                     RuntimeError("EmotivWriter is None, should be set?")
@@ -78,12 +73,13 @@ class Emotiv(object):
                 self.writer.write(header_row)
             else:
                 self.write_encrypted = write_encrypted
-
         else:
+            self.writer = None
             self.write = False
-        if self.input_source == "file":
+
+        if self.input_source != "emotiv":
             self.read_encrypted = read_encrypted
-            self.reader = EmotivReader(self.input_source, mode=io_type)
+            self.reader = EmotivReader(self.input_source, mode="csv")
             first_row = self.reader.read()
             if first_row[0] != 'serial_number' and first_row[0] != 'decrypted_data':
                 raise ValueError('File is not formatted correctly. Expected serial_number or decrypted data as '
