@@ -68,6 +68,8 @@ class Emotiv(object):
                 self.write = False
 
             if self.write_values:
+                if self.writer is None:
+                    RuntimeError("EmotivWriter is None, should be set?")
                 self.write_encrypted = False
                 header_row = []
                 for key in self.sensors.keys():
