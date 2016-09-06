@@ -23,7 +23,7 @@ class Emotiv(object):
     Receives, decrypts and stores packets received from Emotiv Headsets and other sources.
     """
 
-    def __init__(self, display_output=False, serial_number=None, is_research=False, write=False, io_type="csv",
+    def __init__(self, display_output=False, serial_number=None, is_research=False, write=False, io_type="hid",
                  write_encrypted=False, write_values=False, read_encrypted=False, input_source="emotiv",
                  sys_platform=system_platform, verbose=False):
         """
