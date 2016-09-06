@@ -17,7 +17,6 @@ class EmotivPacket(object):
         Updates each sensor with current sensor value from the packet data.
 
         :param data - Values decrypted to be processed
-        :param model - Is headset old model? Old is relative now I guess.
         """
         self.raw_data = data
         if sys.version_info >= (3, 0):

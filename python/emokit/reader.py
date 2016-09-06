@@ -5,6 +5,7 @@ import csv
 import os
 import platform
 import sys
+import time
 from threading import Thread
 
 from queue import Queue
@@ -48,13 +49,20 @@ class EmotivReader(object):
             self.reader = None
         self.data = Queue()
         self.setup_platform[self.platform]()
+        self.running = True
         self.thread = Thread(target=self.run, kwargs={'source': self.hid})
         self.thread.start()
 
     def run(self, source=None):
         """Do not call explicitly, called upon initialization of class"""
-        while True:
-            self.data.put_nowait(read_platform[self.platform](source))
+        if self.platform == 'Windows':
+            source.set_raw_data_handler(self.data_handler)
+        while self.running:
+            if not self.platform == 'Windows':
+                self.data.put_nowait(read_platform[self.platform](source))
+            else:
+                time.sleep(0.0005)
+        source.close()
 
     def data_handler(self, data):
         """
@@ -71,9 +79,9 @@ class EmotivReader(object):
             self.reader.close()
         self.file.close()
         if 'eeg_raw' in self.platform and self.hid is not None:
-            hid.close()
+            self.hid.close()
         elif 'Windows' not in self.platform and self.hid is not None:
-            hidapi.hid_close(hid)
+            hidapi.hid_close(self.hid)
 
     def setup_windows(self):
         """

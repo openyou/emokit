@@ -11,7 +11,7 @@ emokit - emotiv epoc reverse engineering
 """
 
 __title__ = "emokit"
-__version__ = "0.0.5a9"
+__version__ = "0.0.5a10"
 __build__ = 0x000005
 __author__ = "Cody Brocious / Kyle Machulis"
 __license__ = "Public Domain, See LICENSE"

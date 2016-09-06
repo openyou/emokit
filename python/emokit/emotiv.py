@@ -23,9 +23,9 @@ class Emotiv(object):
     Receives, decrypts and stores packets received from Emotiv Headsets and other sources.
     """
 
-    def __init__(self, display_output=True, serial_number=None, is_research=False, write=True, io_type="csv",
-                 write_raw=True, read_raw=False, other_input_source=None, sys_platform=system_platform,
-                 verbose=True):
+    def __init__(self, display_output=False, serial_number=None, is_research=False, write=False, io_type="csv",
+                 write_raw=False, write_values=False, read_raw=False, other_input_source=None,
+                 sys_platform=system_platform, verbose=False):
         """
         Sets up initial values.
 
@@ -35,6 +35,7 @@ class Emotiv(object):
         :param write - Write data to io_type.
         :param io_type - Type of source/destination for EmotivReader/Writer
         :param write_raw - Write unencrypted data
+        :param write_values - Write decrypted sensor data, True overwrites exporting data from dongle pre-processing.
         :param read_raw - Read unencrypted data (requires serial_number)
         :param other_input_source - Source to read from, should be filename or other source (not implemented)
         :param sys_platform - Operating system, to avoid global statement
@@ -54,6 +55,7 @@ class Emotiv(object):
         self.write = write
         self.read_raw = False
         self.write_raw = False
+        self.write_values = write_values
         self.platform = sys_platform
         self.other_input_source = None
         self.packets_received = 0
@@ -64,7 +66,16 @@ class Emotiv(object):
             else:
                 self.writer = None
                 self.write = False
-            self.write_raw = write_raw
+            if self.write_values:
+                self.write_raw = False
+                header_row = []
+                for key in self.sensors.keys():
+                    header_row.append(key + " Value")
+                    header_row.append(key + " Quality")
+                self.writer.write(header_row)
+            else:
+                self.write_raw = write_raw
+
         else:
             self.write = False
         self.other_input_source = other_input_source
@@ -105,10 +116,16 @@ class Emotiv(object):
                 crypto.encrypted_queue.put_nowait(raw_data)
             if not crypto.decrypted_queue.empty():
                 decrypted_packet_data = crypto.decrypted_queue.get()
-                if self.write and not self.write_raw:
+                if self.write and not self.write_raw and not self.write_values:
                     self.writer.write(decrypted_packet_data)
                 self.packets_processed += 1
-                self.packets.put_nowait(EmotivPacket(decrypted_packet_data))
+                new_packet = EmotivPacket(decrypted_packet_data)
+                self.packets.put_nowait(new_packet)
+                if self.write and self.write_values:
+                    data_to_write = []
+                    for key in self.sensors.keys():
+                        data_to_write.extend([new_packet.sensors[key]['value'], new_packet.sensors[key]['quality']])
+                    self.writer.write(data_to_write)
             if self.display_output:
                 if system_platform == "Windows":
                     os.system('cls')
