@@ -35,7 +35,8 @@ class EmotivReader(object):
         self.setup_platform = {
             'Windows': self.setup_windows,
             'Darwin': self.setup_not_windows,
-            'Linux': self.setup_not_windows
+            'Linux': self.setup_not_windows,
+            'Reader': self.setup_reader,
         }
         if self.mode == "csv":
             if file_name is None:
@@ -43,14 +44,18 @@ class EmotivReader(object):
                                  "'csv'.")
             self.file = open(file_name, 'rb')
             self.reader = csv.reader(self.file, quoting=csv.QUOTE_ALL)
+            self.platform = "Reader"
         elif self.mode == 'hid':
-            pass
+            self.reader = None
         else:
             self.reader = None
         self.data = Queue()
         self.setup_platform[self.platform]()
         self.running = True
-        self.thread = Thread(target=self.run, kwargs={'source': self.hid})
+        if self.reader is not None:
+            self.thread = Thread(target=self.run, kwargs={'source': self.reader})
+        else:
+            self.thread = Thread(target=self.run, kwargs={'source': self.hid})
         self.thread.start()
 
     def run(self, source=None):
@@ -59,15 +64,21 @@ class EmotivReader(object):
             source.set_raw_data_handler(self.data_handler)
         while self.running:
             if not self.platform == 'Windows':
-                self.data.put_nowait(read_platform[self.platform](source))
+                try:
+                    self.data.put_nowait(read_platform[self.platform](source))
+                except StopIteration:
+                    self.running = False
             else:
                 time.sleep(0.0005)
-        source.close()
+        if self.file is not None:
+            self.file.close()
+        else:
+            source.close()
 
     def data_handler(self, data):
         """
         Receives packets from headset for Windows. Sends them to a Queue to be processed
-        by the crypto greenlet.
+        by the crypto thread.
         """
         data = validate_data(data)
         if data is not None:
@@ -82,6 +93,18 @@ class EmotivReader(object):
             self.hid.close()
         elif 'Windows' not in self.platform and self.hid is not None:
             hidapi.hid_close(self.hid)
+
+    def setup_reader(self):
+        print(self.reader)
+        first_row = self.reader.next()
+        first_row = ''.join(first_row).split(', ')
+        print(first_row)
+        if first_row[0] != 'serial_number' and first_row[0] != 'decrypted_data':
+            raise ValueError('File is not formatted correctly. Expected serial_number or decrypted data as '
+                             'first value. Reading by values not supported, yet.')
+        if first_row[0] == 'serial_number':
+            self.serial_number = first_row[1]
+            self.platform += ' encrypted'
 
     def setup_windows(self):
         """
@@ -110,7 +133,7 @@ class EmotivReader(object):
         """
         Setup for headset on a non-windows platform.
         Receives packets from headset and sends them to a Queue to be processed
-        by the crypto greenlet.
+        by the crypto thread.
         """
         if os.path.exists('/dev/eeg/raw'):
             self.hid = open("/dev/eeg/raw")
@@ -134,7 +157,7 @@ def read_reader_encrypted(source):
     """
     Read from EmotivReader only. Return data for decryption.
     """
-    data = validate_data(source.read())
+    data = validate_data(read_csv(source))
     if data is not None:
         data = [int(item) for item in data]
         data = ''.join(map(chr, data[1:]))
@@ -146,7 +169,7 @@ def read_reader_decrypted(source):
     Read from EmotivReader only.
     :return:
     """
-    data = source.read()
+    data = read_csv(source)
     if len(data):
         pos = 0
         for char in data:

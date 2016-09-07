@@ -61,8 +61,8 @@ class Emotiv(object):
         self.packets_processed = 0
         self.input_source = input_source
         if self.write and self.input_source == "emotiv":
-            self.writer = EmotivWriter('emotiv_dump_%s.csv' % str(datetime.now()), mode="csv")
             if self.write_values:
+                self.writer = EmotivWriter('emotiv_values_%s.csv' % str(datetime.now()), mode="csv")
                 if self.writer is None:
                     RuntimeError("EmotivWriter is None, should be set?")
                 self.write_encrypted = False
@@ -72,6 +72,7 @@ class Emotiv(object):
                     header_row.append(key + " Quality")
                 self.writer.write(header_row)
             else:
+                self.writer = EmotivWriter('emotiv_data_%s.csv' % str(datetime.now()), mode="csv")
                 self.write_encrypted = write_encrypted
         else:
             self.writer = None
@@ -79,30 +80,24 @@ class Emotiv(object):
 
         if self.input_source != "emotiv":
             self.read_encrypted = read_encrypted
-            self.reader = EmotivReader(self.input_source, mode="csv")
-            first_row = self.reader.read()
-            if first_row[0] != 'serial_number' and first_row[0] != 'decrypted_data':
-                raise ValueError('File is not formatted correctly. Expected serial_number or decrypted data as '
-                                 'first value. Reading by values not supported, yet.')
-            if first_row[0] == 'serial_number':
-                self.reader.serial_number = first_row[1]
-                self.read_encrypted = True
-            elif self.serial_number is None and self.read_encrypted:
-                if first_row[1] != "decrypted_data":
-                    raise ValueError("The first row does not contain the serial number and you didn't provide it, "
-                                     "are you sure it's raw encrypted data?")
-                else:
-                    self.read_encrypted = False
+            self.reader = EmotivReader(file_name=self.input_source, mode="csv")
         else:
             self.reader = EmotivReader()
 
         self.crypto = None
-        if self.serial_number is None:
-            self.serial_number = self.reader.serial_number
-        if self.write and self.write_encrypted:
-            self.writer.write(['serial_number', self.serial_number])
-        elif self.write and not self.write_encrypted and not self.write_values:
-            self.writer.write(['decrypted_data'])
+        if self.serial_number is None and self.reader.serial_number is None and self.read_encrypted:
+            raise ValueError('Unable to find your serial number, please specify it manually.')
+        else:
+            if self.reader.serial_number is not None:
+                self.serial_number = self.reader.serial_number
+        if self.write:
+            if self.write_encrypted:
+                self.writer.write('serial_number, %s' % self.serial_number)
+            else:
+                if not self.write_values:
+                    self.writer.write('decrypted_data')
+                else:
+                    self.writer.write('decrypted_values')
         self.crypto = EmotivCrypto(self.serial_number, self.is_research)
         self.thread = Thread(target=self.run, kwargs={'reader': self.reader, 'crypto': self.crypto})
         self.thread.start()
@@ -148,13 +143,13 @@ class Emotiv(object):
                     self.writer.write(data_to_write)
                 dirty = True
             if self.display_output:
-                if system_platform == "Windows":
-                    os.system('cls')
-                else:
-                    os.system('clear')
                 if dirty:
-                    print(
-                    "Packets Received: %s Packets Processed: %s" % (self.packets_received, self.packets_processed))
+                    if system_platform == "Windows":
+                        os.system('cls')
+                    else:
+                        os.system('clear')
+                    print("Packets Received: %s Packets Processed: %s" % (self.packets_received,
+                                                                          self.packets_processed))
                     print('\n'.join("%s Reading: %s Quality: %s" %
                                     (k[1], self.sensors[k[1]]['value'],
                                      self.sensors[k[1]]['quality']) for k in enumerate(self.sensors)))
@@ -171,10 +166,10 @@ class Emotiv(object):
         """
         try:
             if not self.packets.empty():
-                yield self.packets.get()
+                return self.packets.get()
         except Exception as ex:
             print("Emotiv DequeueError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2], " : ", ex)
-        yield None
+        return None
 
 if __name__ == "__main__":
     a = Emotiv()

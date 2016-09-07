@@ -12,7 +12,7 @@ if platform.system() == "Windows":
 
 
 if __name__ == "__main__":
-    with Emotiv(display_output=True, verbose=True, write=True, write_values=True) as headset:
+    with Emotiv(display_output=True, verbose=True, write=True) as headset:
         print("Serial Number: %s" % headset.serial_number)
         print("Exporting data... press control+c to stop.")
         while True:
