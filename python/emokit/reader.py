@@ -29,6 +29,7 @@ class EmotivReader(object):
     def __init__(self, file_name=None, mode="hid", hid=None, file=None, **kwargs):
         self.mode = mode
         self.file = file
+        self.file_name = file_name
         self.hid = hid
         self.platform = system_platform
         self.serial_number = None
@@ -95,15 +96,10 @@ class EmotivReader(object):
             hidapi.hid_close(self.hid)
 
     def setup_reader(self):
-        print(self.reader)
-        first_row = self.reader.next()
-        first_row = ''.join(first_row).split(', ')
-        print(first_row)
-        if first_row[0] != 'serial_number' and first_row[0] != 'decrypted_data':
-            raise ValueError('File is not formatted correctly. Expected serial_number or decrypted data as '
-                             'first value. Reading by values not supported, yet.')
-        if first_row[0] == 'serial_number':
-            self.serial_number = first_row[1]
+        """
+        Setup reader stuff, not much to do here right now.
+        """
+        if 'encrypted' in self.file_name:
             self.platform += ' encrypted'
 
     def setup_windows(self):
@@ -157,11 +153,8 @@ def read_reader_encrypted(source):
     """
     Read from EmotivReader only. Return data for decryption.
     """
-    data = validate_data(read_csv(source))
-    if data is not None:
-        data = [int(item) for item in data]
-        data = ''.join(map(chr, data[1:]))
-        return data
+    data = read_csv(source)
+    return data
 
 
 def read_reader_decrypted(source):
