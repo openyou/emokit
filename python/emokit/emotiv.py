@@ -24,7 +24,7 @@ class Emotiv(object):
     """
 
     def __init__(self, display_output=False, serial_number=None, is_research=False, write=False,
-                 write_encrypted=False, write_values=False, read_encrypted=False, input_source="emotiv",
+                 write_encrypted=False, write_values=True, read_encrypted=False, input_source="emotiv",
                  sys_platform=system_platform, verbose=False):
         """
         Sets up initial values.
