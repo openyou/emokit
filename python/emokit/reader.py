@@ -43,7 +43,11 @@ class EmotivReader(object):
             if file_name is None:
                 raise ValueError("CSV file name must be specified when initializing an EmotivReader class using mode "
                                  "'csv'.")
-            self.file = open(file_name, 'rb')
+
+            if sys.version_info >= (3, 0):
+                self.file = open(file_name, 'r')
+            else:
+                self.file = open(file_name, 'rb')
             self.reader = csv.reader(self.file, quoting=csv.QUOTE_ALL)
             self.platform = "Reader"
         elif self.mode == 'hid':
@@ -54,27 +58,30 @@ class EmotivReader(object):
         self.setup_platform[self.platform]()
         self.running = True
         if self.reader is not None:
-            self.thread = Thread(target=self.run, kwargs={'source': self.reader})
+            self.thread = Thread(target=self.run, kwargs={'source': self.reader, 'running': self.running})
         else:
-            self.thread = Thread(target=self.run, kwargs={'source': self.hid})
+            self.thread = Thread(target=self.run, kwargs={'source': self.hid, 'running': self.running})
         self.thread.start()
 
-    def run(self, source=None):
+    def run(self, source=None, running=False):
         """Do not call explicitly, called upon initialization of class"""
         if self.platform == 'Windows':
             source.set_raw_data_handler(self.data_handler)
-        while self.running:
+        while running:
             if not self.platform == 'Windows':
                 try:
-                    self.data.put_nowait(read_platform[self.platform](source))
-                except StopIteration:
-                    self.running = False
+                    data = read_platform[self.platform](source)
+                    self.data.put_nowait(data)
+                except Exception as ex:
+                    pass
+                    # Catching StopIteration for some reason stops at the second record, even though there are more results.
             else:
                 time.sleep(0.0005)
         if self.file is not None:
             self.file.close()
         else:
-            source.close()
+            if type(source) != int:
+                source.close()
 
     def data_handler(self, data):
         """
@@ -89,6 +96,7 @@ class EmotivReader(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if self.reader:
             self.reader.close()
+        self.running = False
         self.file.close()
         if 'eeg_raw' in self.platform and self.hid is not None:
             self.hid.close()
@@ -146,7 +154,10 @@ class EmotivReader(object):
 
 
 def read_csv(source):
-    return source.next()
+    if sys.version_info >= (3, 0):
+        return source.__next__()
+    else:
+        return source.next()
 
 
 def read_reader_encrypted(source):
@@ -163,14 +174,7 @@ def read_reader_decrypted(source):
     :return:
     """
     data = read_csv(source)
-    if len(data):
-        pos = 0
-        for char in data:
-            if char == '':
-                data[pos] = ' '
-            pos += 1
-        data = ''.join(data)
-        return data
+    return data
 
 
 def read_non_windows(source):

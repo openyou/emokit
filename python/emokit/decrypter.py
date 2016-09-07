@@ -14,6 +14,7 @@ class EmotivCrypto:
     def __init__(self, serial_number=None, is_research=False):
         self.encrypted_queue = Queue()
         self.decrypted_queue = Queue()
+        self.running = True
         self.crypto_thread = Thread(target=self.do_crypto,
                                     kwargs={'serial_number': serial_number,
                                             'is_research': is_research},
@@ -29,7 +30,7 @@ class EmotivCrypto:
         if serial_number is None:
             raise ValueError("Serial number must not be None.")
         cipher = AES.new(crypto_key(serial_number, is_research), AES.MODE_ECB, iv)
-        while True:
+        while self.running:
             while not self.encrypted_queue.empty():
                 task = self.encrypted_queue.get()
                 if len(task):

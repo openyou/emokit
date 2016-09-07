@@ -93,11 +93,12 @@ class Emotiv(object):
                 header_row.append(key + " Value")
                 header_row.append(key + " Quality")
             self.writer.write(header_row)
-
+        self.crypto = None
         if self.read_encrypted:
             self.crypto = EmotivCrypto(self.serial_number, self.is_research)
-            self.thread = Thread(target=self.run, kwargs={'reader': self.reader, 'crypto': self.crypto})
-            self.thread.start()
+        self.thread = Thread(target=self.run, kwargs={'reader': self.reader, 'crypto': self.crypto,
+                                                      'running': self.running})
+        self.thread.start()
 
     def __enter__(self):
         return self
@@ -105,26 +106,34 @@ class Emotiv(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if traceback:
             self.log(traceback)
-        self.reader.running = False
-        self.crypto.running = False
+        self.quit()
 
     def log(self, message):
         if self.display_output and self.verbose:
             print("%s" % message)
 
-    def run(self, reader=None, crypto=None):
+    def run(self, reader=None, crypto=None, running=False):
         """Do not call explicitly, called upon initialization of class"""
         dirty = True
-        while self.running:
+        while running:
             if not reader.data.empty():
-                raw_data = reader.data.get()
+                try:
+                    raw_data = reader.data.get()
+                except KeyboardInterrupt:
+                    self.quit()
                 if self.write and self.write_encrypted and self.input_source == 'emotiv':
                     # Due to some encoding problem to save encrypted data we must first convert it to binary.
-                    self.writer.write(map(bin, bytearray(raw_data)))
+
+                    if sys.version_info >= (3, 0):
+                        self.writer.write(map(bin, bytearray(raw_data, encoding='latin-1')))
+                    else:
+                        self.writer.write(map(bin, bytearray(raw_data)))
                 self.packets_received += 1
                 if not self.read_encrypted:
                     if not self.read_values:
                         new_packet = EmotivPacket(raw_data)
+                        if new_packet.battery is not None:
+                            self.battery = new_packet.battery
                         self.packets.put_nowait(new_packet)
                         dirty = True
                         self.packets_processed += 1
@@ -136,24 +145,32 @@ class Emotiv(object):
                         if len(raw_data) != 32:
                             self.reader.running = False
                             self.crypto.running = False
+                            self.running = False
                             raise ValueError("Reached end of data or corrupted data.")
                         # Decode binary data stored in file.
-                        raw_data = [int(item.decode(), 2) for item in raw_data]
+
+                        if sys.version_info >= (3, 0):
+                            raw_data = [int(bytes(item, encoding='latin-1').decode(), 2) for item in raw_data]
+                        else:
+                            raw_data = [int(item.decode(), 2) for item in raw_data]
                         raw_data = ''.join(map(chr, raw_data[:]))
                     crypto.encrypted_queue.put_nowait(raw_data)
-            if not crypto.decrypted_queue.empty():
-                decrypted_packet_data = crypto.decrypted_queue.get()
-                if self.write and not self.write_encrypted and not self.write_values and self.input_source == 'emotiv':
-                    self.writer.write(decrypted_packet_data)
-                self.packets_processed += 1
-                new_packet = EmotivPacket(decrypted_packet_data)
-                self.packets.put_nowait(new_packet)
-                if self.write and self.write_values:
-                    data_to_write = []
-                    for key in self.sensors.keys():
-                        data_to_write.extend([new_packet.sensors[key]['value'], new_packet.sensors[key]['quality']])
-                    self.writer.write(data_to_write)
-                dirty = True
+            if self.crypto is not None:
+                if not crypto.decrypted_queue.empty():
+                    decrypted_packet_data = crypto.decrypted_queue.get()
+                    if self.write and not self.write_encrypted and not self.write_values and self.input_source == 'emotiv':
+                        self.writer.write(decrypted_packet_data)
+                    self.packets_processed += 1
+                    new_packet = EmotivPacket(decrypted_packet_data)
+                    if new_packet.battery is not None:
+                        self.battery = new_packet.battery
+                    self.packets.put_nowait(new_packet)
+                    if self.write and self.write_values:
+                        data_to_write = []
+                        for key in self.sensors.keys():
+                            data_to_write.extend([new_packet.sensors[key]['value'], new_packet.sensors[key]['quality']])
+                        self.writer.write(data_to_write)
+                    dirty = True
             if self.display_output:
                 if dirty:
                     if system_platform == "Windows":
@@ -167,10 +184,10 @@ class Emotiv(object):
                                      self.sensors[k[1]]['quality']) for k in enumerate(self.sensors)))
                     print("Battery: %i" % self.battery)
                     dirty = False
-                # print("Packets: %s Reader: %s Encrypted: %s Decrypted: %s" % (str(self.packets.qsize()),
-                #                                                               str(self.reader.data.qsize()),
-                #                                                               str(self.crypto.encrypted_queue.qsize()),
-                #                                                               str(self.crypto.decrypted_queue.qsize())))
+            if not self.reader.running:
+                if self.crypto is not None:
+                    self.crypto.running = False
+                self.running = False
 
     def dequeue(self):
         """
@@ -179,13 +196,17 @@ class Emotiv(object):
         try:
             if not self.packets.empty():
                 return self.packets.get()
-        except Exception as ex:
-            print("Emotiv DequeueError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2], " : ", ex)
+        except KeyboardInterrupt:
+            self.quit()
         return None
+
+    def quit(self):
+        if self.reader is not None:
+            self.reader.running = False
+        if self.crypto is not None:
+            self.crypto.running = False
+        self.running = False
+        os._exit(1)
 
 if __name__ == "__main__":
     a = Emotiv()
-    try:
-        a.setup()
-    except KeyboardInterrupt:
-        a.close()

@@ -186,7 +186,10 @@ class EmotivWriter(object):
 
     def __init__(self, file_name, mode="csv", **kwargs):
         self.mode = mode
-        self.file = open(file_name, 'wb')
+        if sys.version_info >= (3, 0):
+            self.file = open(file_name, 'w', newline='')
+        else:
+            self.file = open(file_name, 'wb')
         if self.mode == "csv":
             self.writer = csv.writer(self.file, quoting=csv.QUOTE_ALL)
         else:
@@ -194,7 +197,11 @@ class EmotivWriter(object):
 
     def write_csv(self, data):
         if sys.version_info >= (3, 0):
-            data = bytes(data, encoding='latin-1')
+            if type(data) == str:
+                data = bytes(data, encoding='latin-1')
+        else:
+            if type(data) == str:
+                data = [ord(char) for char in data]
         self.writer.writerow(data)
 
     def write(self, data):

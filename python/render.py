@@ -13,7 +13,6 @@ from pygame import FULLSCREEN
 
 if platform.system() == "Windows":
     pass
-import gevent
 from emokit.emotiv import Emotiv
 
 quality_color = {
@@ -110,10 +109,7 @@ def main():
         graphers.append(Grapher(screen, name, len(graphers)))
     fullscreen = False
     with Emotiv(display_output=False) as emotiv:
-        gevent.spawn(emotiv.setup)
-        print("running")
         while emotiv.running:
-            print("Still running")
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     emotiv.close()
@@ -162,7 +158,6 @@ def main():
                 pygame.draw.rect(screen, (255, 255, 255), (cursor_x - 5, cursor_y - 5, 10, 10), 0)
                 pygame.display.flip()
                 updated = False
-            gevent.sleep(0.001)
 
 
 if __name__ == "__main__":

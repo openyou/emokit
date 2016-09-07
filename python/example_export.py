@@ -1,6 +1,6 @@
 # This is an example of popping a packet from the Emotiv class's packet queue
-# and printing the gyro x and y values to the console. 
 # Additionally, exports the data to a CSV file.
+# You don't actually need to dequeue packets, although after some time allocation lag may occur if you don't.
 
 
 import platform

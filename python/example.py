@@ -11,4 +11,5 @@ if __name__ == "__main__":
         while True:
             packet = headset.dequeue()
             if packet is not None:
-                print("%s %s" % (packet.sensors['X']['value'], packet.sensors['Y']['value']))
+                print("Gyro - X:{x_position} Y:{y_position}".format(x_position=packet.sensors['X']['value'],
+                                                                    y_position=packet.sensors['Y']['value']))

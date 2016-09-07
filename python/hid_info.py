@@ -26,9 +26,11 @@ def print_hid_enumerate(platform):
     devices = get_hid_devices[platform]()
     for device in devices:
         print("-------------------------")
-        for key, value in device.__dict__.iteritems():
+        for key, value in device.__dict__.items():
             print("%s, %s" % (key, str(value)))
-    print("Please include this information if you open a new issue.")
+    print("************************************************************")
+    print("! Please include this information if you open a new issue. !")
+    print("************************************************************")
 
 
 get_hid_devices = {

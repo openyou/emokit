@@ -18,10 +18,16 @@ class EmotivPacket(object):
 
         :param data - Values decrypted to be processed
         """
-        self.raw_data = data
         if sys.version_info >= (3, 0):
+            self.raw_data = [int(bit) for bit in data]
+            data = self.raw_data
             self.counter = data[0]
         else:
+            if type(data[0]) == str and len(data[0]) > 1:
+                self.raw_data = [chr(int(bit)) for bit in data]
+                data = self.raw_data
+            else:
+                self.raw_data = data
             self.counter = ord(data[0])
         self.battery = None
         if self.counter > 127:

@@ -6,7 +6,6 @@ from ctypes import cdll
 
 if platform.system() == "Windows":
     pass
-import gevent
 
 from emokit.emotiv import Emotiv
 
@@ -67,12 +66,9 @@ def main():
         cursor_y = max(0, min(cursor_y, height))
         if updated:
             screen.move_mouse(cursor_x, cursor_y)
-        gevent.sleep(0)
 
 
 headset = None
 if __name__ == "__main__":
     with Emotiv() as headset:
-        gevent.spawn(headset.setup)
-        gevent.sleep(0.001)
         main()
