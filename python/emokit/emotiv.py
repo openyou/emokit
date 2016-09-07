@@ -208,5 +208,6 @@ class Emotiv(object):
         self.running = False
         os._exit(1)
 
+
 if __name__ == "__main__":
     a = Emotiv()

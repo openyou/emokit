@@ -17,4 +17,3 @@ __author__ = "Cody Brocious / Kyle Machulis"
 __license__ = "Public Domain, See LICENSE"
 __copyright__ = "Copyright (c) 2010-2012, Cody Brocious, Kyle Machulis/Nonpolynomial Labs," \
                 " Copyright 2013 Bryan Bishop, Copyright 2012-2016 Bill Schumacher/Cerebral Power"
-
