@@ -39,7 +39,6 @@ class Emotiv(object):
                    (must be a csv, exported from emokit or following our format)
         :param sys_platform - Operating system, to avoid global statement
 
-        Obviously, the read_encrypted needs to match the write_encrypted value used to capture the data.
         Expect performance to suffer when writing data to a csv.
         """
         self.running = True
