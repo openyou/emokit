@@ -64,6 +64,8 @@ Linux / OS X
 * hidapi - http://www.signal11.us/oss/hidapi/
 * pyhidapi - https://github.com/NF6X/pyhidapi
 
+Running tests
+* pytest - http://doc.pytest.org/en/latest/
 
 You should be able to install emokit and the required python libraries using:  
 
@@ -91,7 +93,8 @@ Python library
           while True:
             packet = headset.dequeue()
             if packet is not None:
-              print('%s %s' % (str(packet.sensors['X']['value']), str(packet.sensors['Y']['value'])))
+                print("Gyro - X:{x_position} Y:{y_position}".format(x_position=packet.sensors['X']['value'],
+                                                                    y_position=packet.sensors['Y']['value']))
 
 
 
@@ -99,6 +102,17 @@ Bindings
 ========
 
 Go: https://github.com/fractalcat/emogo
+
+
+Running Unit Tests
+==================
+
+From the python directory in your terminal type:
+
+  Code:  
+
+    python -m pytest tests/
+      
 
 Platform Specifics Issues
 =========================

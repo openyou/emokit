@@ -23,6 +23,9 @@ class Emotiv(object):
     Receives, decrypts and stores packets received from Emotiv Headsets and other sources.
     """
 
+    # TODO: Add a calibration mechanism, get a "noise average" per sensor or even a "noise pattern" to filter
+    #       sensor values when processing packets received. Ideally this would be done not on someone's head.
+    # TODO: Add filters for facial expressions, muscle contractions.
     def __init__(self, display_output=False, serial_number=None, is_research=False, write=False,
                  write_encrypted=False, write_values=True, input_source="emotiv",
                  sys_platform=system_platform, verbose=False):
@@ -40,64 +43,129 @@ class Emotiv(object):
         :param sys_platform - Operating system, to avoid global statement
 
         Expect performance to suffer when writing data to a csv.
+
         """
-        self.running = True
+        self.running = False
+        # Queue with EmotivPackets that have been received.
         self.packets = Queue()
+        # Battery percent, as int.
         self.battery = 0
+        # Display sensor values in console.
         self.display_output = display_output
+        # Print details of operation in console, exceptions, etc.
         self.verbose = verbose
+        # Should be True for research edition EPOCs and newer EPOC+s, apparently.
         self.is_research = is_research
         self.sensors = sensors_mapping
+        # The EPOCs serial number.
         self.serial_number = serial_number
+        # Only really applies to quality value calculation, probably needs some updating.
         self.old_model = False
+        # Write data to disk.
         self.write = write
+        # Assume we are going to read encrypted data from the headset.
         self.read_encrypted = True
+        # Not used at the moment.
         self.read_values = False
+        # Write the data received as is.
         self.write_encrypted = False
+        # Write the data received after decrypting it.
+        self.write_decrypted = False
+        # Write values and quality values of each sensor.
         self.write_values = write_values
+        # The current platform.
         self.platform = sys_platform
+        # The number of times data was received.
         self.packets_received = 0
+        # The number of times data was decrypted or made into EmotivPackets.
         self.packets_processed = 0
+        # The source of the emotiv data.
         self.input_source = input_source
+        # If the input source is not an emotiv headset, it is a file.
         if self.input_source != "emotiv":
+            # If the name of the input source starts with emotiv_encrypted, get the serial number.
             if self.input_source.startswith('emotiv_encrypted'):
+                # Split the name of the input by _'s and retrieve the serial number, typically located after
+                # emotiv_encrypted_data_ so index 3.
                 self.serial_number = self.input_source.split('_')[3]
             else:
+                # Otherwise, check if it is values only and set read_encrypted to False.
                 self.read_encrypted = False
                 if self.input_source.startswith('emotiv_values'):
                     self.read_values = True
             self.reader = EmotivReader(file_name=self.input_source, mode="csv")
+            # Make sure the reader still has the serial number set, since we won't be obtaining it from the headset.
             self.reader.serial_number = self.serial_number
         else:
+            # Initialize an EmotivReader with default values, it will try to locate a headset.
             self.reader = EmotivReader()
             if self.reader.serial_number is not None:
+                # If EmotivReader found a serial number automatically, change local serial number to the reader serial.
                 self.serial_number = self.reader.serial_number
-            if self.write:
-                if not self.write_values:
-                    self.write_encrypted = write_encrypted
-                    if self.write_encrypted:
-                        self.writer = EmotivWriter('emotiv_encrypted_data_%s_%s.csv' % (self.reader.serial_number,
-                                                                                        str(datetime.now())),
-                                                   mode="csv")
-                    else:
-                        self.writer = EmotivWriter('emotiv_data_%s.csv' % str(datetime.now()), mode="csv")
-            else:
-                self.writer = None
 
-        if self.write and self.write_values:
-            self.writer = EmotivWriter('emotiv_values_%s.csv' % str(datetime.now()), mode="csv")
-            self.write_encrypted = False
+        # Setup output writers, multiple types can be output now at once.
+        if self.write_encrypted:
+            # Only write encrypted if we are reading encrypted.
+            if self.read_encrypted:
+                self.encrypted_writer = EmotivWriter('emotiv_encrypted_data_%s_%s.csv' % (self.reader.serial_number,
+                                                                                          str(datetime.now())),
+                                                     mode="csv")
+        else:
+            self.encrypted_writer = None
+
+        # Setup decrypted data writer.
+        if self.write_decrypted:
+            # If we are reading values we do not have the decrypted data, rather than reconstructing it do not write it.
+            if not self.read_values:
+                self.decrypted_writer = EmotivWriter('emotiv_data_%s.csv' % str(datetime.now()), mode="csv")
+        else:
+            self.decrypted_writer = None
+
+        # Setup sensor value writer.
+        if self.write_values:
+            self.value_writer = EmotivWriter('emotiv_values_%s.csv' % str(datetime.now()), mode="csv")
+            # Make the first row in the file the header with the sensor name
             header_row = []
             for key in self.sensors.keys():
                 header_row.append(key + " Value")
                 header_row.append(key + " Quality")
-            self.writer.write(header_row)
-        self.crypto = None
+            self.value_writer.write(header_row)
+        else:
+            self.value_writer = None
+
+        # Setup the crypto thread, if we are reading from an encrypted data source.
         if self.read_encrypted:
             self.crypto = EmotivCrypto(self.serial_number, self.is_research)
-        self.thread = Thread(target=self.run, kwargs={'reader': self.reader, 'crypto': self.crypto,
-                                                      'running': self.running})
+        else:
+            self.crypto = None
+
+        # Setup emokit loop thread. This thread coordinates the work done from the reader to be decrypted and queued
+        # into EmotivPackets.
+        self.thread = Thread(target=self.run, kwargs={'reader': self.reader, 'crypto': self.crypto})
+        self.thread.setDaemon(True)
+        self._stop_signal = False
+        self.start()
+
+    def start(self):
+        """
+        Starts emotiv, called upon initialization.
+        """
+        self.running = True
+        if self.crypto is not None:
+            self.crypto.start()
+        self.reader.start()
         self.thread.start()
+
+    def stop(self):
+        """
+        Stops emotiv
+        :return:
+        """
+        self.reader.stop()
+        if self.crypto is not None:
+            self.crypto.stop()
+        self._stop_signal = True
+        self.thread.join(65)
 
     def __enter__(self):
         return self
@@ -108,13 +176,22 @@ class Emotiv(object):
         self.quit()
 
     def log(self, message):
+        """
+        Logging function, only prints if verbose is True.
+        :param message: Message to log/print
+        """
         if self.display_output and self.verbose:
             print("%s" % message)
 
-    def run(self, reader=None, crypto=None, running=False):
-        """Do not call explicitly, called upon initialization of class"""
+    def run(self, reader=None, crypto=None):
+        """ Do not call explicitly, called upon initialization of class or self.start()
+            The main emokit loop.
+        :param reader: EmotivReader class
+        :param crypto: EmotivCrypto class
+        """
         dirty = True
-        while running:
+
+        while self.running:
             if not reader.data.empty():
                 try:
                     raw_data = reader.data.get()
@@ -122,11 +199,10 @@ class Emotiv(object):
                     self.quit()
                 if self.write and self.write_encrypted and self.input_source == 'emotiv':
                     # Due to some encoding problem to save encrypted data we must first convert it to binary.
-
                     if sys.version_info >= (3, 0):
-                        self.writer.write(map(bin, bytearray(raw_data, encoding='latin-1')))
+                        self.encrypted_writer.write(map(bin, bytearray(raw_data, encoding='latin-1')))
                     else:
-                        self.writer.write(map(bin, bytearray(raw_data)))
+                        self.encrypted_writer.write(map(bin, bytearray(raw_data)))
                 self.packets_received += 1
                 if not self.read_encrypted:
                     if not self.read_values:
@@ -143,7 +219,7 @@ class Emotiv(object):
                     if self.input_source != 'emotiv' and self.read_encrypted:
                         if len(raw_data) != 32:
                             self.reader.running = False
-                            self.crypto.running = False
+                            self.crypto.stop()
                             self.running = False
                             raise ValueError("Reached end of data or corrupted data.")
                         # Decode binary data stored in file.
@@ -153,23 +229,33 @@ class Emotiv(object):
                         else:
                             raw_data = [int(item.decode(), 2) for item in raw_data]
                         raw_data = ''.join(map(chr, raw_data[:]))
-                    crypto.encrypted_queue.put_nowait(raw_data)
+                    crypto.add_task(raw_data)
             if self.crypto is not None:
-                if not crypto.decrypted_queue.empty():
-                    decrypted_packet_data = crypto.decrypted_queue.get()
-                    if self.write and not self.write_encrypted and not self.write_values and self.input_source == 'emotiv':
-                        self.writer.write(decrypted_packet_data)
+                if crypto.data_ready():
+                    decrypted_packet_data = crypto.get_data()
+                    if self.write_decrypted:
+                        if self.decrypted_writer is not None:
+                            self.decrypted_writer.write(decrypted_packet_data)
                     self.packets_processed += 1
                     new_packet = EmotivPacket(decrypted_packet_data)
                     if new_packet.battery is not None:
                         self.battery = new_packet.battery
                     self.packets.put_nowait(new_packet)
-                    if self.write and self.write_values:
+                    if self.write_values:
                         data_to_write = []
                         for key in self.sensors.keys():
                             data_to_write.extend([new_packet.sensors[key]['value'], new_packet.sensors[key]['quality']])
-                        self.writer.write(data_to_write)
+                        if self.value_writer is not None:
+                            self.value_writer.write(data_to_write)
                     dirty = True
+            if self._stop_signal:
+                if not self.reader.running:
+                    if self.crypto is not None:
+                        if not self.crypto.running and not self.crypto.data_ready():
+                            self.running = False
+                    else:
+                        self.running = False
+
             if self.display_output:
                 if dirty:
                     if system_platform == "Windows":
@@ -184,9 +270,10 @@ class Emotiv(object):
                     print("Battery: %i" % self.battery)
                     dirty = False
             if not self.reader.running:
+                # We are done reading apparently, send stop signal to self and crypto.
                 if self.crypto is not None:
-                    self.crypto.running = False
-                self.running = False
+                    self.crypto.stop()
+                self._stop_signal = True
 
     def dequeue(self):
         """
@@ -199,12 +286,20 @@ class Emotiv(object):
             self.quit()
         return None
 
+    def clear_queue(self):
+        self.packets = Queue()
+
     def quit(self):
-        if self.reader is not None:
-            self.reader.running = False
-        if self.crypto is not None:
-            self.crypto.running = False
-        self.running = False
+        """
+        A little more forceful stop.
+        """
+        self.stop()
+        os._exit(1)
+
+    def force_quit(self):
+        """
+        Kill emokit. Might leave files and other objects open or locked.
+        """
         os._exit(1)
 
 

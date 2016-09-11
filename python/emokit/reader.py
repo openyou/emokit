@@ -56,27 +56,46 @@ class EmotivReader(object):
             self.reader = None
         self.data = Queue()
         self.setup_platform[self.platform]()
-        self.running = True
+        self.running = False
         if self.reader is not None:
             self.thread = Thread(target=self.run, kwargs={'source': self.reader, 'running': self.running})
         else:
             self.thread = Thread(target=self.run, kwargs={'source': self.hid, 'running': self.running})
+        self.thread.setDaemon(True)
+        self._stop_signal = False
+
+    def start(self):
+        """
+        Starts the reader thread.
+        """
+        self.running = True
         self.thread.start()
 
-    def run(self, source=None, running=False):
+    def stop(self):
+        """
+        Stops the reader thread.
+        """
+        self._stop_signal = True
+        self.thread.join(30)
+
+    def run(self, source=None):
         """Do not call explicitly, called upon initialization of class"""
         if self.platform == 'Windows':
             source.set_raw_data_handler(self.data_handler)
-        while running:
+        while self.running:
             if not self.platform == 'Windows':
                 try:
-                    data = read_platform[self.platform](source)
-                    self.data.put_nowait(data)
+                    if not self._stop_signal:
+                        data = read_platform[self.platform](source)
+                        self.data.put_nowait(data)
                 except Exception as ex:
                     pass
-                    # Catching StopIteration for some reason stops at the second record, even though there are more results.
+                    # Catching StopIteration for some reason stops at the second record,
+                    #  even though there are more results.
             else:
                 time.sleep(0.0005)
+            if self._stop_signal:
+                self.running = False
         if self.file is not None:
             self.file.close()
         else:
@@ -88,15 +107,15 @@ class EmotivReader(object):
         Receives packets from headset for Windows. Sends them to a Queue to be processed
         by the crypto thread.
         """
-        data = validate_data(data)
-        if data is not None:
-            self.data.put_nowait(data)
-            return True
+        if not self._stop_signal:
+            data = validate_data(data)
+            if data is not None:
+                self.data.put_nowait(data)
 
     def __exit__(self, exc_type, exc_value, traceback):
+        self.stop()
         if self.reader:
             self.reader.close()
-        self.running = False
         self.file.close()
         if 'eeg_raw' in self.platform and self.hid is not None:
             self.hid.close()
@@ -154,37 +173,46 @@ class EmotivReader(object):
 
 
 def read_csv(source):
+    """
+    Iterate over data from CSV file.
+    :param source: CSV reader
+    :return: Next row in CSV file.
+    """
     if sys.version_info >= (3, 0):
         return source.__next__()
     else:
         return source.next()
 
 
-def read_reader_encrypted(source):
+def read_reader(source):
     """
     Read from EmotivReader only. Return data for decryption.
-    """
-    data = read_csv(source)
-    return data
-
-
-def read_reader_decrypted(source):
-    """
-    Read from EmotivReader only.
-    :return:
+    :param source: Emotiv data reader
+    :return: Next row in Emotiv data file.
     """
     data = read_csv(source)
     return data
 
 
 def read_non_windows(source):
+    """
+    Read from Emotiv hid device.
+    :param source: Emotiv hid device
+    :return: Next encrypted packet from Emotiv device.
+    """
     # Doesn't seem to matter how big we make the buffer 32 returned every time, 33 for other platforms
-    data = validate_data(hidapi.hid_read(source, 34))
+    # Set timeout for 1 second, to help with thread shutdown.
+    data = validate_data(hidapi.hid_read_timeout(source, 34, 1000))
     if data is not None:
         return ''.join(map(chr, data[1:]))
 
 
 def read_os_decrypted_non_windows(source):
+    """
+    Read from Emotiv hid device.
+    :param source: Emotiv hid device
+    :return: Next packet from Emotiv device.
+    """
     data = source.read(32)
     if data != "":
         return data
@@ -195,6 +223,6 @@ read_platform = {
     'Linux': read_non_windows,
     'Darwin raw_eeg': read_os_decrypted_non_windows,
     'Linux raw_eeg': read_os_decrypted_non_windows,
-    'Reader': read_reader_decrypted,
-    'Reader encrypted': read_reader_encrypted
+    'Reader': read_reader,
+    'Reader encrypted': read_reader
 }
