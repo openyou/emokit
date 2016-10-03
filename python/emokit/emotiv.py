@@ -108,7 +108,8 @@ class Emotiv(object):
             # Only write encrypted if we are reading encrypted.
             if self.read_encrypted:
                 self.encrypted_writer = EmotivWriter('emotiv_encrypted_data_%s_%s.csv' % (self.reader.serial_number,
-                                                                                          str(datetime.now())),
+                                                                                          str(datetime.now()).
+                                                                                          replace(":", "-")),
                                                      mode="csv")
         else:
             self.encrypted_writer = None
@@ -117,13 +118,14 @@ class Emotiv(object):
         if self.write_decrypted:
             # If we are reading values we do not have the decrypted data, rather than reconstructing it do not write it.
             if not self.read_values:
-                self.decrypted_writer = EmotivWriter('emotiv_data_%s.csv' % str(datetime.now()), mode="csv")
+                self.decrypted_writer = EmotivWriter('emotiv_data_%s.csv' % str(datetime.now()).replace(":", "-"),
+                                                     mode="csv")
         else:
             self.decrypted_writer = None
 
         # Setup sensor value writer.
         if self.write_values:
-            self.value_writer = EmotivWriter('emotiv_values_%s.csv' % str(datetime.now()), mode="csv")
+            self.value_writer = EmotivWriter('emotiv_values_%s.csv' % str(datetime.now()).replace(":", "-"), mode="csv")
             # Make the first row in the file the header with the sensor name
             header_row = []
             for key in self.sensors.keys():

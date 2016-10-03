@@ -58,9 +58,9 @@ class EmotivReader(object):
         self.setup_platform[self.platform]()
         self.running = False
         if self.reader is not None:
-            self.thread = Thread(target=self.run, kwargs={'source': self.reader, 'running': self.running})
+            self.thread = Thread(target=self.run, kwargs={'source': self.reader})
         else:
-            self.thread = Thread(target=self.run, kwargs={'source': self.hid, 'running': self.running})
+            self.thread = Thread(target=self.run, kwargs={'source': self.hid})
         self.thread.setDaemon(True)
         self._stop_signal = False
 
@@ -82,6 +82,7 @@ class EmotivReader(object):
         """Do not call explicitly, called upon initialization of class"""
         if self.platform == 'Windows':
             source.set_raw_data_handler(self.data_handler)
+            source.open()
         while self.running:
             if not self.platform == 'Windows':
                 try:
@@ -110,7 +111,7 @@ class EmotivReader(object):
         if not self._stop_signal:
             data = validate_data(data)
             if data is not None:
-                self.data.put_nowait(data)
+                self.data.put_nowait(''.join(map(chr, data[1:])))
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.stop()
