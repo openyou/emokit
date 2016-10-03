@@ -4,14 +4,15 @@ try:
     import psyco
     psyco.full()
 except ImportError:
-    print 'No psyco. Expect poor performance. Not really...'
+    print('No psyco. Expect poor performance. Not really...')
+import platform
+import sys
 
 import pygame
-import platform
 from pygame import FULLSCREEN
+
 if platform.system() == "Windows":
-    import socket  # Needed to prevent gevent crashing on Windows. (surfly / gevent issue #459)
-import gevent
+    pass
 from emokit.emotiv import Emotiv
 
 quality_color = {
@@ -107,62 +108,61 @@ def main():
     for name in 'AF3 F7 F3 FC5 T7 P7 O1 O2 P8 T8 FC6 F4 F8 AF4'.split(' '):
         graphers.append(Grapher(screen, name, len(graphers)))
     fullscreen = False
-    emotiv = Emotiv(display_output=True)
-    gevent.spawn(emotiv.setup)
-    gevent.sleep(0)
-    while emotiv.running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                emotiv.close()
-                return
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+    with Emotiv(display_output=False) as emotiv:
+        while emotiv.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
                     emotiv.close()
                     return
-                elif event.key == pygame.K_f:
-                    if fullscreen:
-                        screen = pygame.display.set_mode((800, 600))
-                        fullscreen = False
-                    else:
-                        screen = pygame.display.set_mode((800, 600), FULLSCREEN, 16)
-                        fullscreen = True
-                elif event.key == pygame.K_r:
-                    if not recording:
-                        record_packets = []
-                        recording = True
-                    else:
-                        recording = False
-                        recordings.append(list(record_packets))
-                        record_packets = None
-        packets_in_queue = 0
-        try:
-            while packets_in_queue < 8:
-                packet = emotiv.dequeue()
-                if abs(packet.gyro_x) > 1:
-                    cursor_x = max(0, min(cursor_x, 800))
-                    cursor_x -= packet.gyro_x
-                if abs(packet.gyro_y) > 1:
-                    cursor_y += packet.gyro_y
-                    cursor_y = max(0, min(cursor_y, 600))
-                map(lambda x: x.update(packet), graphers)
-                if recording:
-                    record_packets.append(packet)
-                updated = True
-                packets_in_queue += 1
-        except Exception, ex:
-            print ex
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        emotiv.close()
+                        return
+                    elif event.key == pygame.K_f:
+                        if fullscreen:
+                            screen = pygame.display.set_mode((800, 600))
+                            fullscreen = False
+                        else:
+                            screen = pygame.display.set_mode((800, 600), FULLSCREEN, 16)
+                            fullscreen = True
+                    elif event.key == pygame.K_r:
+                        if not recording:
+                            record_packets = []
+                            recording = True
+                        else:
+                            recording = False
+                            recordings.append(list(record_packets))
+                            record_packets = None
+            packets_in_queue = 0
+            try:
+                while packets_in_queue < 8:
+                    packet = emotiv.dequeue()
+                    if abs(packet.gyro_x) > 1:
+                        cursor_x = max(0, min(cursor_x, 800))
+                        cursor_x -= packet.gyro_x
+                    if abs(packet.gyro_y) > 1:
+                        cursor_y += packet.gyro_y
+                        cursor_y = max(0, min(cursor_y, 600))
+                    map(lambda x: x.update(packet), graphers)
+                    if recording:
+                        record_packets.append(packet)
+                    updated = True
+                    packets_in_queue += 1
+            except Exception as ex:
+                print("EmotivRender DequeuePlotError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2],
+                      " : ", ex)
 
-        if updated:
-            screen.fill((75, 75, 75))
-            map(lambda x: x.draw(), graphers)
-            pygame.draw.rect(screen, (255, 255, 255), (cursor_x - 5, cursor_y - 5, 10, 10), 0)
-            pygame.display.flip()
-            updated = False
-        gevent.sleep(0)
+            if updated:
+                screen.fill((75, 75, 75))
+                map(lambda x: x.draw(), graphers)
+                pygame.draw.rect(screen, (255, 255, 255), (cursor_x - 5, cursor_y - 5, 10, 10), 0)
+                pygame.display.flip()
+                updated = False
 
-try:
-    gheight = 580 / 14
-    main()
 
-except Exception, e:
-    print e
+if __name__ == "__main__":
+    try:
+        gheight = 580 // 14
+        main()
+    except Exception as ex:
+        print("EmotivRender ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2], " : ", ex)

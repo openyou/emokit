@@ -53,8 +53,9 @@ Python
 ------
 
 * pycrypto - https://www.dlitz.net/software/pycrypto/
-* gevent - http://gevent.org
 
+2.x
+* future - pip install future
   
 Windows
 * pywinusb - https://pypi.python.org/pypi/pywinusb/
@@ -63,6 +64,8 @@ Linux / OS X
 * hidapi - http://www.signal11.us/oss/hidapi/
 * pyhidapi - https://github.com/NF6X/pyhidapi
 
+Running tests
+* pytest - http://doc.pytest.org/en/latest/
 
 You should be able to install emokit and the required python libraries using:  
 
@@ -84,30 +87,32 @@ Python library
   Code:
   
     import emotiv
-    import platform
-    if platform.system() == "Windows":
-        import socket
-    import gevent
 
     if __name__ == "__main__":
-      headset = emotiv.Emotiv()    
-      gevent.spawn(headset.setup)
-      gevent.sleep(0)
-      try:
-        while True:
-          packet = headset.dequeue()
-          print packet.gyro_x, packet.gyro_y
-          gevent.sleep(0)
-      except KeyboardInterrupt:
-        headset.close()
-      finally:
-        headset.close()
+      with emotiv.Emotiv() as headset:
+          while True:
+            packet = headset.dequeue()
+            if packet is not None:
+                print("Gyro - X:{x_position} Y:{y_position}".format(x_position=packet.sensors['X']['value'],
+                                                                    y_position=packet.sensors['Y']['value']))
+
 
 
 Bindings
 ========
 
 Go: https://github.com/fractalcat/emogo
+
+
+Running Unit Tests
+==================
+
+From the python directory in your terminal type:
+
+  Code:  
+
+    python -m pytest tests/
+      
 
 Platform Specifics Issues
 =========================
@@ -164,20 +169,22 @@ Suites? Saddest hotel EVER.
  - *What should my output look like?*
  
  Idling, not on someone's head it should look something like this:  
- Y Reading: 0 Quality: 0  
- F3 Reading: 259 Quality: 0  
- F4 Reading: 576 Quality: 0  
- P7 Reading: 258 Quality: 0  
- FC6 Reading: 878 Quality: 0  
- F7 Reading: 118 Quality: 0  
- F8 Reading: 1060 Quality: 0  
- T7 Reading: 252 Quality: 0  
- P8 Reading: -51 Quality: 0  
- FC5 Reading: 1112 Quality: 0  
- AF4 Reading: 481 Quality: 0  
- Unknown Reading: 30 Quality: 1  
- T8 Reading: 614 Quality: 0  
- X Reading: 0 Quality: 0  
- O2 Reading: 337 Quality: 0  
- O1 Reading: -198 Quality: 0  
- AF3 Reading: 146 Quality: 0  
+ Y Reading: 0 Quality: 0
+ F3 Reading: 316 Quality: 24
+ F4 Reading: 779 Quality: 16
+ P7 Reading: 189 Quality: 0
+ FC6 Reading: 925 Quality: 24
+ F7 Reading: 80 Quality: 0
+ F8 Reading: 1037 Quality: 8
+ T7 Reading: 345 Quality: 16
+ P8 Reading: -92 Quality: 16
+ FC5 Reading: 1113 Quality: 16
+ AF4 Reading: 476 Quality: 0
+ Unknown Reading: 82 Quality: 8
+ T8 Reading: 636 Quality: 16
+ X Reading: 1 Quality: 0
+ Z Reading: ? Quality: 0
+ O2 Reading: 216 Quality: 0
+ O1 Reading: -39 Quality: 24
+ AF3 Reading: 100 Quality: 24
+ Battery: 0

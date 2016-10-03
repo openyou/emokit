@@ -1,12 +1,11 @@
 #!/usr/bin/python
 # Example of using the gyro values to control mouse movement.
 import ctypes
+import platform
 from ctypes import cdll
 
-import platform
 if platform.system() == "Windows":
-    import socket  # Needed to prevent gevent crashing on Windows. (surfly / gevent issue #459)
-import gevent
+    pass
 
 from emokit.emotiv import Emotiv
 
@@ -53,7 +52,7 @@ def main():
     width = screen.width
     height = screen.height
 
-    cursor_x, cursor_y = width / 2, height / 2
+    cursor_x, cursor_y = width // 2, height // 2
     while True:
         updated = False
         packet = headset.dequeue()
@@ -67,17 +66,9 @@ def main():
         cursor_y = max(0, min(cursor_y, height))
         if updated:
             screen.move_mouse(cursor_x, cursor_y)
-        gevent.sleep(0)
 
 
 headset = None
 if __name__ == "__main__":
-    try:
-        headset = Emotiv()
-        gevent.spawn(headset.setup)
-        gevent.sleep(0)
+    with Emotiv() as headset:
         main()
-
-    finally:
-        if headset:
-            headset.close()
