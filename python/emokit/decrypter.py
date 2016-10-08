@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division
 
-import sys
-from threading import Thread
 import os
+import sys
+from threading import Thread, Lock
+
 from Crypto.Cipher import AES
 from emokit.util import crypto_key
 from queue import Queue
@@ -31,6 +32,7 @@ class EmotivCrypto:
         # TODO: Add functions that check variance in data received. If extreme toggle is_research and check again.
         #  If extreme again raise exception and shutdown emokit.
         self.is_research = is_research
+        self.lock = Lock()
         self.thread = Thread(target=self.run)
         self.thread.setDaemon(True)
 
@@ -42,8 +44,9 @@ class EmotivCrypto:
         """
         # Initialize AES
         cipher = self.new_cipher()
-
+        self.lock.acquire()
         while self.running:
+            self.lock.release()
             # While the encrypted queue is not empty.
             while not self._encrypted_queue.empty():
                 # Get some encrypted data off of the encrypted Queue.
@@ -67,8 +70,11 @@ class EmotivCrypto:
                             print("Emotiv CryptoError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2], " : ",
                                   ex)
             # If stop signal is received and all the pending data in the encrypted Queue is processed, stop running.
+            self.lock.acquire()
             if self._stop_signal and self._encrypted_queue.empty():
+                print("Crypto stopping.")
                 self.running = False
+        self.lock.release()
 
     def start(self):
         """
@@ -81,7 +87,9 @@ class EmotivCrypto:
         """
         Stops the crypto thread.
         """
+        self.lock.acquire()
         self._stop_signal = True
+        self.lock.release()
         self.thread.join(60)
 
     def new_cipher(self):

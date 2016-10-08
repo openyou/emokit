@@ -5,7 +5,7 @@ import os
 import platform
 import sys
 from datetime import datetime
-from threading import Thread
+from threading import Thread, Lock
 
 from emokit.decrypter import EmotivCrypto
 from emokit.reader import EmotivReader
@@ -82,6 +82,24 @@ class Emotiv(object):
         # The source of the emotiv data.
         self.input_source = input_source
         # If the input source is not an emotiv headset, it is a file.
+        self.reader = None
+        self.lock = Lock()
+        # Setup output writers, multiple types can be output now at once.
+        self.encrypted_writer = None
+        self.decrypted_writer = None
+        self.value_writer = None
+
+        self.crypto = None
+        # Setup the crypto thread, if we are reading from an encrypted data source.
+
+        # Setup emokit loop thread. This thread coordinates the work done from the reader to be decrypted and queued
+        # into EmotivPackets.
+        self.thread = Thread(target=self.run)
+        self._stop_signal = False
+        self.thread.setDaemon(True)
+        self.start()
+
+    def initialize_reader(self):
         if self.input_source != "emotiv":
             # If the name of the input source starts with emotiv_encrypted, get the serial number.
             if self.input_source.startswith('emotiv_encrypted'):
@@ -103,59 +121,39 @@ class Emotiv(object):
                 # If EmotivReader found a serial number automatically, change local serial number to the reader serial.
                 self.serial_number = self.reader.serial_number
 
-        # Setup output writers, multiple types can be output now at once.
+    def initialize_writer(self):
         if self.write_encrypted:
             # Only write encrypted if we are reading encrypted.
             if self.read_encrypted:
-                self.encrypted_writer = EmotivWriter('emotiv_encrypted_data_%s_%s.csv' % (self.reader.serial_number,
-                                                                                          str(datetime.now()).
-                                                                                          replace(":", "-")),
-                                                     mode="csv")
-        else:
-            self.encrypted_writer = None
+                self.encrypted_writer = EmotivWriter('emotiv_encrypted_data_%s_%s.csv' % (
+                    self.reader.serial_number, str(datetime.now()).replace(':', '-')), mode="csv")
 
         # Setup decrypted data writer.
         if self.write_decrypted:
             # If we are reading values we do not have the decrypted data, rather than reconstructing it do not write it.
             if not self.read_values:
-                self.decrypted_writer = EmotivWriter('emotiv_data_%s.csv' % str(datetime.now()).replace(":", "-"),
+                self.decrypted_writer = EmotivWriter('emotiv_data_%s.csv' % str(datetime.now()).replace(':', '-'),
                                                      mode="csv")
-        else:
-            self.decrypted_writer = None
-
         # Setup sensor value writer.
         if self.write_values:
-            self.value_writer = EmotivWriter('emotiv_values_%s.csv' % str(datetime.now()).replace(":", "-"), mode="csv")
+            self.value_writer = EmotivWriter('emotiv_values_%s.csv' % str(datetime.now()).replace(':', '-'),
+                                             mode="csv")
             # Make the first row in the file the header with the sensor name
             header_row = []
             for key in self.sensors.keys():
                 header_row.append(key + " Value")
                 header_row.append(key + " Quality")
             self.value_writer.write(header_row)
-        else:
-            self.value_writer = None
 
-        # Setup the crypto thread, if we are reading from an encrypted data source.
+    def initialize_crypto(self):
         if self.read_encrypted:
             self.crypto = EmotivCrypto(self.serial_number, self.is_research)
-        else:
-            self.crypto = None
-
-        # Setup emokit loop thread. This thread coordinates the work done from the reader to be decrypted and queued
-        # into EmotivPackets.
-        self.thread = Thread(target=self.run, kwargs={'reader': self.reader, 'crypto': self.crypto})
-        self.thread.setDaemon(True)
-        self._stop_signal = False
-        self.start()
 
     def start(self):
         """
         Starts emotiv, called upon initialization.
         """
         self.running = True
-        if self.crypto is not None:
-            self.crypto.start()
-        self.reader.start()
         self.thread.start()
 
     def stop(self):
@@ -167,7 +165,6 @@ class Emotiv(object):
         if self.crypto is not None:
             self.crypto.stop()
         self._stop_signal = True
-        self.thread.join(65)
 
     def __enter__(self):
         return self
@@ -175,7 +172,7 @@ class Emotiv(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if traceback:
             self.log(traceback)
-        self.quit()
+        self.stop()
 
     def log(self, message):
         """
@@ -185,18 +182,32 @@ class Emotiv(object):
         if self.display_output and self.verbose:
             print("%s" % message)
 
-    def run(self, reader=None, crypto=None):
+    def run(self):
         """ Do not call explicitly, called upon initialization of class or self.start()
             The main emokit loop.
         :param reader: EmotivReader class
         :param crypto: EmotivCrypto class
         """
+        self.initialize_reader()
+        self.initialize_writer()
+        self.initialize_crypto()
+        self.reader.start()
+        if self.crypto is not None:
+            self.crypto.start()
         dirty = True
-
+        last_packets_received = 0
+        last_packets_decrypted = 0
+        tick_time = datetime.now()
+        packets_received_since_last_update = 0
+        packets_processed_since_last_update = 0
+        stale_rx = 0
+        restarting_reader = False
+        self.lock.acquire()
         while self.running:
-            if not reader.data.empty():
+            self.lock.release()
+            if not self.reader.data.empty():
                 try:
-                    raw_data = reader.data.get()
+                    raw_data = self.reader.data.get()
                 except KeyboardInterrupt:
                     self.quit()
                 if self.write and self.write_encrypted and self.input_source == 'emotiv':
@@ -220,7 +231,9 @@ class Emotiv(object):
                 else:
                     if self.input_source != 'emotiv' and self.read_encrypted:
                         if len(raw_data) != 32:
+                            self.reader.lock.acquire()
                             self.reader.running = False
+                            self.reader.lock.release()
                             self.crypto.stop()
                             self.running = False
                             raise ValueError("Reached end of data or corrupted data.")
@@ -231,10 +244,10 @@ class Emotiv(object):
                         else:
                             raw_data = [int(item.decode(), 2) for item in raw_data]
                         raw_data = ''.join(map(chr, raw_data[:]))
-                    crypto.add_task(raw_data)
+                    self.crypto.add_task(raw_data)
             if self.crypto is not None:
-                if crypto.data_ready():
-                    decrypted_packet_data = crypto.get_data()
+                if self.crypto.data_ready():
+                    decrypted_packet_data = self.crypto.get_data()
                     if self.write_decrypted:
                         if self.decrypted_writer is not None:
                             self.decrypted_writer.write(decrypted_packet_data)
@@ -251,12 +264,41 @@ class Emotiv(object):
                             self.value_writer.write(data_to_write)
                     dirty = True
             if self._stop_signal:
-                if not self.reader.running:
+                self.reader.lock.acquire()
+                if not self.reader.running and not restarting_reader:
                     if self.crypto is not None:
+                        self.crypto.lock.acquire()
                         if not self.crypto.running and not self.crypto.data_ready():
                             self.running = False
+                        self.crypto.lock.release()
                     else:
                         self.running = False
+                self.reader.lock.release()
+
+            if tick_time.second != datetime.now().second:
+                packets_received_since_last_update = self.packets_received - last_packets_received
+                if packets_received_since_last_update == 1 or packets_received_since_last_update == 0:
+                    stale_rx += 1
+                packets_processed_since_last_update = self.packets_processed - last_packets_decrypted
+                last_packets_decrypted = self.packets_processed
+                last_packets_received = self.packets_received
+                tick_time = datetime.now()
+                dirty = True
+                self.reader.lock.acquire()
+                if restarting_reader and self.reader.stopped:
+                    self.reader.lock.release()
+                    print("Restarting reader")
+                    stale_rx = 0
+                    self.initialize_reader()
+                    self.reader.start()
+                    restarting_reader = False
+                    print("End restarting")
+                else:
+                    self.reader.lock.release()
+
+                if stale_rx > 5 and not restarting_reader:
+                    self.reader.stop()
+                    restarting_reader = True
 
             if self.display_output:
                 if dirty:
@@ -270,12 +312,13 @@ class Emotiv(object):
                                     (k[1], self.sensors[k[1]]['value'],
                                      self.sensors[k[1]]['quality']) for k in enumerate(self.sensors)))
                     print("Battery: %i" % self.battery)
+                    print("Sample Rate Rx: {0} Crypto: {1}".format(
+                        packets_received_since_last_update,
+                        packets_processed_since_last_update)
+                    )
                     dirty = False
-            if not self.reader.running:
-                # We are done reading apparently, send stop signal to self and crypto.
-                if self.crypto is not None:
-                    self.crypto.stop()
-                self._stop_signal = True
+            self.lock.acquire()
+        self.lock.release()
 
     def dequeue(self):
         """
