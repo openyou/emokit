@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division
 
+import os
 import sys
 from threading import Thread, Lock
 
-import os
 from Crypto.Cipher import AES
 from emokit.util import crypto_key
 from queue import Queue
