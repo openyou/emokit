@@ -6,7 +6,7 @@ import os
 import platform
 import sys
 import time
-from threading import Thread
+from threading import Thread, RLock
 
 from queue import Queue
 
@@ -17,8 +17,6 @@ if system_platform == "Windows":
     import pywinusb.hid as hid
 else:
     import hidapi
-
-    hidapi.hid_init()
 
 
 class EmotivReader(object):
@@ -33,6 +31,9 @@ class EmotivReader(object):
         self.hid = hid
         self.platform = system_platform
         self.serial_number = None
+        self.lock = RLock()
+        if self.platform != "Windows":
+            hidapi.hid_init()
         self.setup_platform = {
             'Windows': self.setup_windows,
             'Darwin': self.setup_not_windows,
@@ -57,6 +58,7 @@ class EmotivReader(object):
         self.data = Queue()
         self.setup_platform[self.platform]()
         self.running = False
+        self.stopped = True
         if self.reader is not None:
             self.thread = Thread(target=self.run, kwargs={'source': self.reader})
         else:
@@ -69,6 +71,7 @@ class EmotivReader(object):
         Starts the reader thread.
         """
         self.running = True
+        self.stopped = False
         self.thread.start()
 
     def stop(self):
@@ -76,41 +79,63 @@ class EmotivReader(object):
         Stops the reader thread.
         """
         self._stop_signal = True
-        self.thread.join(30)
 
     def run(self, source=None):
         """Do not call explicitly, called upon initialization of class"""
         if self.platform == 'Windows':
             source.set_raw_data_handler(self.data_handler)
+        self.lock.acquire()
         while self.running:
+            self.lock.release()
             if not self.platform == 'Windows':
+                self.lock.acquire()
                 try:
                     if not self._stop_signal:
                         data = read_platform[self.platform](source)
                         self.data.put_nowait(data)
                 except Exception as ex:
-                    pass
+                    print(ex.message)
                     # Catching StopIteration for some reason stops at the second record,
                     #  even though there are more results.
+                self.lock.release()
             else:
                 time.sleep(0.0005)
+            self.lock.acquire()
             if self._stop_signal:
+                print("Reader stopping...")
                 self.running = False
+        self.lock.release()
         if self.file is not None:
             self.file.close()
-        else:
-            if type(source) != int:
-                source.close()
+        if type(source) != int:
+            source.close()
+        if self.hid is not None:
+            if type(self.hid) != int:
+                self.hid.close()
+        if system_platform != "Windows":
+            try:
+                hidapi.hid_close(source)
+            except Exception:
+                pass
+            try:
+                hidapi.hid_exit()
+            except Exception:
+                pass
+        print("Reader stopped...")
+        self.stopped = True
+        return
 
     def data_handler(self, data):
         """
         Receives packets from headset for Windows. Sends them to a Queue to be processed
         by the crypto thread.
         """
+        self.lock.acquire()
         if not self._stop_signal:
             data = validate_data(data)
             if data is not None:
                 self.data.put_nowait(data)
+        self.lock.release()
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.stop()
