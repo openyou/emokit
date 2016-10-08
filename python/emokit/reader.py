@@ -58,9 +58,9 @@ class EmotivReader(object):
         self.setup_platform[self.platform]()
         self.running = False
         if self.reader is not None:
-            self.thread = Thread(target=self.run, kwargs={'source': self.reader, 'running': self.running})
+            self.thread = Thread(target=self.run, kwargs={'source': self.reader})
         else:
-            self.thread = Thread(target=self.run, kwargs={'source': self.hid, 'running': self.running})
+            self.thread = Thread(target=self.run, kwargs={'source': self.hid})
         self.thread.setDaemon(True)
         self._stop_signal = False
 
