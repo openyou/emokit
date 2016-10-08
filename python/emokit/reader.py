@@ -84,6 +84,7 @@ class EmotivReader(object):
         """Do not call explicitly, called upon initialization of class"""
         if self.platform == 'Windows':
             source.set_raw_data_handler(self.data_handler)
+            source.open()
         self.lock.acquire()
         while self.running:
             self.lock.release()
@@ -134,7 +135,7 @@ class EmotivReader(object):
         if not self._stop_signal:
             data = validate_data(data)
             if data is not None:
-                self.data.put_nowait(data)
+                self.data.put_nowait(''.join(map(chr, data[1:])))
         self.lock.release()
 
     def __exit__(self, exc_type, exc_value, traceback):

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division
 
+import os
 import sys
 from threading import Thread, Lock
 
-from Crypto import Random
 from Crypto.Cipher import AES
 from emokit.util import crypto_key
 from queue import Queue
@@ -98,7 +98,7 @@ class EmotivCrypto:
         :return: New AES cipher
         """
         # Create initialization vector.
-        iv = Random.new().read(AES.block_size)
+        iv = os.urandom(AES.block_size)
         # Make sure the serial number was set.
         if self.serial_number is None:
             raise ValueError("Serial number must not be None.")

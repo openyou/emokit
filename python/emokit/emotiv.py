@@ -18,10 +18,6 @@ from .util import EmotivWriter
 system_platform = platform.system()
 
 
-class EmotivTimeout(Exception):
-    pass
-
-
 class Emotiv(object):
     """
     Receives, decrypts and stores packets received from Emotiv Headsets and other sources.
