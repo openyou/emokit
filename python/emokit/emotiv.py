@@ -192,7 +192,11 @@ class Emotiv(object):
         :param crypto: EmotivCrypto class
         """
         dirty = True
-
+        last_packets_received = 0
+        last_packets_decrypted = 0
+        tick_time = datetime.now()
+        packets_received_since_last_update = 0
+        packets_processed_since_last_update = 0
         while self.running:
             if not reader.data.empty():
                 try:
@@ -259,6 +263,13 @@ class Emotiv(object):
                         self.running = False
 
             if self.display_output:
+                if tick_time.second != datetime.now().second:
+                    packets_received_since_last_update = self.packets_received - last_packets_received
+                    packets_processed_since_last_update = self.packets_processed - last_packets_decrypted
+                    last_packets_decrypted = self.packets_processed
+                    last_packets_received = self.packets_received
+                    tick_time = datetime.now()
+                    dirty = True
                 if dirty:
                     if system_platform == "Windows":
                         os.system('cls')
@@ -270,6 +281,10 @@ class Emotiv(object):
                                     (k[1], self.sensors[k[1]]['value'],
                                      self.sensors[k[1]]['quality']) for k in enumerate(self.sensors)))
                     print("Battery: %i" % self.battery)
+                    print("Sample Rate Rx: {0} Crypto: {1}".format(
+                        packets_received_since_last_update,
+                        packets_processed_since_last_update)
+                    )
                     dirty = False
             if not self.reader.running:
                 # We are done reading apparently, send stop signal to self and crypto.
