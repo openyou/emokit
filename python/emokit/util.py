@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import csv
+import locale
 import sys
 
 
@@ -53,8 +54,8 @@ def hid_enumerate(hidapi, platform):
 
 
 def print_hid_device_info_win(device):
-    print(device.vendor_name)
-    print(device.product_name)
+    print(device.vendor_name.encode(locale.getpreferredencoding()))
+    print(device.product_name.encode(locale.getpreferredencoding()))
 
 
 def print_hid_device_info_nix(device):
