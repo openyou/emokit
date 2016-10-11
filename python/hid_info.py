@@ -28,7 +28,10 @@ def print_hid_enumerate(platform):
     for device in devices:
         print("-------------------------")
         for key, value in device.__dict__.items():
-            print("%s, %s" % (key, str(value).encode(locale.getpreferredencoding())))
+            if type(value) != str:
+                print("%s, %s" % (key, str(value)))
+            else:
+                print("%s, %s" % (key, value.encode(locale.getpreferredencoding())))
     print("************************************************************")
     print("! Please include this information if you open a new issue. !")
     print("************************************************************")
