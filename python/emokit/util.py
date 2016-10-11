@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import csv
-import locale
 import sys
 
 if sys.version_info >= (3, 0):  # pragma: no cover
@@ -57,13 +56,13 @@ def hid_enumerate(hidapi, platform):
 
 
 def print_hid_device_info_win(device):
-    print(device.vendor_name.encode(locale.getpreferredencoding()))
-    print(device.product_name.encode(locale.getpreferredencoding()))
+    print(unicode(device.vendor_name))
+    print(unicode(device.product_name))
 
 
 def print_hid_device_info_nix(device):
-    print(device.manufacturer_string)
-    print(device.product_string)
+    print(unicode(device.manufacturer_string))
+    print(unicode(device.product_string))
     print(device.path)
 
 
