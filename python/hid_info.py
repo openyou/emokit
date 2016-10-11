@@ -1,4 +1,3 @@
-import locale
 import platform
 import sys
 
@@ -32,16 +31,17 @@ def print_hid_enumerate(platform):
     for device in devices:
         print("-------------------------")
         for key, value in device.__dict__.items():
-            if not sys.version_info >= (3, 0):
-                if type(value) == unicode or type(value) == str:
-                    print("%s, %s" % (key, value.encode(locale.getpreferredencoding())))
-                else:
-                    print("%s, %s" % (key, str(value)))
-            else:
-                if type(value) == unicode:
-                    print("%s, %s" % (key, value.encode(locale.getpreferredencoding())))
-                else:
-                    print("%s, %s" % (key, unicode(value)))
+            print("%s, %s" % (key, unicode(value)))
+            # if not sys.version_info >= (3, 0):
+            #    if type(value) == unicode or type(value) == str:
+            #        print("%s, %s" % (key, value.encode(locale.getpreferredencoding())))
+            #    else:
+            #        print("%s, %s" % (key, str(value)))
+            # else:
+            #    if type(value) == unicode:
+            #        print("%s, %s" % (key, value.encode(locale.getpreferredencoding())))
+            #    else:
+            #        print("%s, %s" % (key, unicode(value)))
     print("************************************************************")
     print("! Please include this information if you open a new issue. !")
     print("************************************************************")
