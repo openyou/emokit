@@ -3,7 +3,7 @@ import csv
 import locale
 import sys
 
-if not sys.version_info >= (3, 0):  # pragma: no cover
+if sys.version_info >= (3, 0):  # pragma: no cover
     unicode = str
 
 
