@@ -3,6 +3,9 @@ import csv
 import locale
 import sys
 
+if sys.version_info >= (3, 0):  # pragma: no cover
+    unicode = str
+
 
 def get_level(data, bits):
     """
