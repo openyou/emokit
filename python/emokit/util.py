@@ -142,33 +142,24 @@ def crypto_key(serial_number, is_research=False):
 
 def device_is_emotiv(device, platform):
     is_emotiv = False
+
     try:
         if platform != 'Windows':
-            if "Emotiv" in device.manufacturer_string:
-                is_emotiv = True
-            if "Emotiv" in device.product_string:
-                is_emotiv = True
-            if "EPOC" in device.product_string:
-                is_emotiv = True
-            if "Brain Waves" in device.product_string:
-                is_emotiv = True
-            if device.product_string == '00000000000':
-                is_emotiv = True
-            if "EEG Signals" in device.product_string:
-                is_emotiv = True
+            product_name = unicode(device.product_string)
         else:
-            if "Emotiv" in device.vendor_name:
-                is_emotiv = True
-            if "Emotiv" in device.product_name:
-                is_emotiv = True
-            if "EPOC" in device.product_name:
-                is_emotiv = True
-            if "Brain Waves" in device.product_name:
-                is_emotiv = True
-            if device.product_name == '00000000000':
-                is_emotiv = True
-            if "EEG Signals" in device.product_name:
-                is_emotiv = True
+            product_name = unicode(device.product_name)
+        if "Emotiv" in device.vendor_name:
+            is_emotiv = True
+        if "Emotiv" in product_name:
+            is_emotiv = True
+        if "EPOC" in product_name:
+            is_emotiv = True
+        if "Brain Waves" in product_name:
+            is_emotiv = True
+        if product_name == '00000000000':
+            is_emotiv = True
+        if "EEG Signals" in product_name:
+            is_emotiv = True
     except Exception as ex:
         print("Emotiv IsEmotivError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2], " : ", ex)
     return is_emotiv
