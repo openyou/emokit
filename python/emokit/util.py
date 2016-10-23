@@ -146,19 +146,21 @@ def device_is_emotiv(device, platform):
     try:
         if platform != 'Windows':
             product_name = unicode(device.product_string)
+            vendor_name = unicode(device.manufacturer_string)
         else:
             product_name = unicode(device.product_name)
-        if "Emotiv" in device.vendor_name:
+            vendor_name = unicode(device.vendor_name)
+        if u"emotiv" in vendor_name.lower():
             is_emotiv = True
-        if "Emotiv" in product_name:
+        if u"emotiv" in product_name.lower():
             is_emotiv = True
-        if "EPOC" in product_name:
+        if u"epoc" in product_name.lower():
             is_emotiv = True
-        if "Brain Waves" in product_name:
+        if u"brain waves" in product_name.lower():
             is_emotiv = True
-        if product_name == '00000000000':
+        if product_name == u'00000000000':
             is_emotiv = True
-        if "EEG Signals" in product_name:
+        if u"eeg signals" in product_name.lower():
             is_emotiv = True
     except Exception as ex:
         print("Emotiv IsEmotivError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2], " : ", ex)
