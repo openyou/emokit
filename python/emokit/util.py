@@ -146,9 +146,11 @@ def device_is_emotiv(device, platform):
     try:
         if platform != 'Windows':
             product_name = unicode(device.product_string)
+            vendor_name = unicode(device.manufacturer_string)
         else:
             product_name = unicode(device.product_name)
-        if "emotiv" in device.vendor_name.lower():
+            vendor_name = unicode(device.vendor_name)
+        if u"emotiv" in vendor_name.lower():
             is_emotiv = True
         if u"emotiv" in product_name.lower():
             is_emotiv = True
@@ -156,7 +158,7 @@ def device_is_emotiv(device, platform):
             is_emotiv = True
         if u"brain waves" in product_name.lower():
             is_emotiv = True
-        if product_name == '00000000000':
+        if product_name == u'00000000000':
             is_emotiv = True
         if u"eeg signals" in product_name.lower():
             is_emotiv = True
