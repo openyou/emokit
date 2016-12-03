@@ -8,7 +8,7 @@ import sys
 import time
 from threading import Thread, RLock
 
-from queue import Queue
+from emokit.python_queue import Queue
 
 from .util import validate_data, device_is_emotiv, hid_enumerate, print_hid_enumerate
 
