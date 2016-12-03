@@ -7,7 +7,7 @@ from threading import Thread, Lock
 
 from Crypto.Cipher import AES
 from emokit.util import crypto_key
-from queue import Queue
+from emokit.python_queue import Queue
 
 
 class EmotivCrypto:
