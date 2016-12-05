@@ -4,9 +4,9 @@
 
 
 import platform
+import time
 
 from emokit.emotiv import Emotiv
-
 if platform.system() == "Windows":
     pass
 
@@ -18,5 +18,6 @@ if __name__ == "__main__":
         try:
             while True:
                 packet = headset.dequeue()
+                time.sleep(0.001)
         except Exception:
             headset.stop()

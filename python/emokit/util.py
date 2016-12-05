@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-import csv
+import platform
 import sys
+
+system_platform = platform.system()
 
 if sys.version_info >= (3, 0):  # pragma: no cover
     unicode = str
@@ -175,36 +177,18 @@ def validate_data(data):
     return data
 
 
-class EmotivWriter(object):
-    """
-    Write data from headset to output. CSV file for now.
-    """
-
-    def __init__(self, file_name, mode="csv", **kwargs):
-        self.mode = mode
-        if sys.version_info >= (3, 0):
-            self.file = open(file_name, 'w', newline='')
+def path_checker(user_output_path, emotiv_filename):
+    has_slash = False
+    if user_output_path[-1:] == '/' or user_output_path[-1:] == '\\':
+        has_slash = True
+    if has_slash:
+        output_path = "{user_specified_output_path}{emotiv_filename}". \
+            format(user_specified_output_path=user_output_path, emotiv_filename=emotiv_filename)
+    else:
+        if system_platform == "Windows":
+            output_path = "{user_specified_output_path}\\{emotiv_filename}". \
+                format(user_specified_output_path=user_output_path, emotiv_filename=emotiv_filename)
         else:
-            self.file = open(file_name, 'wb')
-        if self.mode == "csv":
-            self.writer = csv.writer(self.file, quoting=csv.QUOTE_ALL)
-        else:
-            self.writer = None
-
-    def write_csv(self, data):
-        if sys.version_info >= (3, 0):
-            if type(data) == str:
-                data = bytes(data, encoding='latin-1')
-        else:
-            if type(data) == str:
-                data = [ord(char) for char in data]
-        self.writer.writerow(data)
-
-    def write(self, data):
-        if self.mode == "csv":
-            self.write_csv(data)
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if self.writer:
-            self.writer.close()
-        self.file.close()
+            output_path = "{user_specified_output_path}/{emotiv_filename}". \
+                format(user_specified_output_path=user_output_path, emotiv_filename=emotiv_filename)
+    return output_path

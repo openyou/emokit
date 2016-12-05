@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import sys
+from datetime import datetime
 
-from emokit.battery import battery_values
-from emokit.sensors import sensor_bits, quality_bits, sensor_quality_bit, sensors_mapping
-from emokit.util import get_level
+from .battery import battery_values
+from .sensors import sensor_bits, quality_bits, sensor_quality_bit, sensors_mapping
+from .util import get_level
 
 
 class EmotivPacket(object):
@@ -11,13 +12,17 @@ class EmotivPacket(object):
     Basic semantics for input bytes.
     """
 
-    def __init__(self, data):
+    def __init__(self, data, timestamp=None):
         """
         Initializes packet data. Sets the global battery value.
         Updates each sensor with current sensor value from the packet data.
 
         :param data - Values decrypted to be processed
         """
+        if timestamp is None:
+            self.timestamp = datetime.now()
+        else:
+            self.timestamp = timestamp
         if sys.version_info >= (3, 0):
             self.raw_data = [int(bit) for bit in data]
             data = self.raw_data
