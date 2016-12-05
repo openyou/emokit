@@ -9,7 +9,7 @@ from threading import Thread, Lock
 
 from emokit.decrypter import EmotivCrypto
 from emokit.reader import EmotivReader
-from queue import Queue
+from emokit.python_queue import Queue
 
 from .packet import EmotivPacket
 from .sensors import sensors_mapping
