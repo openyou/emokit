@@ -4,6 +4,7 @@
 
 
 import platform
+import time
 
 from emokit.emotiv import Emotiv
 
@@ -15,8 +16,10 @@ if __name__ == "__main__":
     with Emotiv(display_output=True, verbose=True, write=True) as headset:
         print("Serial Number: %s" % headset.serial_number)
         print("Exporting data... press control+c to stop.")
-        try:
-            while True:
+
+        while headset.running:
+            try:
                 packet = headset.dequeue()
-        except Exception:
-            headset.stop()
+            except Exception:
+                headset.stop()
+            time.sleep(0.001)

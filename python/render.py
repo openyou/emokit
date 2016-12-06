@@ -7,6 +7,7 @@ except ImportError:
     print('No psyco. Expect poor performance. Not really...')
 import platform
 import sys
+import time
 
 import pygame
 from pygame import FULLSCREEN
@@ -14,32 +15,15 @@ from pygame import FULLSCREEN
 if platform.system() == "Windows":
     pass
 from emokit.emotiv import Emotiv
-
-quality_color = {
-    "0": (0, 0, 0),
-    "1": (255, 0, 0),
-    "2": (255, 0, 0),
-    "3": (255, 255, 0),
-    "4": (255, 255, 0),
-    "5": (0, 255, 0),
-    "6": (0, 255, 0),
-    "7": (0, 255, 0),
-}
-
-old_quality_color = {
-    "0": (0, 0, 0),
-    "1": (255, 0, 0),
-    "2": (255, 255, 0),
-    "3": (0, 255, 0),
-    "4": (0, 255, 0),
-}
+from emokit.util import get_quality_scale_level_color
 
 
 class Grapher(object):
     """
     Worker that draws a line for the sensor value.
     """
-    def __init__(self, screen, name, i):
+
+    def __init__(self, screen, name, i, old_model=False):
         """
         Initializes graph worker
         """
@@ -55,6 +39,7 @@ class Grapher(object):
         self.text_pos.centery = self.y + gheight
         self.first_packet = True
         self.y_offset = 0
+        self.old_model = old_model
 
     def update(self, packet):
         """
@@ -62,7 +47,7 @@ class Grapher(object):
         """
         if len(self.buffer) == 800 - self.x_offset:
             self.buffer = self.buffer[1:]
-        self.buffer.append([packet.sensors[self.name]['value'], packet.sensors[self.name]['quality'], packet.old_model])
+        self.buffer.append([packet.sensors[self.name]['value'], packet.sensors[self.name]['quality']])
 
     def calc_y(self, val):
         """
@@ -81,12 +66,12 @@ class Grapher(object):
             self.y_offset = self.buffer[0][0]
             self.first_packet = False
         pos = self.x_offset, self.calc_y(self.buffer[0][0]) + self.y
-        for i, (value, quality, old_model) in enumerate(self.buffer):
+        for i, (value, quality) in enumerate(self.buffer):
             y = self.calc_y(value) + self.y
-            if old_model:
-                color = old_quality_color[str(quality)]
+            if self.old_model:
+                color = str(get_quality_scale_level_color(quality, True))
             else:
-                color = quality_color[str(quality)]
+                color = str(get_quality_scale_level_color(quality, False))
             pygame.draw.line(self.screen, color, pos, (self.x_offset + i, y))
             pos = (self.x_offset + i, y)
         self.screen.blit(self.text, self.text_pos)
@@ -105,10 +90,10 @@ def main():
     record_packets = []
     updated = False
     cursor_x, cursor_y = 400, 300
-    for name in 'AF3 F7 F3 FC5 T7 P7 O1 O2 P8 T8 FC6 F4 F8 AF4'.split(' '):
-        graphers.append(Grapher(screen, name, len(graphers)))
     fullscreen = False
     with Emotiv(display_output=False) as emotiv:
+        for name in 'AF3 F7 F3 FC5 T7 P7 O1 O2 P8 T8 FC6 F4 F8 AF4'.split(' '):
+            graphers.append(Grapher(screen, name, len(graphers), emotiv.old_model))
         while emotiv.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -137,17 +122,19 @@ def main():
             try:
                 while packets_in_queue < 8:
                     packet = emotiv.dequeue()
-                    if abs(packet.gyro_x) > 1:
-                        cursor_x = max(0, min(cursor_x, 800))
-                        cursor_x -= packet.gyro_x
-                    if abs(packet.gyro_y) > 1:
-                        cursor_y += packet.gyro_y
-                        cursor_y = max(0, min(cursor_y, 600))
-                    map(lambda x: x.update(packet), graphers)
-                    if recording:
-                        record_packets.append(packet)
-                    updated = True
-                    packets_in_queue += 1
+                    if packet is not None:
+                        if abs(packet.sensors['X']['value']) > 1:
+                            cursor_x = max(0, min(cursor_x, 800))
+                            cursor_x -= packet.sensors['X']['value']
+                        if abs(packet.sensors['Y']['value']) > 1:
+                            cursor_y += packet.sensors['Y']['value']
+                            cursor_y = max(0, min(cursor_y, 600))
+                        map(lambda x: x.update(packet), graphers)
+                        if recording:
+                            record_packets.append(packet)
+                        updated = True
+                        packets_in_queue += 1
+                    time.sleep(0.001)
             except Exception as ex:
                 print("EmotivRender DequeuePlotError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2],
                       " : ", ex)

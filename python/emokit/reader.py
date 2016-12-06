@@ -3,16 +3,15 @@ from __future__ import absolute_import, division
 
 import csv
 import os
-import platform
 import sys
 import time
-from threading import Thread, RLock
+from datetime import datetime
+from threading import Thread, Lock
 
-from emokit.python_queue import Queue
+from .python_queue import Queue
+from .tasks import EmotivReaderTask
+from .util import validate_data, device_is_emotiv, hid_enumerate, print_hid_enumerate, system_platform
 
-from .util import validate_data, device_is_emotiv, hid_enumerate, print_hid_enumerate
-
-system_platform = platform.system()
 if system_platform == "Windows":
     import pywinusb.hid as hid
 else:
@@ -31,7 +30,7 @@ class EmotivReader(object):
         self.hid = hid
         self.platform = system_platform
         self.serial_number = None
-        self.lock = RLock()
+        self.lock = Lock()
         if self.platform != "Windows":
             hidapi.hid_init()
         self.setup_platform = {
@@ -78,7 +77,9 @@ class EmotivReader(object):
         """
         Stops the reader thread.
         """
+        self.lock.acquire()
         self._stop_signal = True
+        self.lock.release()
 
     def run(self, source=None):
         """Do not call explicitly, called upon initialization of class"""
@@ -89,23 +90,20 @@ class EmotivReader(object):
         while self.running:
             self.lock.release()
             if not self.platform == 'Windows':
-                self.lock.acquire()
                 try:
                     if not self._stop_signal:
                         data = read_platform[self.platform](source)
-                        self.data.put_nowait(data)
+                        self.data.put_nowait(EmotivReaderTask(data=data, timestamp=datetime.now()))
                 except Exception as ex:
                     print(ex.message)
                     # Catching StopIteration for some reason stops at the second record,
                     #  even though there are more results.
-                self.lock.release()
             else:
-                time.sleep(0.0005)
+                time.sleep(0.00001)
             self.lock.acquire()
             if self._stop_signal:
                 print("Reader stopping...")
                 self.running = False
-        self.lock.release()
         if self.file is not None:
             self.file.close()
         if type(source) != int:
@@ -133,10 +131,12 @@ class EmotivReader(object):
         """
         self.lock.acquire()
         if not self._stop_signal:
+            self.lock.release()
             data = validate_data(data)
             if data is not None:
-                self.data.put_nowait(''.join(map(chr, data[1:])))
-        self.lock.release()
+                self.data.put_nowait(EmotivReaderTask(data=''.join(map(chr, data[1:])), timestamp=datetime.now()))
+        else:
+            self.lock.release()
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.stop()
@@ -171,6 +171,7 @@ class EmotivReader(object):
             device.open()
             self.hid = device
             self.serial_number = device.serial_number
+            print("Reader detected serial number: {serial_number}".format(serial_number=self.serial_number))
             device.set_raw_data_handler(self.data_handler)
         except Exception as ex:
             print("Emotiv WindowsSetupError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2], " : ", ex)

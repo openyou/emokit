@@ -3,15 +3,17 @@ from __future__ import absolute_import, division
 
 import os
 import sys
+import time
 from threading import Thread, Lock
 
 from Crypto.Cipher import AES
-from emokit.util import crypto_key
-from emokit.python_queue import Queue
+
+from .python_queue import Queue
+from .util import crypto_key
 
 
 class EmotivCrypto:
-    def __init__(self, serial_number=None, is_research=False):
+    def __init__(self, serial_number=None, is_research=False, verbose=False):
         """
         Performs decryption of packets received. Stores decrypted packets in a Queue for use.
 
@@ -24,6 +26,7 @@ class EmotivCrypto:
         self._decrypted_queue = Queue()
         # Running state.
         self.running = False
+        self.verbose = verbose
         # Stop signal tells the loop to stop after processing remaining tasks.
         self._stop_signal = False
         # The emotiv serial number.
@@ -43,37 +46,44 @@ class EmotivCrypto:
         Do not call explicitly, use .start() instead.
         """
         # Initialize AES
-        cipher = self.new_cipher()
+        cipher = self.new_cipher(self.verbose)
         self.lock.acquire()
         while self.running:
             self.lock.release()
             # While the encrypted queue is not empty.
             while not self._encrypted_queue.empty():
                 # Get some encrypted data off of the encrypted Queue.
-                encrypted_data = self._encrypted_queue.get()
+                encrypted_task = self._encrypted_queue.get()
                 # Make sure the encrypted data is not None.
-                if encrypted_data is not None:
+                if encrypted_task is not None:
                     # Make sure the encrypted data is not empty.
-                    if len(encrypted_data):
-                        try:
-                            # Python 3 compatibility
-                            if sys.version_info >= (3, 0):
-                                # Convert to byte array or bytes like object.
-                                encrypted_data = bytes(encrypted_data, encoding='latin-1')
-                            # Decrypt the encrypted data.
-                            decrypted_data = decrypt_data(cipher, encrypted_data)
-                            # Put the decrypted data onto the decrypted Queue.
-                            self._decrypted_queue.put_nowait(decrypted_data)
-                        except Exception as ex:
-                            # Catch everything, and print exception.
-                            # TODO: Make this more specific perhaps?
-                            print("Emotiv CryptoError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2], " : ",
-                                  ex)
+                    if encrypted_task.data is not None:
+                        if len(encrypted_task.data):
+                            try:
+                                # Python 3 compatibility
+                                if sys.version_info >= (3, 0):
+                                    # Convert to byte array or bytes like object.
+                                    encrypted_data = bytes(encrypted_task.data, encoding='latin-1')
+                                else:
+                                    encrypted_data = encrypted_task.data
+                                # Decrypt the encrypted data.
+                                decrypted_data = decrypt_data(cipher, encrypted_data)
+                                # Put the decrypted data onto the decrypted Queue.
+                                encrypted_task.data = decrypted_data
+                                self._decrypted_queue.put_nowait(encrypted_task)
+                            except Exception as ex:
+                                # Catch everything, and print exception.
+                                # TODO: Make this more specific perhaps?
+                                print(
+                                    "Emotiv CryptoError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2],
+                                    " : ",
+                                    ex)
             # If stop signal is received and all the pending data in the encrypted Queue is processed, stop running.
             self.lock.acquire()
             if self._stop_signal and self._encrypted_queue.empty():
-                print("Crypto stopping.")
+                print("Crypto thread stopping.")
                 self.running = False
+            time.sleep(0.00001)
         self.lock.release()
 
     def start(self):
@@ -92,18 +102,22 @@ class EmotivCrypto:
         self.lock.release()
         self.thread.join(60)
 
-    def new_cipher(self):
+    def new_cipher(self, verbose=False):
         """
         Generates a new AES cipher from the serial number and headset version.
         :return: New AES cipher
         """
+        if verbose:
+            print("EmotivCrypto: Generating new AES cipher.")
         # Create initialization vector.
         iv = os.urandom(AES.block_size)
         # Make sure the serial number was set.
         if self.serial_number is None:
             raise ValueError("Serial number must not be None.")
+        if verbose:
+            print("EmotivCrypto: Serial Number - {serial_number}".format(serial_number=self.serial_number))
         # Create and return new AES class, using the serial number and headset version.
-        return AES.new(crypto_key(self.serial_number, self.is_research), AES.MODE_ECB, iv)
+        return AES.new(crypto_key(self.serial_number, self.is_research, verbose), AES.MODE_ECB, iv)
 
     def add_task(self, data):
         """
