@@ -47,7 +47,7 @@ class Grapher(object):
         """
         if len(self.buffer) == 800 - self.x_offset:
             self.buffer = self.buffer[1:]
-        self.buffer.append([packet.sensors[self.name]['value'], packet.sensors[self.name]['quality'], self.old_model])
+        self.buffer.append([packet.sensors[self.name]['value'], packet.sensors[self.name]['quality']])
 
     def calc_y(self, val):
         """
@@ -66,9 +66,9 @@ class Grapher(object):
             self.y_offset = self.buffer[0][0]
             self.first_packet = False
         pos = self.x_offset, self.calc_y(self.buffer[0][0]) + self.y
-        for i, (value, quality, old_model) in enumerate(self.buffer):
+        for i, (value, quality) in enumerate(self.buffer):
             y = self.calc_y(value) + self.y
-            if old_model:
+            if self.old_model:
                 color = str(get_quality_scale_level_color(quality, True))
             else:
                 color = str(get_quality_scale_level_color(quality, False))
