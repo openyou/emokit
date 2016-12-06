@@ -28,7 +28,7 @@ class Emotiv(object):
     # TODO: Add filters for facial expressions, muscle contractions.
     def __init__(self, display_output=False, serial_number=None, is_research=False, write=False,
                  write_encrypted=False, write_decrypted=False, write_values=True, input_source="emotiv",
-                 sys_platform=system_platform, verbose=False, output_path=None):
+                 sys_platform=system_platform, verbose=False, output_path=None, chunk_writes=True, chunk_size=32):
         """
         Sets up initial values.
 
@@ -41,12 +41,18 @@ class Emotiv(object):
         :param input_source - Source to read from, emotiv or a file name
                    (must be a csv, exported from emokit or following our format)
         :param sys_platform - Operating system, to avoid global statement
+        :param verbose - Detailed logging.
+        :param output_path - The path to output data files to.
+        :param chunk_writes - Write a chunk of data instead of a single line.
+        :param chunk_size - The number of packets to buffer before writing.
 
-        Expect performance to suffer when writing data to a csv.
+        Expect performance to suffer when writing data to a csv, maybe.
 
         """
         print("Initializing Emokit...")
         self.running = False
+        self.chunk_writes = chunk_writes
+        self.chunk_size = chunk_size
         # Queue with EmotivPackets that have been received.
         self.packets = Queue()
         # Battery percent, as int.
@@ -140,7 +146,8 @@ class Emotiv(object):
                     if self.output_path is not None:
                         if type(self.output_path) == str:
                             output_path = path_checker(self.output_path, output_path)
-                    self.encrypted_writer = EmotivWriter(output_path, mode="csv")
+                    self.encrypted_writer = EmotivWriter(output_path, mode="csv", chunk_writes=self.chunk_writes,
+                                                         chunk_size=self.chunk_size)
                     self.encrypted_writer.start()
 
             # Setup decrypted data writer.
@@ -152,7 +159,8 @@ class Emotiv(object):
                     if self.output_path is not None:
                         if type(self.output_path) == str:
                             output_path = path_checker(self.output_path, output_path)
-                    self.decrypted_writer = EmotivWriter(output_path, mode="csv")
+                    self.decrypted_writer = EmotivWriter(output_path, mode="csv", chunk_writes=self.chunk_writes,
+                                                         chunk_size=self.chunk_size)
                     self.decrypted_writer.start()
 
             # Setup sensor value writer.
@@ -161,7 +169,8 @@ class Emotiv(object):
                 if self.output_path is not None:
                     if type(self.output_path) == str:
                         output_path = path_checker(self.output_path, output_path)
-                self.value_writer = EmotivWriter(output_path, mode="csv")
+                self.value_writer = EmotivWriter(output_path, mode="csv", chunk_writes=self.chunk_writes,
+                                                 chunk_size=self.chunk_size)
                 # Make the first row in the file the header with the sensor name
                 header_row = ['Timestamp']
                 for key in self.sensors.keys():
