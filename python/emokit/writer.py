@@ -11,7 +11,7 @@ class EmotivWriter(object):
     Write data from headset to output. CSV file for now.
     """
 
-    def __init__(self, file_name, mode="csv", header_row=None, **kwargs):
+    def __init__(self, file_name, mode="csv", header_row=None, chunk_writes=True, chunk_size=16, **kwargs):
         self.mode = mode
         self.lock = Lock()
         self.data = Queue()
@@ -19,6 +19,8 @@ class EmotivWriter(object):
         self.header_row = header_row
         self.running = True
         self.stopped = False
+        self.chunk_writes = chunk_writes
+        self.chunk_size = chunk_size
         self.thread = Thread(target=self.run)
         self.thread.setDaemon(True)
         self._stop_signal = False
@@ -63,6 +65,13 @@ class EmotivWriter(object):
 
         else:
             output_file = None
+
+        data_buffer = None
+        data_buffer_size = 1
+        if self.chunk_writes:
+            data_buffer = []
+            data_buffer_size = self.chunk_size
+
         self.lock.acquire()
         while self.running:
             self.lock.release()
@@ -74,7 +83,7 @@ class EmotivWriter(object):
                                         "{f7_quality},{t7_value},{t7_quality},{p7_value},{p7_quality},{o1_value}," \
                                         "{o1_quality},{o2_value},{o2_quality},{p8_value},{p8_quality},{t8_value}," \
                                         "{t8_quality},{f8_value},{f8_quality},{af4_value},{af4_quality},{fc6_value}," \
-                                        "{fc6_quality},{f4_value},{f4_quality},{x_value},{y_value},{z_value}".format(
+                                        "{fc6_quality},{f4_value},{f4_quality},{x_value},{y_value},{z_value}\n".format(
                             timestamp=str(next_task.timestamp),
                             f3_value=next_task.data['F3']['value'],
                             f3_quality=next_task.data['F3']['quality'],
@@ -121,7 +130,13 @@ class EmotivWriter(object):
                             if type(data) == str:
                                 data = [ord(char) for char in data]
                         data_to_write = [str(next_task.timestamp), data]
-                    output_file.write(data_to_write + '\n')
+                    if data_buffer is not None:
+                        data_buffer.append(data_to_write)
+                        if len(data_buffer) >= data_buffer_size - 1:
+                            output_file.writelines(data_buffer)
+                            data_buffer = []
+                    else:
+                        output_file.write(data_to_write)
 
             except Exception as ex:
                 print(ex.message)
