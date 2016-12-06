@@ -336,15 +336,31 @@ class Emotiv(object):
 
             self.lock.acquire()
             if self._stop_signal:
-                if not self.reader.running and not restarting_reader:
-                    if self.crypto is not None:
-                        self.crypto.stop()
-                        if not self.crypto.running and not self.crypto.data_ready():
-                            self.running = False
-                        else:
-                            print("Waiting for crypto thread to finish processing....")
-                    else:
-                        self.running = False
+                should_stop = True
+                if self.reader.running:
+                    should_stop = False
+                if self.crypto is not None:
+                    if self.crypto.running and self.crypto.data_ready():
+                        should_stop = False
+                        print("Waiting for crypto thread to finish processing....")
+                if self.decrypted_writer is not None:
+                    if self.decrypted_writer.running:
+                        should_stop = False
+                        print("Waiting for decrypted writer thread to finish processing....")
+                if self.encrypted_writer is not None:
+                    if self.encrypted_writer.running:
+                        should_stop = False
+                        print("Waiting for encrypted writer thread to finish processing....")
+                if self.value_writer is not None:
+                    if self.value_writer.running:
+                        should_stop = False
+                        print("Waiting for value writer thread to finish processing....")
+                if self.output is not None:
+                    if self.output.running:
+                        should_stop = False
+                        print("Waiting for output thread to finish processing....")
+                if should_stop:
+                    self.running = False
 
     def dequeue(self):
         """
