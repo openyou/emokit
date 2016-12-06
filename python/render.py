@@ -41,7 +41,8 @@ class Grapher(object):
     """
     Worker that draws a line for the sensor value.
     """
-    def __init__(self, screen, name, i):
+
+    def __init__(self, screen, name, i, old_model=False):
         """
         Initializes graph worker
         """
@@ -57,6 +58,7 @@ class Grapher(object):
         self.text_pos.centery = self.y + gheight
         self.first_packet = True
         self.y_offset = 0
+        self.old_model = old_model
 
     def update(self, packet):
         """
@@ -64,7 +66,7 @@ class Grapher(object):
         """
         if len(self.buffer) == 800 - self.x_offset:
             self.buffer = self.buffer[1:]
-        self.buffer.append([packet.sensors[self.name]['value'], packet.sensors[self.name]['quality'], packet.old_model])
+        self.buffer.append([packet.sensors[self.name]['value'], packet.sensors[self.name]['quality'], self.old_model])
 
     def calc_y(self, val):
         """
@@ -107,10 +109,10 @@ def main():
     record_packets = []
     updated = False
     cursor_x, cursor_y = 400, 300
-    for name in 'AF3 F7 F3 FC5 T7 P7 O1 O2 P8 T8 FC6 F4 F8 AF4'.split(' '):
-        graphers.append(Grapher(screen, name, len(graphers)))
     fullscreen = False
     with Emotiv(display_output=False) as emotiv:
+        for name in 'AF3 F7 F3 FC5 T7 P7 O1 O2 P8 T8 FC6 F4 F8 AF4'.split(' '):
+            graphers.append(Grapher(screen, name, len(graphers), emotiv.old_model))
         while emotiv.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -140,11 +142,11 @@ def main():
                 while packets_in_queue < 8:
                     packet = emotiv.dequeue()
                     if packet is not None:
-                        if abs(packet.gyro_x) > 1:
+                        if abs(packet.sensors['X']['value']) > 1:
                             cursor_x = max(0, min(cursor_x, 800))
-                            cursor_x -= packet.gyro_x
-                        if abs(packet.gyro_y) > 1:
-                            cursor_y += packet.gyro_y
+                            cursor_x -= packet.sensors['X']['value']
+                        if abs(packet.sensors['Y']['value']) > 1:
+                            cursor_y += packet.sensors['Y']['value']
                             cursor_y = max(0, min(cursor_y, 600))
                         map(lambda x: x.update(packet), graphers)
                         if recording:
