@@ -129,12 +129,14 @@ class EmotivReader(object):
         Receives packets from headset for Windows. Sends them to a Queue to be processed
         by the crypto thread.
         """
-        # self.lock.acquire()
+        self.lock.acquire()
         if not self._stop_signal:
+            self.lock.release()
             data = validate_data(data)
             if data is not None:
                 self.data.put_nowait(EmotivReaderTask(data=''.join(map(chr, data[1:])), timestamp=datetime.now()))
-                # self.lock.release()
+        else:
+            self.lock.release()
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.stop()
