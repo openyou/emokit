@@ -31,6 +31,55 @@ def get_quality_scale(quality_value, old_model=False):
         return quality_value // 1024
 
 
+def get_quality_scale_level(quality_value, old_model=False):
+    if old_model:
+        return get_quality_level(quality_value // 540, old_model)
+    else:
+        return get_quality_level(quality_value // 1024, old_model)
+
+
+def get_quality_level(quality_scale, old_model=False):
+    if old_model:
+        if quality_scale == 0:
+            return "Nothing"
+        if quality_scale == 1:
+            return "Okay"
+        if quality_scale == 2:
+            return "Good"
+        if 3 == quality_scale == 4:
+            return "Excellent"
+    else:
+        if quality_scale == 0:
+            return "Nothing"
+        if 1 == quality_scale == 2:
+            return "Okay"
+        if 3 == quality_scale == 4:
+            return "Good"
+        if quality_scale > 4:
+            return "Excellent"
+
+
+def get_quality_color(quality_scale, old_model=False):
+    if old_model:
+        if quality_scale == 0:
+            return 0, 0, 0
+        if quality_scale == 1:
+            return 255, 0, 0
+        if quality_scale == 2:
+            return 255, 255, 0
+        if 3 == quality_scale == 4:
+            return 0, 255, 0
+    else:
+        if quality_scale == 0:
+            return 0, 0, 0
+        if 1 == quality_scale == 2:
+            return 255, 0, 0
+        if 3 == quality_scale == 4:
+            return 255, 255, 0
+        if quality_scale > 4:
+            return 0, 255, 0
+
+
 def is_old_model(serial_number):
     if "GM" in serial_number[-2:]:
         return False
