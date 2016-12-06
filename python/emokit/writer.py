@@ -51,17 +51,10 @@ class EmotivWriter(object):
             else:
                 output_file = open(self.file_name, 'wb')
             if self.header_row is not None:
-                if sys.version_info >= (3, 0):
-                    if type(self.header_row) == str:
-                        data = bytes(self.header_row, encoding='latin-1')
-                        output_file.write(data)
-                    else:
-                        output_file.write(self.header_row)
+                if type(self.header_row) == str:
+                    output_file.write(self.header_row)
                 else:
-                    if type(self.header_row) == str:
-                        output_file.write(self.header_row)
-                    else:
-                        output_file.write(','.join(self.header_row) + '\n')
+                    output_file.write(','.join(self.header_row) + '\n')
 
         else:
             output_file = None
