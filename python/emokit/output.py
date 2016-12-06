@@ -5,7 +5,7 @@ from threading import Thread, Lock
 
 from .python_queue import Queue
 from .sensors import sensors_mapping
-from .util import system_platform
+from .util import get_quality_scale, system_platform
 
 
 class EmotivOutput(object):
@@ -108,6 +108,34 @@ class EmotivOutput(object):
                         af4_quality=last_sensors['AF4']['quality'],
                         fc6_quality=last_sensors['FC6']['quality'],
                         f4_quality=last_sensors['F4']['quality'],
+                        f3_quality_old=get_quality_scale(last_sensors['F3']['quality'], True),
+                        fc5_quality_old=get_quality_scale(last_sensors['FC5']['quality'], True),
+                        af3_quality_old=get_quality_scale(last_sensors['AF3']['quality'], True),
+                        f7_quality_old=get_quality_scale(last_sensors['F7']['quality'], True),
+                        t7_quality_old=get_quality_scale(last_sensors['T7']['quality'], True),
+                        p7_quality_old=get_quality_scale(last_sensors['P7']['quality'], True),
+                        o1_quality_old=get_quality_scale(last_sensors['O1']['quality'], True),
+                        o2_quality_old=get_quality_scale(last_sensors['O2']['quality'], True),
+                        p8_quality_old=get_quality_scale(last_sensors['P8']['quality'], True),
+                        t8_quality_old=get_quality_scale(last_sensors['T8']['quality'], True),
+                        f8_quality_old=get_quality_scale(last_sensors['F8']['quality'], True),
+                        af4_quality_old=get_quality_scale(last_sensors['AF4']['quality'], True),
+                        fc6_quality_old=get_quality_scale(last_sensors['FC6']['quality'], True),
+                        f4_quality_old=get_quality_scale(last_sensors['F4']['quality'], True),
+                        f3_quality_new=get_quality_scale(last_sensors['F3']['quality'], False),
+                        fc5_quality_new=get_quality_scale(last_sensors['FC5']['quality'], False),
+                        af3_quality_new=get_quality_scale(last_sensors['AF3']['quality'], False),
+                        f7_quality_new=get_quality_scale(last_sensors['F7']['quality'], False),
+                        t7_quality_new=get_quality_scale(last_sensors['T7']['quality'], False),
+                        p7_quality_new=get_quality_scale(last_sensors['P7']['quality'], False),
+                        o1_quality_new=get_quality_scale(last_sensors['O1']['quality'], False),
+                        o2_quality_new=get_quality_scale(last_sensors['O2']['quality'], False),
+                        p8_quality_new=get_quality_scale(last_sensors['P8']['quality'], False),
+                        t8_quality_new=get_quality_scale(last_sensors['T8']['quality'], False),
+                        f8_quality_new=get_quality_scale(last_sensors['F8']['quality'], False),
+                        af4_quality_new=get_quality_scale(last_sensors['AF4']['quality'], False),
+                        fc6_quality_new=get_quality_scale(last_sensors['FC6']['quality'], False),
+                        f4_quality_new=get_quality_scale(last_sensors['F4']['quality'], False),
                         x=last_sensors['X']['value'],
                         y=last_sensors['Y']['value'],
                         z=last_sensors['Z']['value'],
@@ -130,26 +158,26 @@ output_template = """
 Emokit - v0.0.8 SN: {serial_number}
 +=========================================================+
 | Sensor |   Value  | Quality  | Quality L1 | Quality L2  |
-+--------+----------+-------------------------------------+
-|   F3   | {f3_value:^8} | {f3_quality:^8}                            |
-|   FC5  | {fc5_value:^8} | {fc5_quality:^8}                            |
-|   AF3  | {af3_value:^8} | {af3_quality:^8}                            |
-|   F7   | {f7_value:^8} | {f7_quality:^8}                            |
-|   T7   | {t7_value:^8} | {t7_quality:^8}                            |
-|   P7   | {p7_value:^8} | {p7_quality:^8}                            |
-|   O1   | {o1_value:^8} | {o1_quality:^8}                            |
-|   O2   | {o2_value:^8} | {o2_quality:^8}                            |
-|   P8   | {p8_value:^8} | {p8_quality:^8}                            |
-|   T8   | {t8_value:^8} | {t8_quality:^8}                            |
-|   F8   | {f8_value:^8} | {f8_quality:^8}                            |
-|   AF4  | {af4_value:^8} | {af4_quality:^8}                            |
-|   FC6  | {fc6_value:^8} | {fc6_quality:^8}                            |
-|   F4   | {f4_value:^8} | {f4_quality:^8}                            |
-|   X    | {x:^8} |   N/A                               |
-|   Y    | {y:^8} |   N/A                               |
-|   Z    | {z:^8} |   N/A                               |
-|  Batt  | {battery:^8} |   N/A                               |
-+--------+--------------+---------------------------------+
++--------+----------+----------+------------+-------------+
+|   F3   | {f3_value:^8} | {f3_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   FC5  | {fc5_value:^8} | {fc5_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   AF3  | {af3_value:^8} | {af3_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   F7   | {f7_value:^8} | {f7_quality:^8}  | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   T7   | {t7_value:^8} | {t7_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   P7   | {p7_value:^8} | {p7_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   O1   | {o1_value:^8} | {o1_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   O2   | {o2_value:^8} | {o2_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   P8   | {p8_value:^8} | {p8_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   T8   | {t8_value:^8} | {t8_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   F8   | {f8_value:^8} | {f8_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   AF4  | {af4_value:^8} | {af4_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   FC6  | {fc6_value:^8} | {fc6_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   F4   | {f4_value:^8} | {f4_quality:^8} | {f3_quality_old:^8 } | {f3_quality_new:^8}  |
+|   X    | {x:^8} |   N/A  | N/A | N/A  |
+|   Y    | {y:^8} |   N/A  | N/A | N/A  |
+|   Z    | {z:^8} |   N/A  | N/A | N/A  |
+|  Batt  | {battery:^8} |   N/A       |        N/A     |      N/A     |
++--------+--------------+-------------+----------+---------+
 |Packets Received: {received:^8}  |  Packets Processed: {processed:^7}|
 |   Sampling Rate: {sample_rate:^8}  |        Crypto Rate: {crypto_rate:^7}|
 +=========================================================+

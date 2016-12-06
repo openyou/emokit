@@ -7,6 +7,7 @@ except ImportError:
     print('No psyco. Expect poor performance. Not really...')
 import platform
 import sys
+import time
 
 import pygame
 from pygame import FULLSCREEN
@@ -14,6 +15,7 @@ from pygame import FULLSCREEN
 if platform.system() == "Windows":
     pass
 from emokit.emotiv import Emotiv
+from emokit.util import get_quality_scale
 
 quality_color = {
     "0": (0, 0, 0),
@@ -84,9 +86,9 @@ class Grapher(object):
         for i, (value, quality, old_model) in enumerate(self.buffer):
             y = self.calc_y(value) + self.y
             if old_model:
-                color = old_quality_color[str(quality)]
+                color = old_quality_color[str(get_quality_scale(quality, True))]
             else:
-                color = quality_color[str(quality)]
+                color = quality_color[str(get_quality_scale(quality, False))]
             pygame.draw.line(self.screen, color, pos, (self.x_offset + i, y))
             pos = (self.x_offset + i, y)
         self.screen.blit(self.text, self.text_pos)
@@ -137,17 +139,19 @@ def main():
             try:
                 while packets_in_queue < 8:
                     packet = emotiv.dequeue()
-                    if abs(packet.gyro_x) > 1:
-                        cursor_x = max(0, min(cursor_x, 800))
-                        cursor_x -= packet.gyro_x
-                    if abs(packet.gyro_y) > 1:
-                        cursor_y += packet.gyro_y
-                        cursor_y = max(0, min(cursor_y, 600))
-                    map(lambda x: x.update(packet), graphers)
-                    if recording:
-                        record_packets.append(packet)
-                    updated = True
-                    packets_in_queue += 1
+                    if packet is not None:
+                        if abs(packet.gyro_x) > 1:
+                            cursor_x = max(0, min(cursor_x, 800))
+                            cursor_x -= packet.gyro_x
+                        if abs(packet.gyro_y) > 1:
+                            cursor_y += packet.gyro_y
+                            cursor_y = max(0, min(cursor_y, 600))
+                        map(lambda x: x.update(packet), graphers)
+                        if recording:
+                            record_packets.append(packet)
+                        updated = True
+                        packets_in_queue += 1
+                        time.sleep(0.001)
             except Exception as ex:
                 print("EmotivRender DequeuePlotError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2],
                       " : ", ex)

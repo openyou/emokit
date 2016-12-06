@@ -24,6 +24,13 @@ def get_level(data, bits):
     return level
 
 
+def get_quality_scale(quality_value, old_model=False):
+    if old_model:
+        return quality_value // 540
+    else:
+        return quality_value // 1024
+
+
 def is_old_model(serial_number):
     if "GM" in serial_number[-2:]:
         return False

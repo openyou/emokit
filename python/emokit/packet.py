@@ -4,7 +4,7 @@ from datetime import datetime
 
 from .battery import battery_values
 from .sensors import sensor_bits, quality_bits, sensor_quality_bit, sensors_mapping
-from .util import get_level
+from .util import get_level, get_quality_scale
 
 
 class EmotivPacket(object):
@@ -89,7 +89,4 @@ class EmotivPacket(object):
             self.sensors['Z']['value'])
 
     def get_quality_scale(self, old_model=False):
-        if old_model:
-            return self.quality_value // 540
-        else:
-            return self.quality_value // 1024
+        return get_quality_scale(self.quality_value, old_model)
