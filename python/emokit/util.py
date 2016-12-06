@@ -35,7 +35,7 @@ def get_quality_scale_level(quality_value, old_model=False):
     if old_model:
         return get_quality_level(quality_value // 540, old_model)
     else:
-        return get_quality_level(quality_value // 1024, old_model)
+        return get_quality_level(quality_value // 1024, False)
 
 
 def get_quality_level(quality_scale, old_model=False):
@@ -57,6 +57,13 @@ def get_quality_level(quality_scale, old_model=False):
             return "Good"
         if quality_scale > 4:
             return "Excellent"
+
+
+def get_quality_scale_level_color(quality_value, old_model=False):
+    if old_model:
+        return get_quality_color(quality_value // 540, old_model)
+    else:
+        return get_quality_color(quality_value // 1024, False)
 
 
 def get_quality_color(quality_scale, old_model=False):

@@ -15,26 +15,7 @@ from pygame import FULLSCREEN
 if platform.system() == "Windows":
     pass
 from emokit.emotiv import Emotiv
-from emokit.util import get_quality_scale
-
-quality_color = {
-    "0": (0, 0, 0),
-    "1": (255, 0, 0),
-    "2": (255, 0, 0),
-    "3": (255, 255, 0),
-    "4": (255, 255, 0),
-    "5": (0, 255, 0),
-    "6": (0, 255, 0),
-    "7": (0, 255, 0),
-}
-
-old_quality_color = {
-    "0": (0, 0, 0),
-    "1": (255, 0, 0),
-    "2": (255, 255, 0),
-    "3": (0, 255, 0),
-    "4": (0, 255, 0),
-}
+from emokit.util import get_quality_scale_level_color
 
 
 class Grapher(object):
@@ -88,9 +69,9 @@ class Grapher(object):
         for i, (value, quality, old_model) in enumerate(self.buffer):
             y = self.calc_y(value) + self.y
             if old_model:
-                color = old_quality_color[str(get_quality_scale(quality, True))]
+                color = str(get_quality_scale_level_color(quality, True))
             else:
-                color = quality_color[str(get_quality_scale(quality, False))]
+                color = str(get_quality_scale_level_color(quality, False))
             pygame.draw.line(self.screen, color, pos, (self.x_offset + i, y))
             pos = (self.x_offset + i, y)
         self.screen.blit(self.text, self.text_pos)
