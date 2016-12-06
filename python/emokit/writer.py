@@ -4,6 +4,7 @@ import time
 from threading import Thread, Lock
 
 from .python_queue import Queue
+from .util import writer_task_to_line
 
 
 class EmotivWriter(object):
@@ -79,42 +80,7 @@ class EmotivWriter(object):
                 if not self.data.empty():
                     next_task = self.data.get_nowait()
                     if next_task.is_values:
-                        data_to_write = "{timestamp},{f3_value},{f3_quality},{fc5_value},{fc5_quality},{f7_value}," \
-                                        "{f7_quality},{t7_value},{t7_quality},{p7_value},{p7_quality},{o1_value}," \
-                                        "{o1_quality},{o2_value},{o2_quality},{p8_value},{p8_quality},{t8_value}," \
-                                        "{t8_quality},{f8_value},{f8_quality},{af4_value},{af4_quality},{fc6_value}," \
-                                        "{fc6_quality},{f4_value},{f4_quality},{x_value},{y_value},{z_value}\n".format(
-                            timestamp=str(next_task.timestamp),
-                            f3_value=next_task.data['F3']['value'],
-                            f3_quality=next_task.data['F3']['quality'],
-                            fc5_value=next_task.data['FC5']['value'],
-                            fc5_quality=next_task.data['FC5']['quality'],
-                            f7_value=next_task.data['F7']['value'],
-                            f7_quality=next_task.data['F7']['quality'],
-                            t7_value=next_task.data['T7']['value'],
-                            t7_quality=next_task.data['T7']['quality'],
-                            p7_value=next_task.data['P7']['value'],
-                            p7_quality=next_task.data['P7']['quality'],
-                            o1_value=next_task.data['O1']['value'],
-                            o1_quality=next_task.data['O1']['quality'],
-                            o2_value=next_task.data['O2']['value'],
-                            o2_quality=next_task.data['O2']['quality'],
-                            p8_value=next_task.data['P8']['value'],
-                            p8_quality=next_task.data['P8']['quality'],
-                            t8_value=next_task.data['T8']['value'],
-                            t8_quality=next_task.data['T8']['quality'],
-                            f8_value=next_task.data['F8']['value'],
-                            f8_quality=next_task.data['F8']['quality'],
-                            af4_value=next_task.data['AF4']['value'],
-                            af4_quality=next_task.data['AF4']['quality'],
-                            fc6_value=next_task.data['FC6']['value'],
-                            fc6_quality=next_task.data['FC6']['quality'],
-                            f4_value=next_task.data['F4']['value'],
-                            f4_quality=next_task.data['F4']['quality'],
-                            x_value=next_task.data['X']['value'],
-                            y_value=next_task.data['Y']['value'],
-                            z_value=next_task.data['Z']['value']
-                        )
+                        data_to_write = writer_task_to_line(next_task)
                     else:
                         if next_task.is_encrypted:
                             if sys.version_info >= (3, 0):
@@ -142,14 +108,22 @@ class EmotivWriter(object):
                 print(ex.message)
             self.lock.acquire()
             if self._stop_signal:
-                if self.data.empty():
-                    print("Writer thread stopping...")
-                    self.running = False
+                print("Writer thread stopping...")
+                self.running = False
                 if not self._stop_notified:
                     print("Stop request received, Writer will empty queue before exiting.")
                     self._stop_notified = True
                 time.sleep(0.00001)
+        self.lock.release()
         if output_file is not None:
+            if data_buffer is not None:
+                if len(data_buffer):
+                    output_file.writelines(data_buffer)
+            if not self.data.empty():
+                while not self.data.empty():
+                    packet = self.data.get_nowait()
+                    if packet is not None:
+                        output_file.write(writer_task_to_line(packet))
             output_file.close()
         print("Writer stopped...")
         self.stopped = True

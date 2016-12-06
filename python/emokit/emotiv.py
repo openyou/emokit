@@ -200,6 +200,12 @@ class Emotiv(object):
             self.reader.stop()
         if self.crypto is not None:
             self.crypto.stop()
+        if self.decrypted_writer is not None:
+            self.decrypted_writer.stop()
+        if self.encrypted_writer is not None:
+            self.encrypted_writer.stop()
+        if self.value_writer is not None:
+            self.value_writer.stop()
         self._stop_signal = True
 
     def __enter__(self):
