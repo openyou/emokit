@@ -342,23 +342,18 @@ class Emotiv(object):
                 if self.crypto is not None:
                     if self.crypto.running and self.crypto.data_ready():
                         should_stop = False
-                        print("Waiting for crypto thread to finish processing....")
                 if self.decrypted_writer is not None:
                     if self.decrypted_writer.running:
                         should_stop = False
-                        print("Waiting for decrypted writer thread to finish processing....")
                 if self.encrypted_writer is not None:
                     if self.encrypted_writer.running:
                         should_stop = False
-                        print("Waiting for encrypted writer thread to finish processing....")
                 if self.value_writer is not None:
                     if self.value_writer.running:
                         should_stop = False
-                        print("Waiting for value writer thread to finish processing....")
                 if self.output is not None:
                     if self.output.running:
                         should_stop = False
-                        print("Waiting for output thread to finish processing....")
                 if should_stop:
                     self.running = False
 
