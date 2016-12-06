@@ -186,7 +186,8 @@ class Emotiv(object):
         Stops emotiv
         :return:
         """
-        self.reader.stop()
+        if self.reader is not None:
+            self.reader.stop()
         if self.crypto is not None:
             self.crypto.stop()
         self._stop_signal = True
