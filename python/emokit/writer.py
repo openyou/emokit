@@ -11,7 +11,7 @@ class EmotivWriter(object):
     Write data from headset to output. CSV file for now.
     """
 
-    def __init__(self, file_name, mode="csv", header_row=None, chunk_writes=True, chunk_size=16, **kwargs):
+    def __init__(self, file_name, mode="csv", header_row=None, chunk_writes=True, chunk_size=32, **kwargs):
         self.mode = mode
         self.lock = Lock()
         self.data = Queue()
