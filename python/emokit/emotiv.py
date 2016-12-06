@@ -14,7 +14,7 @@ from .python_queue import Queue
 from .reader import EmotivReader
 from .sensors import sensors_mapping
 from .tasks import EmotivOutputTask, EmotivWriterTask
-from .util import path_checker, system_platform
+from .util import path_checker, system_platform, values_header
 from .writer import EmotivWriter
 
 
@@ -172,11 +172,7 @@ class Emotiv(object):
                 self.value_writer = EmotivWriter(output_path, mode="csv", chunk_writes=self.chunk_writes,
                                                  chunk_size=self.chunk_size)
                 # Make the first row in the file the header with the sensor name
-                header_row = ['Timestamp']
-                for key in self.sensors.keys():
-                    header_row.append(key + " Value")
-                    header_row.append(key + " Quality")
-                self.value_writer.header_row = header_row
+                self.value_writer.header_row = values_header
                 self.value_writer.start()
 
     def initialize_crypto(self):

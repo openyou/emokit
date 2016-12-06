@@ -263,6 +263,11 @@ def path_checker(user_output_path, emotiv_filename):
     return output_path
 
 
+values_header = "Timestamp,F3 Value,F3 Quality,FC5 Value,5C5 Quality,F7 Value,F7 Quality,T7 Value,T7 Quality,P7 Value," \
+                "P7 Quality,O1 Value,O1 Quality,O2 Value,O2 Quality,P8 Value,P8 Quality,T8 Value,T8 Quality,F8 Value,F8 Quality," \
+                "AF4 Value,AF4 Quality,FC6 Value,FC6 Quality,F4 Value,F4 Quality,X Value,Y Value,Z Value\n"
+
+
 def writer_task_to_line(next_task):
     return "{timestamp},{f3_value},{f3_quality},{fc5_value},{fc5_quality},{f7_value}," \
            "{f7_quality},{t7_value},{t7_quality},{p7_value},{p7_quality},{o1_value}," \

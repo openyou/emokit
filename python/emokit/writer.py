@@ -54,13 +54,12 @@ class EmotivWriter(object):
                 if sys.version_info >= (3, 0):
                     if type(self.header_row) == str:
                         data = bytes(self.header_row, encoding='latin-1')
-                        output_file.write(data + '\n')
+                        output_file.write(data)
                     else:
-                        output_file.write(','.join(self.header_row) + '\n')
+                        output_file.write(self.header_row)
                 else:
                     if type(self.header_row) == str:
-                        data = [ord(char) for char in self.header_row]
-                        output_file.write(data + '\n')
+                        output_file.write(self.header_row)
                     else:
                         output_file.write(','.join(self.header_row) + '\n')
 
