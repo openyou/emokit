@@ -153,7 +153,7 @@ def main():
                             record_packets.append(packet)
                         updated = True
                         packets_in_queue += 1
-                        time.sleep(0.001)
+                    time.sleep(0.001)
             except Exception as ex:
                 print("EmotivRender DequeuePlotError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2],
                       " : ", ex)
