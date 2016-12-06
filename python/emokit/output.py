@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from datetime import datetime
+import time
 from threading import Thread, Lock
 
 from .python_queue import Queue
@@ -47,7 +47,7 @@ class EmotivOutput(object):
         """Do not call explicitly, called upon initialization of class"""
         # self.lock.acquire()
         dirty = False
-        tick_time = datetime.now()
+        tick_time = time.time()
         last_packets_received = 0
         last_packets_decrypted = 0
         packets_received_since_last_update = 0
@@ -57,7 +57,7 @@ class EmotivOutput(object):
         self.lock.acquire()
         while self.running:
             self.lock.release()
-            if not self.tasks.empty():
+            while not self.tasks.empty():
                 next_task = self.tasks.get_nowait()
                 if next_task.packet_received:
                     self.packets_received += 1
@@ -68,13 +68,13 @@ class EmotivOutput(object):
                         last_sensors = next_task.packet_data.sensors
                         battery = next_task.packet_data.battery
 
-                if tick_time.second != datetime.now().second:
+                if time.time() - tick_time > 1:
+                    tick_time = time.time()
                     packets_received_since_last_update = self.packets_received - last_packets_received
                     packets_processed_since_last_update = self.packets_processed - last_packets_decrypted
                     last_packets_decrypted = self.packets_processed
                     last_packets_received = self.packets_received
                     dirty = True
-                    tick_time = datetime.now()
                 if dirty:
                     if system_platform == "Windows":
                         os.system('cls')
@@ -153,6 +153,7 @@ class EmotivOutput(object):
             if self._stop_signal:
                 print("Output thread stopping.")
                 self.running = False
+            time.sleep(0.11)
         self.lock.release()
 
 

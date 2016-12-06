@@ -5,6 +5,7 @@ import os
 import sys
 from datetime import datetime
 from threading import Thread, Lock
+from time import time
 
 from .decrypter import EmotivCrypto
 from .output import EmotivOutput
@@ -224,7 +225,7 @@ class Emotiv(object):
         if self.crypto is not None:
             self.crypto.start()
         last_packets_received = 0
-        tick_time = datetime.now()
+        tick_time = time()
         stale_rx = 0
         restarting_reader = False
         self.lock.acquire()
@@ -299,13 +300,13 @@ class Emotiv(object):
                                         timestamp=decrypted_task.timestamp
                                     )
                                 )
-
-            if tick_time.second != datetime.now().second:
+            tick_diff = time() - tick_time
+            if tick_diff >= 1:
+                tick_time = time()
                 packets_received_since_last_update = self.packets_received - last_packets_received
                 if packets_received_since_last_update == 1 or packets_received_since_last_update == 0:
                     stale_rx += 1
                 last_packets_received = self.packets_received
-                tick_time = datetime.now()
                 if restarting_reader and self.reader.stopped:
                     print("Restarting Reader")
                     stale_rx = 0
@@ -317,6 +318,7 @@ class Emotiv(object):
                 if stale_rx > 5 and not restarting_reader:
                     self.reader.stop()
                     restarting_reader = True
+
             self.lock.acquire()
             if self._stop_signal:
                 if not self.reader.running and not restarting_reader:

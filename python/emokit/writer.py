@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import csv
 import sys
+import time
 from threading import Thread, Lock
 
 from .python_queue import Queue
@@ -42,29 +42,27 @@ class EmotivWriter(object):
 
     def run(self, source=None):
         """Do not call explicitly, called upon initialization of class"""
-
-        if sys.version_info >= (3, 0):
-            file = open(self.file_name, 'w', newline='')
-        else:
-            file = open(self.file_name, 'wb')
         if self.mode == "csv":
-            writer = csv.writer(file, quoting=csv.QUOTE_ALL)
+            if sys.version_info >= (3, 0):
+                output_file = open(self.file_name, 'w', newline='')
+            else:
+                output_file = open(self.file_name, 'wb')
             if self.header_row is not None:
                 if sys.version_info >= (3, 0):
                     if type(self.header_row) == str:
                         data = bytes(self.header_row, encoding='latin-1')
-                        writer.writerow(data)
+                        output_file.write(data + '\n')
                     else:
-                        writer.writerow(self.header_row)
+                        output_file.write(','.join(self.header_row) + '\n')
                 else:
                     if type(self.header_row) == str:
                         data = [ord(char) for char in self.header_row]
-                        writer.writerow(data)
+                        output_file.write(data + '\n')
                     else:
-                        writer.writerow(self.header_row)
+                        output_file.write(','.join(self.header_row) + '\n')
 
         else:
-            writer = None
+            output_file = None
         self.lock.acquire()
         while self.running:
             self.lock.release()
@@ -72,23 +70,42 @@ class EmotivWriter(object):
                 if not self.data.empty():
                     next_task = self.data.get_nowait()
                     if next_task.is_values:
-                        data_to_write = [next_task.timestamp,
-                                         next_task.data['F3']['value'], next_task.data['F3']['quality'],
-                                         next_task.data['FC5']['value'], next_task.data['FC5']['quality'],
-                                         next_task.data['F7']['value'], next_task.data['F7']['quality'],
-                                         next_task.data['T7']['value'], next_task.data['T7']['quality'],
-                                         next_task.data['P7']['value'], next_task.data['P7']['quality'],
-                                         next_task.data['O1']['value'], next_task.data['O1']['quality'],
-                                         next_task.data['O2']['value'], next_task.data['O2']['quality'],
-                                         next_task.data['P8']['value'], next_task.data['P8']['quality'],
-                                         next_task.data['T8']['value'], next_task.data['T8']['quality'],
-                                         next_task.data['F8']['value'], next_task.data['F8']['quality'],
-                                         next_task.data['AF4']['value'], next_task.data['AF4']['quality'],
-                                         next_task.data['FC6']['value'], next_task.data['FC6']['quality'],
-                                         next_task.data['F4']['value'], next_task.data['F4']['quality'],
-                                         next_task.data['X']['value'], next_task.data['Y']['value'],
-                                         next_task.data['Z']['value'],
-                                         ]
+                        data_to_write = "{timestamp},{f3_value},{f3_quality},{fc5_value},{fc5_quality},{f7_value}," \
+                                        "{f7_quality},{t7_value},{t7_quality},{p7_value},{p7_quality},{o1_value}," \
+                                        "{o1_quality},{o2_value},{o2_quality},{p8_value},{p8_quality},{t8_value}," \
+                                        "{t8_quality},{f8_value},{f8_quality},{af4_value},{af4_quality},{fc6_value}," \
+                                        "{fc6_quality},{f4_value},{f4_quality},{x_value},{y_value},{z_value}".format(
+                            timestamp=str(next_task.timestamp),
+                            f3_value=next_task.data['F3']['value'],
+                            f3_quality=next_task.data['F3']['quality'],
+                            fc5_value=next_task.data['FC5']['value'],
+                            fc5_quality=next_task.data['FC5']['quality'],
+                            f7_value=next_task.data['F7']['value'],
+                            f7_quality=next_task.data['F7']['quality'],
+                            t7_value=next_task.data['T7']['value'],
+                            t7_quality=next_task.data['T7']['quality'],
+                            p7_value=next_task.data['P7']['value'],
+                            p7_quality=next_task.data['P7']['quality'],
+                            o1_value=next_task.data['O1']['value'],
+                            o1_quality=next_task.data['O1']['quality'],
+                            o2_value=next_task.data['O2']['value'],
+                            o2_quality=next_task.data['O2']['quality'],
+                            p8_value=next_task.data['P8']['value'],
+                            p8_quality=next_task.data['P8']['quality'],
+                            t8_value=next_task.data['T8']['value'],
+                            t8_quality=next_task.data['T8']['quality'],
+                            f8_value=next_task.data['F8']['value'],
+                            f8_quality=next_task.data['F8']['quality'],
+                            af4_value=next_task.data['AF4']['value'],
+                            af4_quality=next_task.data['AF4']['quality'],
+                            fc6_value=next_task.data['FC6']['value'],
+                            fc6_quality=next_task.data['FC6']['quality'],
+                            f4_value=next_task.data['F4']['value'],
+                            f4_quality=next_task.data['F4']['quality'],
+                            x_value=next_task.data['X']['value'],
+                            y_value=next_task.data['Y']['value'],
+                            z_value=next_task.data['Z']['value']
+                        )
                     else:
                         if next_task.is_encrypted:
                             if sys.version_info >= (3, 0):
@@ -103,8 +120,9 @@ class EmotivWriter(object):
                         else:
                             if type(data) == str:
                                 data = [ord(char) for char in data]
-                        data_to_write = [next_task.timestamp, data]
-                    writer.writerow(data_to_write)
+                        data_to_write = [str(next_task.timestamp), data]
+                    output_file.write(data_to_write + '\n')
+
             except Exception as ex:
                 print(ex.message)
             self.lock.acquire()
@@ -115,9 +133,9 @@ class EmotivWriter(object):
                 if not self._stop_notified:
                     print("Stop request received, Writer will empty queue before exiting.")
                     self._stop_notified = True
-
-        if file is not None:
-            file.close()
+                time.sleep(0.00001)
+        if output_file is not None:
+            output_file.close()
         print("Writer stopped...")
         self.stopped = True
         return

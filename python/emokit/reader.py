@@ -99,7 +99,7 @@ class EmotivReader(object):
                     # Catching StopIteration for some reason stops at the second record,
                     #  even though there are more results.
             else:
-                time.sleep(0.0005)
+                time.sleep(0.00001)
             self.lock.acquire()
             if self._stop_signal:
                 print("Reader stopping...")

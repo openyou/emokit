@@ -3,6 +3,7 @@ from __future__ import absolute_import, division
 
 import os
 import sys
+import time
 from threading import Thread, Lock
 
 from Crypto.Cipher import AES
@@ -82,6 +83,7 @@ class EmotivCrypto:
             if self._stop_signal and self._encrypted_queue.empty():
                 print("Crypto thread stopping.")
                 self.running = False
+            time.sleep(0.00001)
         self.lock.release()
 
     def start(self):
