@@ -13,7 +13,7 @@ class EmotivOutput(object):
         Write output to console.
     """
 
-    def __init__(self, serial_number=""):
+    def __init__(self, serial_number="", old_model=False):
         self.tasks = Queue()
         self.running = True
         self.stopped = False
@@ -22,6 +22,7 @@ class EmotivOutput(object):
         self.packets_processed = 0
         self._stop_signal = False
         self.serial_number = serial_number
+        self.old_model = old_model
         self.lock = Lock()
         self.thread = Thread(target=self.run)
         self.thread.setDaemon(True)
@@ -144,7 +145,8 @@ class EmotivOutput(object):
                         sample_rate=str(packets_received_since_last_update),
                         crypto_rate=str(packets_processed_since_last_update),
                         received=str(self.packets_received),
-                        processed=str(self.packets_processed)
+                        processed=str(self.packets_processed),
+                        old_model=self.old_model
                     ))
                     dirty = False
             self.lock.acquire()
@@ -155,7 +157,7 @@ class EmotivOutput(object):
 
 
 output_template = """
-Emokit - v0.0.8 SN: {serial_number}
+Emokit - v0.0.8 SN: {serial_number}  Old Model: {old_model}
 +========================================================+
 | Sensor |   Value  | Quality  | Quality L1 | Quality L2 |
 +--------+----------+----------+------------+------------+

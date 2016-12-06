@@ -103,7 +103,7 @@ class Emotiv(object):
     def initialize_output(self):
         print("Initializing Output Thread...")
         if self.display_output:
-            self.output = EmotivOutput(serial_number=self.serial_number)
+            self.output = EmotivOutput(serial_number=self.serial_number, old_model=self.old_model)
 
     def initialize_reader(self):
         print("Initializing Reader Thread...")
