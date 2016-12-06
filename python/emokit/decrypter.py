@@ -12,7 +12,7 @@ from .util import crypto_key
 
 
 class EmotivCrypto:
-    def __init__(self, serial_number=None, is_research=False):
+    def __init__(self, serial_number=None, is_research=False, verbose=False):
         """
         Performs decryption of packets received. Stores decrypted packets in a Queue for use.
 
@@ -25,6 +25,7 @@ class EmotivCrypto:
         self._decrypted_queue = Queue()
         # Running state.
         self.running = False
+        self.verbose = verbose
         # Stop signal tells the loop to stop after processing remaining tasks.
         self._stop_signal = False
         # The emotiv serial number.
@@ -44,7 +45,7 @@ class EmotivCrypto:
         Do not call explicitly, use .start() instead.
         """
         # Initialize AES
-        cipher = self.new_cipher()
+        cipher = self.new_cipher(self.verbose)
         self.lock.acquire()
         while self.running:
             self.lock.release()
@@ -99,18 +100,22 @@ class EmotivCrypto:
         self.lock.release()
         self.thread.join(60)
 
-    def new_cipher(self):
+    def new_cipher(self, verbose=False):
         """
         Generates a new AES cipher from the serial number and headset version.
         :return: New AES cipher
         """
+        if verbose:
+            print("EmotivCrypto: Generating new AES cipher.")
         # Create initialization vector.
         iv = os.urandom(AES.block_size)
         # Make sure the serial number was set.
         if self.serial_number is None:
             raise ValueError("Serial number must not be None.")
+        if verbose:
+            print("EmotivCrypto: Serial Number - {serial_number}".format(serial_number=self.serial_number))
         # Create and return new AES class, using the serial number and headset version.
-        return AES.new(crypto_key(self.serial_number, self.is_research), AES.MODE_ECB, iv)
+        return AES.new(crypto_key(self.serial_number, self.is_research, verbose), AES.MODE_ECB, iv)
 
     def add_task(self, data):
         """

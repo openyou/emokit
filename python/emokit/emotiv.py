@@ -172,7 +172,7 @@ class Emotiv(object):
     def initialize_crypto(self):
         print("Initializing Crypto Thread...")
         if self.read_encrypted:
-            self.crypto = EmotivCrypto(self.serial_number, self.is_research)
+            self.crypto = EmotivCrypto(self.serial_number, self.is_research, verbose=self.verbose)
 
     def start(self):
         """

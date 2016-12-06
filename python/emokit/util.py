@@ -166,7 +166,7 @@ print_device_info = {
 }
 
 
-def crypto_key(serial_number, is_research=False):
+def crypto_key(serial_number, is_research=False, verbose=False):
     k = ['\0'] * 16
     k[0] = serial_number[-1]
     k[1] = '\0'
@@ -195,6 +195,12 @@ def crypto_key(serial_number, is_research=False):
     k[13] = '\0'
     k[14] = serial_number[-4]
     k[15] = 'P'
+    if verbose:
+        print("EmotivCrypto: Generated Crypto Key from Serial Number...\n"
+              "   Serial Number - {serial_number} | is research - {is_research} \n"
+              "   AES KEY - {aes_key}".format(serial_number=serial_number, is_research=is_research,
+                                              aes_key=k))
+
     return ''.join(k)
 
 
