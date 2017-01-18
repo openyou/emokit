@@ -81,7 +81,7 @@ class EmotivPacket(object):
         """
         Returns custom string representation of the Emotiv Packet.
         """
-        return 'EmotivPacket(counter=%i, battery=%i, gyro_x=%i, gyro_y=%i, gyro_z=%s)' % (
+        return 'EmotivPacket(counter={}, battery={}, gyro_x={}, gyro_y={}, gyro_z={})'.format(
             self.counter,
             self.battery,
             self.sensors['X']['value'],

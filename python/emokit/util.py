@@ -263,9 +263,9 @@ def path_checker(user_output_path, emotiv_filename):
     return output_path
 
 
-values_header = "Timestamp,F3 Value,F3 Quality,FC5 Value,5C5 Quality,F7 Value,F7 Quality,T7 Value,T7 Quality,P7 Value," \
+values_header = "Timestamp,F3 Value,F3 Quality,FC5 Value,FC5 Quality,F7 Value,F7 Quality,T7 Value,T7 Quality,P7 Value," \
                 "P7 Quality,O1 Value,O1 Quality,O2 Value,O2 Quality,P8 Value,P8 Quality,T8 Value,T8 Quality,F8 Value,F8 Quality," \
-                "AF4 Value,AF4 Quality,FC6 Value,FC6 Quality,F4 Value,F4 Quality,X Value,Y Value,Z Value\n"
+                "AF4 Value,AF4 Quality,FC6 Value,FC6 Quality,F4 Value,F4 Quality,AF3 Value,AF3 Quality,X Value,Y Value,Z Value\n"
 
 
 def writer_task_to_line(next_task):
@@ -273,7 +273,8 @@ def writer_task_to_line(next_task):
            "{f7_quality},{t7_value},{t7_quality},{p7_value},{p7_quality},{o1_value}," \
            "{o1_quality},{o2_value},{o2_quality},{p8_value},{p8_quality},{t8_value}," \
            "{t8_quality},{f8_value},{f8_quality},{af4_value},{af4_quality},{fc6_value}," \
-           "{fc6_quality},{f4_value},{f4_quality},{x_value},{y_value},{z_value}\n".format(
+           "{fc6_quality},{f4_value},{f4_quality},{af3_value},{af3_quality},{x_value}," \
+           "{y_value},{z_value}\n".format(
         timestamp=str(next_task.timestamp),
         f3_value=next_task.data['F3']['value'], f3_quality=next_task.data['F3']['quality'],
         fc5_value=next_task.data['FC5']['value'], fc5_quality=next_task.data['FC5']['quality'],
@@ -288,5 +289,6 @@ def writer_task_to_line(next_task):
         af4_value=next_task.data['AF4']['value'], af4_quality=next_task.data['AF4']['quality'],
         fc6_value=next_task.data['FC6']['value'], fc6_quality=next_task.data['FC6']['quality'],
         f4_value=next_task.data['F4']['value'], f4_quality=next_task.data['F4']['quality'],
+        af3_value=next_task.data['AF3']['value'], af3_quality=next_task.data['AF3']['quality'],
         x_value=next_task.data['X']['value'], y_value=next_task.data['Y']['value'],
         z_value=next_task.data['Z']['value'])
