@@ -12,12 +12,13 @@ class EmotivPacket(object):
     Basic semantics for input bytes.
     """
 
-    def __init__(self, data, timestamp=None):
+    def __init__(self, data, timestamp=None, verbose=False):
         """
         Initializes packet data. Sets the global battery value.
         Updates each sensor with current sensor value from the packet data.
 
         :param data - Values decrypted to be processed
+        :param verbose - Flag for outputting debug values.
         """
         if timestamp is None:
             self.timestamp = datetime.now()
@@ -51,20 +52,21 @@ class EmotivPacket(object):
 
         for name, bits in sensor_bits.items():
             # Get Level for sensors subtract 8192 to get signed value
-            value = get_level(self.raw_data, bits) - 8192
+            value = get_level(self.raw_data, bits, verbose) - 8192
             setattr(self, name, (value,))
             self.sensors[name]['value'] = value
-        self.quality_bit, self.quality_value = self.handle_quality(self.sensors)
+        self.quality_bit, self.quality_value = self.handle_quality(self.sensors, verbose)
 
-    def handle_quality(self, sensors):
+    def handle_quality(self, sensors, verbose=False):
         """
         Sets the quality value for the sensor from the quality bits in the packet data.
         Optionally will return the value.
 
         :param sensors - reference to sensors dict in Emotiv class.
+        :param verbose - Flag for outputting debug values.
 
         """
-        current_contact_quality = get_level(self.raw_data, quality_bits)
+        current_contact_quality = get_level(self.raw_data, quality_bits, verbose)
 
         if sys.version_info >= (3, 0):
             sensor_bit = self.raw_data[0]

@@ -13,7 +13,7 @@ class EmotivOutput(object):
         Write output to console.
     """
 
-    def __init__(self, serial_number="", old_model=False):
+    def __init__(self, serial_number="", old_model=False, verbose=False):
         self.tasks = Queue()
         self.running = True
         self.stopped = False
@@ -24,7 +24,8 @@ class EmotivOutput(object):
         self.serial_number = serial_number
         self.old_model = old_model
         self.lock = Lock()
-        self.thread = Thread(target=self.run)
+        self.verbose = verbose
+        self.thread = Thread(target=self.run, kwargs={'verbose': self.verbose})
         self.thread.setDaemon(True)
 
     def start(self):
@@ -43,7 +44,7 @@ class EmotivOutput(object):
         self._stop_signal = True
         self.lock.release()
 
-    def run(self, source=None):
+    def run(self, source=None, verbose=False):
         """Do not call explicitly, called upon initialization of class"""
         # self.lock.acquire()
         dirty = False
@@ -76,10 +77,11 @@ class EmotivOutput(object):
                     last_packets_received = self.packets_received
                     dirty = True
                 if dirty:
-                    if system_platform == "Windows":
-                        os.system('cls')
-                    else:
-                        os.system('clear')
+                    if not verbose:
+                        if system_platform == "Windows":
+                            os.system('cls')
+                        else:
+                            os.system('clear')
                     print(output_template.format(
                         serial_number=self.serial_number,
                         f3_value=last_sensors['F3']['value'],

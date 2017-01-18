@@ -8,10 +8,12 @@ if sys.version_info >= (3, 0):  # pragma: no cover
     unicode = str
 
 
-def get_level(data, bits):
+def get_level(data, bits, verbose=False):
     """
     Returns sensor level value from data using sensor bit mask in micro volts (uV).
     """
+    if verbose:
+        return detailed_get_level(data, bits)
     level = 0
     for i in range(13, -1, -1):
         level <<= 1
@@ -21,6 +23,47 @@ def get_level(data, bits):
             level |= (data[b] >> o) & 1
         else:
             level |= (ord(data[b]) >> o) & 1
+    return level
+
+
+def detailed_get_level(data, bits):
+    """
+    Returns sensor level value from data using sensor bit mask in micro volts (uV), with detailed logging.
+    """
+    level = 0
+    print("Begin Sensor Level Calculation")
+    print("Data: {}".format(data))
+    print("Bits: {}".format(bits))
+    for i in range(13, -1, -1):
+        print("Iteration: {}".format(i))
+        print("Level: {}".format(level))
+        level <<= 1
+        print("Shift left level by one by: {}".format(level))
+        bit_at_index = bits[i]
+        print("Bit Index: {}".format(bit_at_index))
+        b = (bit_at_index // 8) + 1
+        print("Floored(ABS or Integer) Quotient of bit and 8 plus one: {}".format(b))
+        o = bit_at_index % 8
+        print("Remainder of bit and 8: {}".format(o))
+        if sys.version_info >= (3, 0):
+            data_at_bit_index_divided_by_8_plus_one = data[b]
+            print("Data at bit index divided by 8, plus one: {}".format(data_at_bit_index_divided_by_8_plus_one))
+            data_shifted_right_by_remainder = data_at_bit_index_divided_by_8_plus_one >> o
+            print("Data shifted right by remainder: {}".format(data_shifted_right_by_remainder))
+            bitwise_of_data_shifted_right_and_one = data_shifted_right_by_remainder & 1
+            print("Bitwise of data shifted right and one: {}".format(bitwise_of_data_shifted_right_and_one))
+            level |= bitwise_of_data_shifted_right_and_one
+            print("New level value with bitwise value added to level: {}".format(level))
+        else:
+            data_at_bit_index_divided_by_8_plus_one = ord(data[b])
+            print("Data at bit index divided by 8, plus one: {}".format(data_at_bit_index_divided_by_8_plus_one))
+            data_shifted_right_by_remainder = data_at_bit_index_divided_by_8_plus_one >> o
+            print("Data shifted right by remainder: {}".format(data_shifted_right_by_remainder))
+            bitwise_of_data_shifted_right_and_one = data_shifted_right_by_remainder & 1
+            print("Bitwise of data shifted right and one: {}".format(bitwise_of_data_shifted_right_and_one))
+            level |= bitwise_of_data_shifted_right_and_one
+            print("New level value with bitwise value added to level: {}".format(level))
+    print("Sensor level: {}".format(level))
     return level
 
 

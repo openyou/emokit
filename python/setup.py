@@ -18,6 +18,11 @@ if system_platform == "Windows":
     requirements += ['pywinusb']
 else:
     requirements += ['pyhidapi']
+
+setup_requirements = ['pytest-runner', ]
+setup_requirements += requirements
+test_requirements = ['pytest', ]
+test_requirements += requirements
 setup(
     name="emokit",
     version=emokit.__version__,
@@ -32,6 +37,8 @@ setup(
     packages=packages,
     install_requires=requirements,
     scripts=[],
+    setup_requires=setup_requirements,
+    tests_require=test_requirements,
     platforms="any",
     zip_safe=False,
     classifiers=[
