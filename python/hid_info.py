@@ -53,4 +53,7 @@ get_hid_devices = {
     'Windows': hid_enumerate_win
 }
 
+print(sys.version_info)
+print(system_platform)
+
 print_hid_enumerate(system_platform)
