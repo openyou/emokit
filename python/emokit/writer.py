@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+from threading import Thread, Lock
+
 import sys
 import time
-from threading import Thread, Lock
 
 from .python_queue import Queue
 from .util import writer_task_to_line
@@ -82,8 +83,8 @@ class EmotivWriter(object):
                         else:
                             data = next_task.data
                         if sys.version_info >= (3, 0):
-                            if type(data) == str:
-                                data = bytes(data, encoding='latin-1')
+                            # Values are int
+                            data = ','.join([str(value) for value in data])
                         else:
                             if type(data) == str:
                                 data = ','.join([str(ord(char)) for char in data])
