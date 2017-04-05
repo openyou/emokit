@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-from threading import Thread, Lock
-
 import sys
 import time
+from threading import Thread, Lock
 
 from .python_queue import Queue
 from .util import writer_task_to_line
@@ -88,6 +87,9 @@ class EmotivWriter(object):
                         else:
                             if type(data) == str:
                                 data = ','.join([str(ord(char)) for char in data])
+                            else:
+                                # Writing encrypted.
+                                data = ','.join([char for char in data])
                         data_to_write = ','.join([str(next_task.timestamp), data])
                         data_to_write += '\n'
                     if data_buffer is not None:

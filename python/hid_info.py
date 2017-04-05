@@ -25,7 +25,7 @@ def print_hid_enumerate(platform):
     """
     Loops over all devices in the hidapi and attempts prints information.
 
-    This is a fall back method that give the user information to give the developers when opening an issue.
+    This is a fall back method that gives the user information to give the developers when opening an issue.
     """
     devices = get_hid_devices[platform]()
     for device in devices:
