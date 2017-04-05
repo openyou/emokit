@@ -36,7 +36,7 @@ class Emotiv(object):
         :param serial_number - Specify serial_number, needed to decrypt packets for raw data reader and special cases.
         :param is_research - Is EPOC headset research edition? Doesn't seem to work even if it is.
         :param write - Write data to csv.
-        :param write_encrypted - Write encrypted data
+        :param write_encrypted - Write encrypted data, may impact read performance.
         :param write_values - Write decrypted sensor data, True overwrites exporting data from dongle pre-processing.
         :param input_source - Source to read from, emotiv or a file name
                    (must be a csv, exported from emokit or following our format)
@@ -110,7 +110,7 @@ class Emotiv(object):
     def initialize_output(self):
         print("Initializing Output Thread...")
         if self.display_output:
-            self.output = EmotivOutput(serial_number=self.serial_number, old_model=self.old_model)
+            self.output = EmotivOutput(serial_number=self.serial_number, old_model=self.old_model, verbose=self.verbose)
 
     def initialize_reader(self):
         print("Initializing Reader Thread...")
@@ -255,7 +255,7 @@ class Emotiv(object):
                 self.packets_received += 1
                 if not self.read_encrypted:
                     if not self.read_values:
-                        new_packet = EmotivPacket(reader_task.data)
+                        new_packet = EmotivPacket(reader_task.data, verbose=self.verbose)
                         if new_packet.battery is not None:
                             self.battery = new_packet.battery
                         self.packets.put_nowait(new_packet)

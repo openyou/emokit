@@ -3,6 +3,7 @@
 from emokit.emotiv import EmotivPacket
 from emokit.sensors import sensor_bits
 
+
 def get_test_data():
     '''
     test_package.data
@@ -32,11 +33,13 @@ def get_test_data():
         data = bin_data.read()
         return data
 
+
 def test_init():
     data = get_test_data()
     packet = EmotivPacket(data)
     for sensor in sensor_bits.keys():
         assert sensor in packet.sensors.keys()
+
 
 def test_repr():
     data = get_test_data()

@@ -86,8 +86,9 @@ class EmotivWriter(object):
                                 data = bytes(data, encoding='latin-1')
                         else:
                             if type(data) == str:
-                                data = [ord(char) for char in data]
-                        data_to_write = [str(next_task.timestamp), data]
+                                data = ','.join([str(ord(char)) for char in data])
+                        data_to_write = ','.join([str(next_task.timestamp), data])
+                        data_to_write += '\n'
                     if data_buffer is not None:
                         data_buffer.append(data_to_write)
                         if len(data_buffer) >= data_buffer_size - 1:
