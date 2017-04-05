@@ -104,30 +104,35 @@ def get_quality_level(quality_scale, old_model=False):
 
 def get_quality_scale_level_color(quality_value, old_model=False):
     if old_model:
-        return get_quality_color(quality_value // 540, old_model)
+        quality_value = quality_value // 520
     else:
-        return get_quality_color(quality_value // 1024, False)
+        quality_value = quality_value // 1024
+    return get_quality_color(quality_value, old_model)
+
+
+old_color_scale = {
+    0: (0, 0, 0),
+    1: (255, 0, 0),
+    2: (255, 255, 0),
+    3: (0, 255, 0),
+    4: (0, 255, 0)
+}
+
+new_color_scale = {
+    0: (0, 0, 0),
+    1: (255, 0, 0),
+    2: (255, 0, 0),
+    3: (255, 255, 0),
+    4: (255, 255, 0)
+}
 
 
 def get_quality_color(quality_scale, old_model=False):
     if old_model:
-        if quality_scale == 0:
-            return 0, 0, 0
-        if quality_scale == 1:
-            return 255, 0, 0
-        if quality_scale == 2:
-            return 255, 255, 0
-        if 3 == quality_scale == 4:
-            return 0, 255, 0
+        color = old_color_scale.get(quality_scale)
     else:
-        if quality_scale == 0:
-            return 0, 0, 0
-        if 1 == quality_scale == 2:
-            return 255, 0, 0
-        if 3 == quality_scale == 4:
-            return 255, 255, 0
-        if quality_scale > 4:
-            return 0, 255, 0
+        color = new_color_scale.get(quality_scale, (0, 255, 0))
+    return tuple(color)
 
 
 def is_old_model(serial_number):
