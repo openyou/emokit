@@ -12,6 +12,12 @@ Contributions by
 * Sharif Olorin  (http://github.com/fractalcat) - hidapi support
 * Bill Schumacher (http://github.com/bschumacher) - Fixed the Python library
 
+Headset Support
+===============
+
+Supported: Epoc, Epoc+(Pre-2016, limited gyro sensors)
+Unsupported: Epoc+(2016+), other models.
+
 Description
 ===========
 
@@ -85,17 +91,22 @@ Python library
 --------------
 
   Code:
-  
-    import emotiv
+
+    # -*- coding: utf-8 -*-
+    # This is an example of popping a packet from the Emotiv class's packet queue
+
+
+    import time
+
+    from emokit.emotiv import Emotiv
 
     if __name__ == "__main__":
-      with emotiv.Emotiv() as headset:
-          while True:
-            packet = headset.dequeue()
-            if packet is not None:
-                print("Gyro - X:{x_position} Y:{y_position}".format(x_position=packet.sensors['X']['value'],
-                                                                    y_position=packet.sensors['Y']['value']))
-
+        with Emotiv(display_output=True, verbose=True) as headset:
+            while True:
+                packet = headset.dequeue()
+                if packet is not None:
+                   pass
+                time.sleep(0.001)
 
 
 Bindings
@@ -169,22 +180,30 @@ Suites? Saddest hotel EVER.
  - *What should my output look like?*
  
  Idling, not on someone's head it should look something like this:  
- Y Reading: 0 Quality: 0
- F3 Reading: 316 Quality: 24
- F4 Reading: 779 Quality: 16
- P7 Reading: 189 Quality: 0
- FC6 Reading: 925 Quality: 24
- F7 Reading: 80 Quality: 0
- F8 Reading: 1037 Quality: 8
- T7 Reading: 345 Quality: 16
- P8 Reading: -92 Quality: 16
- FC5 Reading: 1113 Quality: 16
- AF4 Reading: 476 Quality: 0
- Unknown Reading: 82 Quality: 8
- T8 Reading: 636 Quality: 16
- X Reading: 1 Quality: 0
- Z Reading: ? Quality: 0
- O2 Reading: 216 Quality: 0
- O1 Reading: -39 Quality: 24
- AF3 Reading: 100 Quality: 24
- Battery: 0
+
+Emokit - v0.0.8 SN: ActualSerialNumberHere  Old Model: False
++========================================================+
+| Sensor |   Value  | Quality  | Quality L1 | Quality L2 |
++--------+----------+----------+------------+------------+
+|   F3   |   292    |    24    |  Nothing   |  Nothing   |
+|   FC5  |   1069   |    0     |  Nothing   |  Nothing   |
+|   AF3  |   110    |    8     |  Nothing   |  Nothing   |
+|   F7   |    63    |    24    |  Nothing   |  Nothing   |
+|   T7   |   322    |    8     |  Nothing   |  Nothing   |
+|   P7   |   166    |    0     |  Nothing   |  Nothing   |
+|   O1   |   -62    |    24    |  Nothing   |  Nothing   |
+|   O2   |   235    |    24    |  Nothing   |  Nothing   |
+|   P8   |   -63    |    24    |  Nothing   |  Nothing   |
+|   T8   |   626    |    16    |  Nothing   |  Nothing   |
+|   F8   |   1045   |    16    |  Nothing   |  Nothing   |
+|   AF4  |   578    |    8     |  Nothing   |  Nothing   |
+|   FC6  |   973    |    16    |  Nothing   |  Nothing   |
+|   F4   |   780    |    8     |  Nothing   |  Nothing   |
+|   X    |    2     |   N/A    |    N/A     |    N/A     |
+|   Y    |    1     |   N/A    |    N/A     |    N/A     |
+|   Z    |    ?     |   N/A    |    N/A     |    N/A     |
+|  Batt  |    46    |   N/A    |    N/A     |    N/A     |
++--------+----------+----------+------------+------------+
+|Packets Received:   452    |  Packets Processed:   447  |
+|   Sampling Rate:    2     |        Crypto Rate:    0   |
++========================================================+
