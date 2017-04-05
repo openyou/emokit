@@ -10,12 +10,12 @@ import sys
 import time
 
 import pygame
+from emokit.emotiv import Emotiv
+from emokit.util import get_quality_scale_level_color
 from pygame import FULLSCREEN
 
 if platform.system() == "Windows":
     pass
-from emokit.emotiv import Emotiv
-from emokit.util import get_quality_scale_level_color
 
 
 class Grapher(object):
@@ -68,10 +68,7 @@ class Grapher(object):
         pos = self.x_offset, self.calc_y(self.buffer[0][0]) + self.y
         for i, (value, quality) in enumerate(self.buffer):
             y = self.calc_y(value) + self.y
-            if self.old_model:
-                color = str(get_quality_scale_level_color(quality, True))
-            else:
-                color = str(get_quality_scale_level_color(quality, False))
+            color = get_quality_scale_level_color(quality, self.old_model)
             pygame.draw.line(self.screen, color, pos, (self.x_offset + i, y))
             pos = (self.x_offset + i, y)
         self.screen.blit(self.text, self.text_pos)
