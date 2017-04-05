@@ -80,6 +80,10 @@ class EmotivOutput(object):
                         os.system('cls')
                     else:
                         os.system('clear')
+                    if battery is None:
+                        # TODO: Figure out why battery is None, probably just because the counter
+                        #  hasn't rolled to the battery counter yet. except for new devices apparently.
+                        battery = 0
                     print(output_template.format(
                         serial_number=self.serial_number,
                         f3_value=last_sensors['F3']['value'],
