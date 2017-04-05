@@ -132,7 +132,7 @@ def get_quality_color(quality_scale, old_model=False):
         color = old_color_scale.get(quality_scale)
     else:
         color = new_color_scale.get(quality_scale, (0, 255, 0))
-    return tuple(color)
+    return color
 
 
 def is_old_model(serial_number):
