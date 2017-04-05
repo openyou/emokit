@@ -8,10 +8,12 @@ if sys.version_info >= (3, 0):  # pragma: no cover
     unicode = str
 
 
-def get_level(data, bits):
+def get_level(data, bits, verbose=False):
     """
     Returns sensor level value from data using sensor bit mask in micro volts (uV).
     """
+    if verbose:
+        return detailed_get_level(data, bits)
     level = 0
     for i in range(13, -1, -1):
         level <<= 1
@@ -21,6 +23,47 @@ def get_level(data, bits):
             level |= (data[b] >> o) & 1
         else:
             level |= (ord(data[b]) >> o) & 1
+    return level
+
+
+def detailed_get_level(data, bits):
+    """
+    Returns sensor level value from data using sensor bit mask in micro volts (uV), with detailed logging.
+    """
+    level = 0
+    print("Begin Sensor Level Calculation")
+    print("Data: {}".format(data))
+    print("Bits: {}".format(bits))
+    for i in range(13, -1, -1):
+        print("Iteration: {}".format(i))
+        print("Level: {}".format(level))
+        level <<= 1
+        print("Shift left level by one by: {}".format(level))
+        bit_at_index = bits[i]
+        print("Bit Index: {}".format(bit_at_index))
+        b = (bit_at_index // 8) + 1
+        print("Floored(ABS or Integer) Quotient of bit and 8 plus one: {}".format(b))
+        o = bit_at_index % 8
+        print("Remainder of bit and 8: {}".format(o))
+        if sys.version_info >= (3, 0):
+            data_at_bit_index_divided_by_8_plus_one = data[b]
+            print("Data at bit index divided by 8, plus one: {}".format(data_at_bit_index_divided_by_8_plus_one))
+            data_shifted_right_by_remainder = data_at_bit_index_divided_by_8_plus_one >> o
+            print("Data shifted right by remainder: {}".format(data_shifted_right_by_remainder))
+            bitwise_of_data_shifted_right_and_one = data_shifted_right_by_remainder & 1
+            print("Bitwise of data shifted right and one: {}".format(bitwise_of_data_shifted_right_and_one))
+            level |= bitwise_of_data_shifted_right_and_one
+            print("New level value with bitwise value added to level: {}".format(level))
+        else:
+            data_at_bit_index_divided_by_8_plus_one = ord(data[b])
+            print("Data at bit index divided by 8, plus one: {}".format(data_at_bit_index_divided_by_8_plus_one))
+            data_shifted_right_by_remainder = data_at_bit_index_divided_by_8_plus_one >> o
+            print("Data shifted right by remainder: {}".format(data_shifted_right_by_remainder))
+            bitwise_of_data_shifted_right_and_one = data_shifted_right_by_remainder & 1
+            print("Bitwise of data shifted right and one: {}".format(bitwise_of_data_shifted_right_and_one))
+            level |= bitwise_of_data_shifted_right_and_one
+            print("New level value with bitwise value added to level: {}".format(level))
+    print("Sensor level: {}".format(level))
     return level
 
 
@@ -263,9 +306,9 @@ def path_checker(user_output_path, emotiv_filename):
     return output_path
 
 
-values_header = "Timestamp,F3 Value,F3 Quality,FC5 Value,5C5 Quality,F7 Value,F7 Quality,T7 Value,T7 Quality,P7 Value," \
+values_header = "Timestamp,F3 Value,F3 Quality,FC5 Value,FC5 Quality,F7 Value,F7 Quality,T7 Value,T7 Quality,P7 Value," \
                 "P7 Quality,O1 Value,O1 Quality,O2 Value,O2 Quality,P8 Value,P8 Quality,T8 Value,T8 Quality,F8 Value,F8 Quality," \
-                "AF4 Value,AF4 Quality,FC6 Value,FC6 Quality,F4 Value,F4 Quality,X Value,Y Value,Z Value\n"
+                "AF4 Value,AF4 Quality,FC6 Value,FC6 Quality,F4 Value,F4 Quality,AF3 Value,AF3 Quality,X Value,Y Value,Z Value\n"
 
 
 def writer_task_to_line(next_task):
@@ -273,7 +316,8 @@ def writer_task_to_line(next_task):
            "{f7_quality},{t7_value},{t7_quality},{p7_value},{p7_quality},{o1_value}," \
            "{o1_quality},{o2_value},{o2_quality},{p8_value},{p8_quality},{t8_value}," \
            "{t8_quality},{f8_value},{f8_quality},{af4_value},{af4_quality},{fc6_value}," \
-           "{fc6_quality},{f4_value},{f4_quality},{x_value},{y_value},{z_value}\n".format(
+           "{fc6_quality},{f4_value},{f4_quality},{af3_value},{af3_quality},{x_value}," \
+           "{y_value},{z_value}\n".format(
         timestamp=str(next_task.timestamp),
         f3_value=next_task.data['F3']['value'], f3_quality=next_task.data['F3']['quality'],
         fc5_value=next_task.data['FC5']['value'], fc5_quality=next_task.data['FC5']['quality'],
@@ -288,5 +332,6 @@ def writer_task_to_line(next_task):
         af4_value=next_task.data['AF4']['value'], af4_quality=next_task.data['AF4']['quality'],
         fc6_value=next_task.data['FC6']['value'], fc6_quality=next_task.data['FC6']['quality'],
         f4_value=next_task.data['F4']['value'], f4_quality=next_task.data['F4']['quality'],
+        af3_value=next_task.data['AF3']['value'], af3_quality=next_task.data['AF3']['quality'],
         x_value=next_task.data['X']['value'], y_value=next_task.data['Y']['value'],
         z_value=next_task.data['Z']['value'])
