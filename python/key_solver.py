@@ -41,24 +41,28 @@ def next_key(charset, previous_key):
     return AES.new(''.join(k), AES.MODE_ECB, iv), k
 
 
+# Make new crypto function match found key.
+# ['1', '0', '\x00', '\x00', 'H', '0', '8', '\x10', 'T', '0', '0', '\x10', '7', 'T', '8', '1']
+
+
 def new_crypto_key(serial_number, verbose=False):
     k = ['\0'] * 16
-    k[0] = 'P'
-    k[1] = '\x10'
-    k[2] = serial_number[-4]
-    k[3] = serial_number[-4]
-    k[4] = serial_number[-5]
-    k[5] = 'T'
-    k[6] = serial_number[-6]
-    k[7] = serial_number[-1]
-    k[8] = serial_number[-2]
-    k[9] = '\x10'
-    k[10] = '\x00'
-    k[11] = serial_number[-2]
-    k[12] = 'T'
-    k[13] = 'B'
-    k[14] = serial_number[-2]
-    k[15] = '\x00'
+    k[0] = serial_number[-4]
+    k[1] = serial_number[-5]
+    k[2] = '\x00'
+    k[3] = '\x00'
+    k[4] = 'H'
+    k[5] = serial_number[-6]
+    k[6] = serial_number[-3]
+    k[7] = '\x10'
+    k[8] = 'T'
+    k[9] = serial_number[-5]
+    k[10] = serial_number[-6]
+    k[11] = '\x10'
+    k[12] = serial_number[-2]
+    k[13] = 'T'
+    k[14] = serial_number[-3]
+    k[15] = serial_number[-1]
     if verbose:
         print("EmotivCrypto: Generated Crypto Key from Serial Number...\n"
               "   Serial Number - {serial_number} \n"
@@ -98,6 +102,39 @@ def original_key(serial_number, is_research):
     return AES.new(''.join(k), AES.MODE_ECB, iv), k
 
 
+def reversed_original_key(serial_number, is_research):
+    k = ['\0'] * 16
+    k[0] = serial_number[-1]
+    k[1] = '\0'
+    k[2] = serial_number[-2]
+    if is_research:
+        k[3] = 'H'
+        k[4] = serial_number[-1]
+        k[5] = '\0'
+        k[6] = serial_number[-2]
+        k[7] = 'T'
+        k[8] = serial_number[-3]
+        k[9] = '\x10'
+        k[10] = serial_number[-4]
+        k[11] = 'B'
+    else:
+        k[3] = 'T'
+        k[4] = serial_number[-3]
+        k[5] = '\x10'
+        k[6] = serial_number[-4]
+        k[7] = 'B'
+        k[8] = serial_number[-1]
+        k[9] = '\0'
+        k[10] = serial_number[-2]
+        k[11] = 'H'
+    k[12] = serial_number[-3]
+    k[13] = '\0'
+    k[14] = serial_number[-4]
+    k[15] = 'P'
+    k.reverse()
+    return AES.new(''.join(k), AES.MODE_ECB, iv), k
+
+
 def counter_check(file_data, cipher, swap_data=False):
     counter_misses = 0
     counter_checks = 0
@@ -111,14 +148,16 @@ def counter_check(file_data, cipher, swap_data=False):
         else:
             decrypted = cipher.decrypt(data[16:]) + cipher.decrypt(data[:16])
         counter = ord(decrypted[0])
+        # Uncomment this
+        # print(counter)
         if counter <= 127:
             if counter != last_counter + 1:
                 counter_misses += 1
         elif not (counter == 0 and last_counter > 127):
             counter_misses += 1
-        if counter_misses > 9 and counter_checks > 10:
+        if counter_misses > 63 and counter_checks > 64:
             return False
-        if counter_checks > 10 and counter_misses < 9:
+        if counter_checks > 64 and counter_misses < 63:
             return True
         counter_checks += 1
         last_counter = counter
@@ -153,6 +192,13 @@ with open('{}'.format(filename), 'r') as encrypted_data:
     i = 0
     # key = [charset[0], ] * 15
     # key.append('P')
+    while not found_looping and i < 10000000:
+        cipher, key = new_crypto_key(serial_number)
+        if counter_check(file_data, cipher, True):
+            print("Correct Key Found! Swap the data! {}".format(key))
+            sys.exit()
+        i += 1
+    i = 0
     while not found_looping and i < 10000000:
         cipher, key = random_key(serial_number)
         if counter_check(file_data, cipher):
