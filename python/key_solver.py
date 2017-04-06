@@ -41,6 +41,31 @@ def next_key(charset, previous_key):
     return AES.new(''.join(k), AES.MODE_ECB, iv), k
 
 
+def new_crypto_key(serial_number, verbose=False):
+    k = ['\0'] * 16
+    k[0] = 'P'
+    k[1] = '\x10'
+    k[2] = serial_number[-4]
+    k[3] = serial_number[-4]
+    k[4] = serial_number[-5]
+    k[5] = 'T'
+    k[6] = serial_number[-6]
+    k[7] = serial_number[-1]
+    k[8] = serial_number[-2]
+    k[9] = '\x10'
+    k[10] = '\x00'
+    k[11] = serial_number[-2]
+    k[12] = 'T'
+    k[13] = 'B'
+    k[14] = serial_number[-2]
+    k[15] = '\x00'
+    if verbose:
+        print("EmotivCrypto: Generated Crypto Key from Serial Number...\n"
+              "   Serial Number - {serial_number} \n"
+              "   AES KEY - {aes_key}".format(serial_number=serial_number, aes_key=k))
+    return AES.new(''.join(k), AES.MODE_ECB, iv), k
+
+
 def original_key(serial_number, is_research):
     k = ['\0'] * 16
     k[0] = serial_number[-1]
@@ -79,7 +104,6 @@ def counter_check(file_data, cipher, swap_data=False):
     last_counter = 0
     for line in file_data:
         data = line.split(',')[1:]
-
         data = [int(value, 2) for value in data]
         data = ''.join(map(chr, data))
         if not swap_data:
@@ -87,11 +111,14 @@ def counter_check(file_data, cipher, swap_data=False):
         else:
             decrypted = cipher.decrypt(data[16:]) + cipher.decrypt(data[:16])
         counter = ord(decrypted[0])
-        if counter != last_counter + 1:
+        if counter <= 127:
+            if counter != last_counter + 1:
+                counter_misses += 1
+        elif not (counter == 0 and last_counter > 127):
             counter_misses += 1
-        if counter_misses > 4 and counter_checks > 5:
+        if counter_misses > 9 and counter_checks > 10:
             return False
-        if counter_checks > 5 and counter_misses < 4:
+        if counter_checks > 10 and counter_misses < 9:
             return True
         counter_checks += 1
         last_counter = counter
@@ -126,6 +153,21 @@ with open('{}'.format(filename), 'r') as encrypted_data:
     i = 0
     # key = [charset[0], ] * 15
     # key.append('P')
+    while not found_looping and i < 10000000:
+        cipher, key = random_key(serial_number)
+        if counter_check(file_data, cipher):
+            print("Correct Key Found! {}".format(key))
+            sys.exit()
+        i += 1
+    i = 0
+    while not found_looping and i < 10000000:
+        cipher, key = random_key(serial_number)
+        if counter_check(file_data, cipher, True):
+            print("Correct Key Found! Swap the data! {}".format(key))
+            sys.exit()
+        i += 1
+    i = 0
+    print("Dumb luck didn't work, starting brute force.")
     then = datetime.now()
     last_i = 1
     for key in next_value():
