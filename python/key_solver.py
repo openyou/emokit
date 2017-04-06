@@ -192,13 +192,14 @@ with open('{}'.format(filename), 'r') as encrypted_data:
     i = 0
     # key = [charset[0], ] * 15
     # key.append('P')
-    while not found_looping and i < 10000000:
-        cipher, key = new_crypto_key(serial_number)
-        if counter_check(file_data, cipher, True):
-            print("Correct Key Found! Swap the data! {}".format(key))
-            sys.exit()
-        i += 1
-    i = 0
+    # Uncomment this after updating new_crypto_key to verify.
+    # while not found_looping and i < 10000000:
+    #    cipher, key = new_crypto_key(serial_number)
+    #    if counter_check(file_data, cipher, True):
+    #        print("Correct Key Found! Swap the data! {}".format(key))
+    #        sys.exit()
+    #    i += 1
+    # i = 0
     while not found_looping and i < 10000000:
         cipher, key = random_key(serial_number)
         if counter_check(file_data, cipher):
