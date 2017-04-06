@@ -43,6 +43,12 @@ def next_key(charset, previous_key):
 
 # Make new crypto function match found key.
 # ['1', '0', '\x00', '\x00', 'H', '0', '8', '\x10', 'T', '0', '0', '\x10', '7', 'T', '8', '1']
+['B', '1', 'H', 'T', '1', 'P', '\x00', '4', '8', 'B', 'P', '7', 'T', '7', '1', 'P']
+
+
+def test_key():
+    return AES.new(''.join(['B', '1', 'H', 'T', '1', 'P', '\x00', '4', '8', 'B', 'P', '7', 'T', '7', '1', 'P']),
+                   AES.MODE_ECB, iv)
 
 
 def new_crypto_key(serial_number, verbose=False):
@@ -155,9 +161,9 @@ def counter_check(file_data, cipher, swap_data=False):
                 counter_misses += 1
         elif not (counter == 0 and last_counter > 127):
             counter_misses += 1
-        if counter_misses > 63 and counter_checks > 64:
+        if counter_misses > 3 and counter_checks > 64:
             return False
-        if counter_checks > 64 and counter_misses < 63:
+        if counter_checks > 64 and counter_misses < 3:
             return True
         counter_checks += 1
         last_counter = counter
@@ -194,9 +200,9 @@ with open('{}'.format(filename), 'r') as encrypted_data:
     # key.append('P')
     # Uncomment this after updating new_crypto_key to verify.
     # while not found_looping and i < 10000000:
-    #    cipher, key = new_crypto_key(serial_number)
-    #    if counter_check(file_data, cipher, True):
-    #        print("Correct Key Found! Swap the data! {}".format(key))
+    #    cipher = test_key()
+    #    if counter_check(file_data, cipher, False):
+    #        print("Verified!")
     #        sys.exit()
     #    i += 1
     # i = 0
