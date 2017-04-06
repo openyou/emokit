@@ -9,7 +9,7 @@ from threading import Thread, Lock
 from Crypto.Cipher import AES
 
 from .python_queue import Queue
-from .util import crypto_key
+from .util import crypto_key, new_crypto_key
 
 
 class EmotivCrypto:
@@ -117,7 +117,10 @@ class EmotivCrypto:
         if verbose:
             print("EmotivCrypto: Serial Number - {serial_number}".format(serial_number=self.serial_number))
         # Create and return new AES class, using the serial number and headset version.
-        return AES.new(crypto_key(self.serial_number, self.is_research, verbose), AES.MODE_ECB, iv)
+        if self.serial_number.startswith('UD2016'):
+            return AES.new(new_crypto_key(self.serial_number, self.is_research, verbose), AES.MODE_ECB, iv)
+        else:
+            return AES.new(crypto_key(self.serial_number, self.is_research, verbose), AES.MODE_ECB, iv)
 
     def add_task(self, data):
         """

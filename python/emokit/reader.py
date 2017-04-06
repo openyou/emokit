@@ -231,6 +231,7 @@ def read_non_windows(source):
     # Set timeout for 1 second, to help with thread shutdown.
     data = validate_data(hidapi.hid_read_timeout(source, 34, 1000))
     if data is not None:
+        print(data)
         return ''.join(map(chr, data[1:]))
 
 
