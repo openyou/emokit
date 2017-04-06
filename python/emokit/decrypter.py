@@ -118,7 +118,7 @@ class EmotivCrypto:
             print("EmotivCrypto: Serial Number - {serial_number}".format(serial_number=self.serial_number))
         # Create and return new AES class, using the serial number and headset version.
         if self.serial_number.startswith('UD2016'):
-            return AES.new(new_crypto_key(self.serial_number, self.is_research, verbose), AES.MODE_ECB, iv)
+            return AES.new(new_crypto_key(self.serial_number, verbose), AES.MODE_ECB, iv)
         else:
             return AES.new(crypto_key(self.serial_number, self.is_research, verbose), AES.MODE_ECB, iv)
 
