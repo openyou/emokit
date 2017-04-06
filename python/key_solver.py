@@ -1,6 +1,8 @@
+import itertools
 import os
 import random
 import sys
+from datetime import datetime, timedelta
 
 from Crypto.Cipher import AES
 
@@ -8,6 +10,19 @@ filename = 'emotiv_encrypted_data_UD20160103001874_2017-04-05.17-21-32.384061.tx
 # filename = 'emotiv_encrypted_data_UD20160103001874_2017-04-05.17-42-23.292665.txt'
 serial_number = 'UD20160103001874'
 iv = os.urandom(AES.block_size)
+
+# Probably need to expand this and probably use a serial brute force like approach, but meh
+# Lets just see if it works.
+charset = [char for char in serial_number[-4:]]
+charset.extend(['\x00', '\x10', 'H', 'T', 'B', 'P'])
+possible_combinations = len(charset) * 16 * 16
+
+
+# Credit http://stackoverflow.com/questions/11747254/python-brute-force-algorithm
+def next_value():
+    return (''.join(candidate)
+            for candidate in itertools.chain.from_iterable(itertools.product(charset, repeat=i)
+                                                           for i in range(16, 16 + 1)))
 
 
 def random_key(serial_number):
@@ -17,6 +32,12 @@ def random_key(serial_number):
     emotiv_key_possiblities = ['\0', 'H', 'T', '\x10', 'B', 'P']
     keyset.extend(emotiv_key_possiblities)
     k = [random.choice(keyset) for value in range(0, 16)]
+    return AES.new(''.join(k), AES.MODE_ECB, iv), k
+
+
+def next_key(charset, previous_key):
+    k = [random.choice(charset) for value in range(0, 16)]
+
     return AES.new(''.join(k), AES.MODE_ECB, iv), k
 
 
@@ -103,28 +124,39 @@ with open('{}'.format(filename), 'r') as encrypted_data:
     file_data = encrypted_data.readlines()
     found_looping = False
     i = 0
-    while not found_looping and i < 1000000:
+    # key = [charset[0], ] * 15
+    # key.append('P')
+    then = datetime.now()
+    last_i = 1
+    for key in next_value():
+        cipher = AES.new(''.join(key), AES.MODE_ECB, iv)
+        if counter_check(file_data, cipher):
+            print("Correct Key Found! {}".format(key))
+            sys.exit()
+        i += 1
+        now = datetime.now()
+        if now - then > timedelta(minutes=1):
+            print("{} out of {} combinations tried,  {} tries/minute, last key {}".format(i, possible_combinations,
+                                                                                          i - last_i / 60, key))
+            last_i = i
+            i = 0
+            then = now
+    i = 0
+    while not found_looping and i < 10000000:
         cipher, key = random_key(serial_number)
         if counter_check(file_data, cipher):
             print("Correct Key Found! {}".format(key))
             sys.exit()
         i += 1
     i = 0
-    while not found_looping and i < 1000000:
-        cipher, key = random_key(serial_number)
-        if counter_check(file_data, cipher):
-            print("Correct Key Found! {}".format(key))
-            sys.exit()
-        i += 1
-    i = 0
-    while not found_looping and i < 1000000:
+    while not found_looping and i < 10000000:
         cipher, key = random_key(serial_number)
         if counter_check(file_data, cipher, True):
             print("Correct Key Found! Swap the data! {}".format(key))
             sys.exit()
         i += 1
     i = 0
-    while not found_looping and i < 1000000:
+    while not found_looping and i < 10000000:
         cipher, key = random_key(serial_number)
         if counter_check(file_data, cipher, True):
             print("Correct Key Found! Swap the data! {}".format(key))
