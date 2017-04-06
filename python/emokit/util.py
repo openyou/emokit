@@ -241,9 +241,8 @@ def new_crypto_key(serial_number, verbose=False):
     k[15] = '\x00'
     if verbose:
         print("EmotivCrypto: Generated Crypto Key from Serial Number...\n"
-              "   Serial Number - {serial_number} | is research - {is_research} \n"
-              "   AES KEY - {aes_key}".format(serial_number=serial_number, is_research=is_research,
-                                              aes_key=k))
+              "   Serial Number - {serial_number} \n"
+              "   AES KEY - {aes_key}".format(serial_number=serial_number, aes_key=k))
 
     return ''.join(k)
 
