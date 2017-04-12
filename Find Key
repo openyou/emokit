@@ -1,0 +1,28 @@
+In IDA, open Pure.EEG program
+Click Jump>Jump to File Offset
+Enter 3180
+Scroll down to the first retn (address is roughly 00013efd)
+Click blue dot next to .text
+Right click the now red dot, uncheck "break"
+set the debugger to Local Win32 debugger
+press green arrow
+
+It will complain that there are exceptions, you need to click the blue link and uncheck suspend and check the box to return to program. Otherwise you will get no where (this is from memory, not sure the exact words)
+
+After the program starts up right click on the red dot and edit breakpoint
+click the break box and click OK, the program will pause at this point.
+
+There should be a General Registers Window, click bent arrow that is point to the 1st Stack[000Some numbers that will always be different]
+This will take you to the section the key is used in. Scroll up roughly 100 lines (if you want to do the math I didn't, scroll up 0390F804 - 0390F7AC lines. When you get to a section that has numbers from your serial key, you have found the location.
+
+Right click in the Hex View-1 window and click Synchronize With>IDA View-EIP
+
+Click back in the IDA View-EIP window and used the up or down arrows to move the data thru the hex box.
+
+This is the Key to the EPOC+ settings, you will find a different once for the headset in EPOC mode. This maybe a for research, but I don't know, but it did not work in the testing.
+
+To find the EPOC settings, click on Search>Sequence of Bytes Enter the hex equivalent of the last 3 numbers of your serial key backwards and search IE: 34 00 37 (this is not what you search for, just the format).
+
+Click OK, after a few minutes a new tab will appear. Scroll down the list until to you find the word stack, there will be only 2. Click the 1st one, this will take you to about where your key is for the standard epoc mode.
+
+Follow the above instructions on how to get it into hex view
