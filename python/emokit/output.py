@@ -71,7 +71,7 @@ class EmotivOutput(object):
                         if next_task.packet_data.battery is not None:
                             battery = next_task.packet_data.battery
                         last_sensors = next_task.packet_data.sensors
-                        print(type(next_task.packet_data))
+                        # print(type(next_task.packet_data))
                 if time.time() - tick_time > 1:
                     tick_time = time.time()
                     packets_received_since_last_update = self.packets_received - last_packets_received
