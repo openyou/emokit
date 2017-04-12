@@ -7,7 +7,8 @@ import time
 from emokit.emotiv import Emotiv
 
 if __name__ == "__main__":
-    with Emotiv(display_output=True, verbose=False) as headset:
+    with Emotiv(display_output=True, verbose=True,
+                input_source="emotiv_encrypted_data_UD20160103001874_2017-04-05.17-21-32.384061.csv") as headset:
         while True:
             packet = headset.dequeue()
             if packet is not None:

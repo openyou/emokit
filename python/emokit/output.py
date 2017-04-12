@@ -3,6 +3,7 @@ import os
 import time
 from threading import Thread, Lock
 
+from packet import EmotivExtraPacket
 from .python_queue import Queue
 from .sensors import sensors_mapping
 from .util import get_quality_scale_level, system_platform
@@ -60,15 +61,17 @@ class EmotivOutput(object):
             self.lock.release()
             while not self.tasks.empty():
                 next_task = self.tasks.get_nowait()
+
                 if next_task.packet_received:
                     self.packets_received += 1
 
                 if next_task.packet_decrypted:
                     self.packets_processed += 1
-                    if next_task.packet_data.battery is not None:
+                    if type(next_task.packet_data) != EmotivExtraPacket:
+                        if next_task.packet_data.battery is not None:
+                            battery = next_task.packet_data.battery
                         last_sensors = next_task.packet_data.sensors
-                        battery = next_task.packet_data.battery
-
+                        # print(type(next_task.packet_data))
                 if time.time() - tick_time > 1:
                     tick_time = time.time()
                     packets_received_since_last_update = self.packets_received - last_packets_received
@@ -76,7 +79,7 @@ class EmotivOutput(object):
                     last_packets_decrypted = self.packets_processed
                     last_packets_received = self.packets_received
                     dirty = True
-                if dirty:
+                if dirty or verbose:
                     if not verbose:
                         if system_platform == "Windows":
                             os.system('cls')
