@@ -1,13 +1,16 @@
 import itertools
+import multiprocessing
 import os
 import random
 import sys
+import time
 from datetime import datetime, timedelta
 
 from Crypto.Cipher import AES
 
-filename = 'emotiv_encrypted_data_UD20160103001874_2017-04-05.17-21-32.384061.txt'
+# filename = 'emotiv_encrypted_data_UD20160103001874_2017-04-05.17-21-32.384061.txt'
 # filename = 'emotiv_encrypted_data_UD20160103001874_2017-04-05.17-42-23.292665.txt'
+filename = 'emotiv_encrypted_data_UD20160103001874_2017-04-05.17-39-48.516489.txt'
 serial_number = 'UD20160103001874'
 iv = os.urandom(AES.block_size)
 
@@ -47,27 +50,30 @@ def next_key(charset, previous_key):
 
 
 def test_key():
-    return AES.new(''.join(['B', '1', 'H', 'T', '1', 'P', '\x00', '4', '8', 'B', 'P', '7', 'T', '7', '1', 'P']),
+    return AES.new(''.join(['4', '\x00', '7', '\x15', '8', '\x00', '1', '\x0C', '8', '\x00', '7', 'D', '4', '\x00',
+                            '7', 'X']),
                    AES.MODE_ECB, iv)
 
 
 def new_crypto_key(serial_number, verbose=False):
     k = ['\0'] * 16
-    k[0] = serial_number[-4]
-    k[1] = serial_number[-5]
-    k[2] = '\x00'
-    k[3] = '\x00'
-    k[4] = 'H'
-    k[5] = serial_number[-6]
-    k[6] = serial_number[-3]
-    k[7] = '\x10'
-    k[8] = 'T'
-    k[9] = serial_number[-5]
-    k[10] = serial_number[-6]
-    k[11] = '\x10'
-    k[12] = serial_number[-2]
-    k[13] = 'T'
-    k[14] = serial_number[-3]
+    'UD20160103001874'
+    ['4', '7', '7', '8', '8', '8', '7', '1', '4', '1', '7', '7', '1', '1', '7', '4']
+    k[0] = serial_number[-1]
+    k[1] = serial_number[-2]
+    k[2] = serial_number[-2]
+    k[3] = serial_number[-3]
+    k[4] = serial_number[-3]
+    k[5] = serial_number[-3]
+    k[6] = serial_number[-2]
+    k[7] = serial_number[-4]
+    k[8] = serial_number[-1]
+    k[9] = serial_number[-4]
+    k[10] = serial_number[-2]
+    k[11] = serial_number[-2]
+    k[12] = serial_number[-4]
+    k[13] = serial_number[-4]
+    k[14] = serial_number[-2]
     k[15] = serial_number[-1]
     if verbose:
         print("EmotivCrypto: Generated Crypto Key from Serial Number...\n"
@@ -145,7 +151,12 @@ def counter_check(file_data, cipher, swap_data=False):
     counter_misses = 0
     counter_checks = 0
     last_counter = 0
+    lines = 258
+    i = 0
     for line in file_data:
+        i += 1
+        if i > lines:
+            continue
         data = line.split(',')[1:]
         data = [int(value, 2) for value in data]
         data = ''.join(map(chr, data))
@@ -154,22 +165,24 @@ def counter_check(file_data, cipher, swap_data=False):
         else:
             decrypted = cipher.decrypt(data[16:]) + cipher.decrypt(data[:16])
         counter = ord(decrypted[0])
+        # (counter)
+        print([ord(char) for char in decrypted])
         # Uncomment this
         # print(counter)
-        if counter <= 127:
-            if counter != last_counter + 1:
-                counter_misses += 1
-        elif not (counter == 0 and last_counter > 127):
-            counter_misses += 1
-        if counter_misses > 3 and counter_checks > 64:
-            return False
-        if counter_checks > 64 and counter_misses < 3:
-            return True
+        # if counter <= 127:
+        #    if counter != last_counter + 1:
+        #        counter_misses += 1
+        # elif not (counter == 0 and last_counter > 127):
+        #    counter_misses += 1
+        # if counter_misses > 2 and counter_checks > 16:
+        #    return False
+        # if counter_checks > 16 and counter_misses < 2:
+        #    return True
         counter_checks += 1
         last_counter = counter
 
 
-def unencrypted_counter_check(file_data, swap_data=False):
+def unencrypted_counter_check(file_data, swap_data=True):
     counter_misses = 0
     counter_checks = 0
     last_counter = 0
@@ -206,6 +219,36 @@ with open('{}'.format(filename), 'r') as encrypted_data:
     #        sys.exit()
     #    i += 1
     # i = 0
+
+
+def check_key(next_check):
+    new_cipher = AES.new(''.join(next_check), AES.MODE_ECB, iv)
+    if counter_check(file_data, new_cipher):
+        print("Correct Key Found! {}".format(next_check))
+    sys.exit()
+
+
+pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
+['4', '\x00', '7', 'H', '4', '\x00', '7', 'T', '8', '\x00', '1', 'B', '8', '\x00', '1', 'P']
+['4', '7', '7', '8', '8', '8', '7', '1', '4', '1', '7', '7', '1', '1', '7', '4']
+check_key(['4', '7', '7', '8', '8', '8', '7', '1', '4', '1', '7', '7', '1', '1', '7', '4'])
+print("?")
+i = 0
+last_i = 1
+then = datetime.now()
+for key in next_value():
+    pool.apply_async(check_key, args=(key,))
+    i += 1
+
+    now = datetime.now()
+    if now - then > timedelta(minutes=1):
+        print("{} keys per second, last key {}".format(i - last_i / 60, key))
+        last_i = i
+        then = now
+    time.sleep(0.00001)
+
+i += 1
+if False:
     while not found_looping and i < 10000000:
         cipher, key = random_key(serial_number)
         if counter_check(file_data, cipher):
@@ -221,21 +264,7 @@ with open('{}'.format(filename), 'r') as encrypted_data:
         i += 1
     i = 0
     print("Dumb luck didn't work, starting brute force.")
-    then = datetime.now()
-    last_i = 1
-    for key in next_value():
-        cipher = AES.new(''.join(key), AES.MODE_ECB, iv)
-        if counter_check(file_data, cipher):
-            print("Correct Key Found! {}".format(key))
-            sys.exit()
-        i += 1
-        now = datetime.now()
-        if now - then > timedelta(minutes=1):
-            print("{} out of {} combinations tried,  {} tries/minute, last key {}".format(i, possible_combinations,
-                                                                                          i - last_i / 60, key))
-            last_i = i
-            i = 0
-            then = now
+
     i = 0
     while not found_looping and i < 10000000:
         cipher, key = random_key(serial_number)
@@ -270,3 +299,4 @@ with open('{}'.format(filename), 'r') as encrypted_data:
             sys.exit()
         i += 1
     print("Your script is terrible, try again...")
+

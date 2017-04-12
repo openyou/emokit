@@ -8,6 +8,13 @@ if sys.version_info >= (3, 0):  # pragma: no cover
     unicode = str
 
 
+def is_extra_data(data):
+    for data in data[-10:]:
+        if data != 0:
+            return False
+    return True
+
+
 def get_level(data, bits, verbose=False):
     """
     Returns sensor level value from data using sensor bit mask in micro volts (uV).
@@ -223,22 +230,22 @@ print_device_info = {
 
 def new_crypto_key(serial_number, verbose=False):
     k = ['\0'] * 16
-    k[0] = 'P'
-    k[1] = '\x10'
-    k[2] = serial_number[-4]
-    k[3] = serial_number[-4]
-    k[4] = serial_number[-5]
-    k[5] = 'T'
-    k[6] = serial_number[-6]
-    k[7] = serial_number[-1]
-    k[8] = serial_number[-2]
-    k[9] = '\x10'
-    k[10] = '\x00'
+    k[0] = serial_number[-1]
+    k[1] = serial_number[-2]
+    k[2] = serial_number[-2]
+    k[3] = serial_number[-3]
+    k[4] = serial_number[-3]
+    k[5] = serial_number[-3]
+    k[6] = serial_number[-2]
+    k[7] = serial_number[-4]
+    k[8] = serial_number[-1]
+    k[9] = serial_number[-4]
+    k[10] = serial_number[-2]
     k[11] = serial_number[-2]
-    k[12] = 'T'
-    k[13] = 'B'
+    k[12] = serial_number[-4]
+    k[13] = serial_number[-4]
     k[14] = serial_number[-2]
-    k[15] = '\x00'
+    k[15] = serial_number[-1]
     if verbose:
         print("EmotivCrypto: Generated Crypto Key from Serial Number...\n"
               "   Serial Number - {serial_number} \n"

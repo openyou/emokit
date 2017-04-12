@@ -95,7 +95,8 @@ class EmotivReader(object):
                         data = read_platform[self.platform](source)
                         self.data.put_nowait(EmotivReaderTask(data=data, timestamp=datetime.now()))
                 except Exception as ex:
-                    print(ex.message)
+                    pass
+                    # print("Reader Error: {}".format(ex.message))
                     # Catching StopIteration for some reason stops at the second record,
                     #  even though there are more results.
             else:
@@ -205,6 +206,7 @@ def read_csv(source):
     :param source: CSV reader
     :return: Next row in CSV file.
     """
+    # print(dir(source))
     if sys.version_info >= (3, 0):
         return source.__next__()
     else:
@@ -231,7 +233,6 @@ def read_non_windows(source):
     # Set timeout for 1 second, to help with thread shutdown.
     data = validate_data(hidapi.hid_read_timeout(source, 34, 1000))
     if data is not None:
-        print(data)
         return ''.join(map(chr, data[1:]))
 
 

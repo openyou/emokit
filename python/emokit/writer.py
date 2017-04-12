@@ -12,7 +12,8 @@ class EmotivWriter(object):
     Write data from headset to output. CSV file for now.
     """
 
-    def __init__(self, file_name, mode="csv", header_row=None, chunk_writes=True, chunk_size=32, **kwargs):
+    def __init__(self, file_name, mode="csv", header_row=None, chunk_writes=True, chunk_size=32, verbose=False,
+                 **kwargs):
         self.mode = mode
         self.lock = Lock()
         self.data = Queue()
@@ -26,6 +27,7 @@ class EmotivWriter(object):
         self.thread.setDaemon(True)
         self._stop_signal = False
         self._stop_notified = False
+        self.verbose = verbose
 
     def start(self):
         """
@@ -101,7 +103,8 @@ class EmotivWriter(object):
                         output_file.write(data_to_write)
 
             except Exception as ex:
-                print(ex.message)
+                if self.verbose:
+                    print("Error: {}".format(ex.message))
             self.lock.acquire()
             if self._stop_signal:
                 print("Writer thread stopping...")
