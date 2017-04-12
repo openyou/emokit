@@ -28,7 +28,8 @@ class Emotiv(object):
     # TODO: Add filters for facial expressions, muscle contractions.
     def __init__(self, display_output=False, serial_number=None, is_research=False, write=False,
                  write_encrypted=False, write_decrypted=False, write_values=True, input_source="emotiv",
-                 sys_platform=system_platform, verbose=False, output_path=None, chunk_writes=True, chunk_size=32):
+                 sys_platform=system_platform, verbose=False, output_path=None, chunk_writes=True, chunk_size=32,
+                 force_epoc_mode=False):
         """
         Sets up initial values.
 
@@ -96,6 +97,7 @@ class Emotiv(object):
         self.decrypted_writer = None
         self.value_writer = None
         self.output_path = output_path
+        self.force_epoc_mode = force_epoc_mode
         self.crypto = None
         # Setup the crypto thread, if we are reading from an encrypted data source.
 

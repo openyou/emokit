@@ -10,9 +10,11 @@ import sys
 import time
 
 import pygame
-from emokit.emotiv import Emotiv
-from emokit.util import get_quality_scale_level_color
 from pygame import FULLSCREEN
+
+from emokit.emotiv import Emotiv
+from emokit.packet import EmotivExtraPacket
+from emokit.util import get_quality_scale_level_color
 
 if platform.system() == "Windows":
     pass
@@ -119,18 +121,20 @@ def main():
             try:
                 while packets_in_queue < 8:
                     packet = emotiv.dequeue()
+
                     if packet is not None:
-                        if abs(packet.sensors['X']['value']) > 1:
-                            cursor_x = max(0, min(cursor_x, 800))
-                            cursor_x -= packet.sensors['X']['value']
-                        if abs(packet.sensors['Y']['value']) > 1:
-                            cursor_y += packet.sensors['Y']['value']
-                            cursor_y = max(0, min(cursor_y, 600))
-                        map(lambda x: x.update(packet), graphers)
-                        if recording:
-                            record_packets.append(packet)
-                        updated = True
-                        packets_in_queue += 1
+                        if type(packet) != EmotivExtraPacket:
+                            if abs(packet.sensors['X']['value']) > 1:
+                                cursor_x = max(0, min(cursor_x, 800))
+                                cursor_x -= packet.sensors['X']['value']
+                            if abs(packet.sensors['Y']['value']) > 1:
+                                cursor_y += packet.sensors['Y']['value']
+                                cursor_y = max(0, min(cursor_y, 600))
+                            map(lambda x: x.update(packet), graphers)
+                            if recording:
+                                record_packets.append(packet)
+                            updated = True
+                            packets_in_queue += 1
                     time.sleep(0.001)
             except Exception as ex:
                 print("EmotivRender DequeuePlotError ", sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2],

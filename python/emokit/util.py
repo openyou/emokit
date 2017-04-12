@@ -254,6 +254,32 @@ def new_crypto_key(serial_number, verbose=False):
     return ''.join(k)
 
 
+def epoc_plus_crypto_key(serial_number, verbose=False):
+    k = ['\0'] * 16
+    k[0] = serial_number[-1]
+    k[1] = '\x00'
+    k[2] = serial_number[-2]
+    k[3] = '\x15'
+    k[4] = serial_number[-3]
+    k[5] = '\x00'
+    k[6] = serial_number[-4]
+    k[7] = '\x0C'
+    k[8] = serial_number[-3]
+    k[9] = '\x00'
+    k[10] = serial_number[-2]
+    k[11] = 'D'
+    k[12] = serial_number[-1]
+    k[13] = '\x00'
+    k[14] = serial_number[-2]
+    k[15] = 'X'
+    if verbose:
+        print("EmotivCrypto: Generated Crypto Key from Serial Number...\n"
+              "   Serial Number - {serial_number} \n"
+              "   AES KEY - {aes_key}".format(serial_number=serial_number, aes_key=k))
+
+    return ''.join(k)
+
+
 def crypto_key(serial_number, is_research=False, verbose=False):
     k = ['\0'] * 16
     k[0] = serial_number[-1]
