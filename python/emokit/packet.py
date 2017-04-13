@@ -190,10 +190,12 @@ class EmotivOldPacket(object):
         else:
             if type(data[0]) == str and len(data[0]) > 1:
                 self.raw_data = [chr(int(bit)) for bit in data]
+
                 data = self.raw_data
             else:
                 self.raw_data = data
             self.counter = ord(data[0])
+        # print([ord(c) for c in data])
         self.battery = None
         if self.counter > 127:
             self.battery = battery_values[str(self.counter)]

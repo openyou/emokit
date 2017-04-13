@@ -181,7 +181,8 @@ class Emotiv(object):
     def initialize_crypto(self):
         print("Initializing Crypto Thread...")
         if self.read_encrypted:
-            self.crypto = EmotivCrypto(self.serial_number, self.is_research, verbose=self.verbose)
+            self.crypto = EmotivCrypto(self.serial_number, self.is_research, verbose=self.verbose,
+                                       force_epoc_mode=self.force_epoc_mode)
 
     def start(self):
         """
@@ -304,7 +305,9 @@ class Emotiv(object):
                             raw_data = [int(bytes(item, encoding='latin-1').decode(), 2) for item in reader_task.data]
                         else:
                             raw_data = [int(item, 2) for item in reader_task.data]
+
                         raw_data = ''.join(map(chr, raw_data[:]))
+
                         reader_task.data = raw_data
 
                     if self.display_output:
@@ -326,9 +329,13 @@ class Emotiv(object):
                         if extra_data:
                             new_packet = EmotivExtraPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
                         else:
-                            new_packet = EmotivNewPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
+                            if self.force_epoc_mode:
+                                new_packet = EmotivOldPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
+                            else:
+                                new_packet = EmotivNewPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
                     else:
                         new_packet = EmotivOldPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
+                    # print(new_packet.counter)
                     if self.display_output:
                         if self.new_format:
                             if extra_data:
