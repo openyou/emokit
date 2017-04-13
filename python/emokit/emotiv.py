@@ -329,13 +329,13 @@ class Emotiv(object):
                         if extra_data:
                             new_packet = EmotivExtraPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
                         else:
-                            # if self.force_epoc_mode:
-                            #    new_packet = EmotivOldPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
-                            # else:
-                            new_packet = EmotivNewPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
+                            if self.force_epoc_mode:
+                                new_packet = EmotivOldPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
+                            else:
+                                new_packet = EmotivNewPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
                     else:
                         new_packet = EmotivOldPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
-                    print(new_packet.counter)
+                    # print(new_packet.counter)
                     if self.display_output:
                         if self.new_format:
                             if extra_data:

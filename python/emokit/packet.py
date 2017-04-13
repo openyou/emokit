@@ -195,7 +195,7 @@ class EmotivOldPacket(object):
             else:
                 self.raw_data = data
             self.counter = ord(data[0])
-        print([ord(c) for c in data])
+        # print([ord(c) for c in data])
         self.battery = None
         if self.counter > 127:
             self.battery = battery_values[str(self.counter)]
