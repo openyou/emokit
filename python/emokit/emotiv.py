@@ -29,7 +29,7 @@ class Emotiv(object):
     def __init__(self, display_output=False, serial_number=None, is_research=False, write=False,
                  write_encrypted=False, write_decrypted=False, write_values=True, input_source="emotiv",
                  sys_platform=system_platform, verbose=False, output_path=None, chunk_writes=True, chunk_size=32,
-                 force_epoc_mode=False):
+                 force_epoc_mode=False, force_old_crypto=False):
         """
         Sets up initial values.
 
@@ -98,6 +98,7 @@ class Emotiv(object):
         self.value_writer = None
         self.output_path = output_path
         self.force_epoc_mode = force_epoc_mode
+        self.force_old_crypto = force_old_crypto
         self.crypto = None
         # Setup the crypto thread, if we are reading from an encrypted data source.
 
@@ -182,7 +183,7 @@ class Emotiv(object):
         print("Initializing Crypto Thread...")
         if self.read_encrypted:
             self.crypto = EmotivCrypto(self.serial_number, self.is_research, verbose=self.verbose,
-                                       force_epoc_mode=self.force_epoc_mode)
+                                       force_epoc_mode=self.force_epoc_mode, force_old_crypto=self.force_old_crypto)
 
     def start(self):
         """
