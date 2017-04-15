@@ -4,8 +4,8 @@ import sys
 from datetime import datetime
 
 from .battery import battery_values
-from .sensors import sensor_bits, quality_bits, sensor_quality_bit, sensors_mapping
-from .util import get_level, get_quality_scale
+from .sensors import sensors_14_bits, sensors_16_bits, quality_bits, sensor_quality_bit, sensors_mapping
+from .util import get_level, get_level_16, get_quality_scale, get_gyro
 
 output_format = "Position {} - Char: {} SChar: {} UChar: {} Bool: {} Short: {} UShort: {} Int: {} UInt: {}\n" \
                 "             Long: {} ULong: {} 64Long: {} U64Long: {} Float: {}\n" \
@@ -101,8 +101,10 @@ class EmotivNewPacket(object):
             data = self.raw_data
             self.counter = data[0]
         else:
+            # print(data)
+            # self.raw_data = [int(bit) for bit in data]
             if type(data[0]) == str and len(data[0]) > 1:
-                self.raw_data = [chr(int(bit)) for bit in data]
+                self.raw_data = [int(bit) for bit in data]
                 data = self.raw_data
             else:
                 self.raw_data = data
@@ -122,11 +124,11 @@ class EmotivNewPacket(object):
             self.sensors['Y']['value'] = ord(data[30]) - 105
             self.sensors['Z']['value'] = '?'
 
-        for name, bits in sensor_bits.items():
-            # Get Level for sensors subtract 8192 to get signed value
-            value = get_level(self.raw_data, bits, verbose) - 8192
+        for name, sensor_bits in sensors_16_bits.items():
+            value = get_level_16(self.raw_data, sensor_bits, verbose) * 0.13
             setattr(self, name, (value,))
             self.sensors[name]['value'] = value
+
         self.quality_bit, self.quality_value = self.handle_quality(self.sensors, verbose)
 
     def handle_quality(self, sensors, verbose=False):
@@ -202,20 +204,40 @@ class EmotivOldPacket(object):
             self.counter = 128
         self.sync = self.counter == 0xe9
         self.sensors = sensors_mapping.copy()
-        if sys.version_info >= (3, 0):
-            self.sensors['X']['value'] = data[29] - 106
-            self.sensors['Y']['value'] = data[30] - 105
-            self.sensors['Z']['value'] = '?'
-        else:
-            self.sensors['X']['value'] = ord(data[29]) - 106
-            self.sensors['Y']['value'] = ord(data[30]) - 105
-            self.sensors['Z']['value'] = '?'
+        value = get_gyro(self.raw_data, sensors_14_bits['GYRO_Y'])
+        # print("Gyro Y: {}".format(value))
+        self.sensors['Y']['value'] = value * 1.0
+        value = get_gyro(self.raw_data, sensors_14_bits['GYRO_X'])
+        # print("Gyro X: {}".format(value))
+        self.sensors['X']['value'] = value * 1.0
+        """
+        #value = get_gyro(self.raw_data, sensors_14_bits['GYRO_Y_2'])
+        #print("Gyro Y 2: {}".format(value))
+        value = get_gyro(self.raw_data, sensors_14_bits['GYRO_X_2'])
+        print("Gyro X 2: {}".format(value))
+        value = get_gyro(self.raw_data, sensors_14_bits['GYRO_Y_3'])
+        print("Gyro Y 3: {}".format(value))
+        value = get_gyro(self.raw_data, sensors_14_bits['GYRO_X_3'])
+        print("Gyro X 3: {}".format(value))
+        value = get_gyro(self.raw_data, sensors_14_bits['GYRO_Y_4'])
+        print("Gyro Y 4: {}".format(value))
+        value = get_gyro(self.raw_data, sensors_14_bits['GYRO_X_4'])
+        print("Gyro X 4: {}".format(value))
+        value = get_gyro(self.raw_data, sensors_14_bits['GYRO_Y_5'])
+        print("Gyro Y 5: {}".format(value))
+        value = get_gyro(self.raw_data, sensors_14_bits['GYRO_X_5'])
+        print("Gyro X 5: {}".format(value))
+        value = get_gyro(self.raw_data, sensors_14_bits['GYRO_Y_6'])
+        print("Gyro Y 6: {}".format(value))
+        value = get_gyro(self.raw_data, sensors_14_bits['GYRO_X_6'])
+        print("Gyro X 6: {}".format(value))"""
+        self.sensors['Z']['value'] = '?'
 
-        for name, bits in sensor_bits.items():
-            # Get Level for sensors subtract 8192 to get signed value
-            value = get_level(self.raw_data, bits, verbose) - 8192
-            setattr(self, name, (value,))
-            self.sensors[name]['value'] = value
+        for name, bits in sensors_14_bits.items():
+            if not 'GYRO' in name:
+                value = get_level(self.raw_data, bits, verbose) * 0.51
+                setattr(self, name, (value,))
+                self.sensors[name]['value'] = value
         self.quality_bit, self.quality_value = self.handle_quality(self.sensors, verbose)
 
     def handle_quality(self, sensors, verbose=False):

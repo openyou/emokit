@@ -171,20 +171,20 @@ Emokit - v0.0.8 SN: {serial_number}  Old Model: {old_model}
 +========================================================+
 | Sensor |   Value  | Quality  | Quality L1 | Quality L2 |
 +--------+----------+----------+------------+------------+
-|   F3   | {f3_value:^8} | {f3_quality:^8} |  {f3_quality_old:^8}  |  {f3_quality_new:^8}  |
-|   FC5  | {fc5_value:^8} | {fc5_quality:^8} |  {fc5_quality_old:^8}  |  {fc5_quality_new:^8}  |
-|   AF3  | {af3_value:^8} | {af3_quality:^8} |  {af3_quality_old:^8}  |  {af3_quality_new:^8}  |
-|   F7   | {f7_value:^8} | {f7_quality:^8} |  {f7_quality_old:^8}  |  {f7_quality_new:^8}  |
-|   T7   | {t7_value:^8} | {t7_quality:^8} |  {t7_quality_old:^8}  |  {t7_quality_new:^8}  |
-|   P7   | {p7_value:^8} | {p7_quality:^8} |  {p7_quality_old:^8}  |  {p7_quality_new:^8}  |
-|   O1   | {o1_value:^8} | {o1_quality:^8} |  {o1_quality_old:^8}  |  {o1_quality_new:^8}  |
-|   O2   | {o2_value:^8} | {o2_quality:^8} |  {o2_quality_old:^8}  |  {o1_quality_new:^8}  |
-|   P8   | {p8_value:^8} | {p8_quality:^8} |  {p8_quality_old:^8}  |  {p8_quality_new:^8}  |
-|   T8   | {t8_value:^8} | {t8_quality:^8} |  {t8_quality_old:^8}  |  {t8_quality_new:^8}  |
-|   F8   | {f8_value:^8} | {f8_quality:^8} |  {f8_quality_old:^8}  |  {f8_quality_new:^8}  |
-|   AF4  | {af4_value:^8} | {af4_quality:^8} |  {af4_quality_old:^8}  |  {af4_quality_new:^8}  |
-|   FC6  | {fc6_value:^8} | {fc6_quality:^8} |  {fc6_quality_old:^8}  |  {fc6_quality_new:^8}  |
-|   F4   | {f4_value:^8} | {f4_quality:^8} |  {f4_quality_old:^8}  |  {f4_quality_new:^8}  |
+|   F3   | {f3_value:^8.10f} | {f3_quality:^8} |  {f3_quality_old:^8}  |  {f3_quality_new:^8}  |
+|   FC5  | {fc5_value:^8.10f} | {fc5_quality:^8} |  {fc5_quality_old:^8}  |  {fc5_quality_new:^8}  |
+|   AF3  | {af3_value:^8.10f} | {af3_quality:^8} |  {af3_quality_old:^8}  |  {af3_quality_new:^8}  |
+|   F7   | {f7_value:^8.10f} | {f7_quality:^8} |  {f7_quality_old:^8}  |  {f7_quality_new:^8}  |
+|   T7   | {t7_value:^8.10f} | {t7_quality:^8} |  {t7_quality_old:^8}  |  {t7_quality_new:^8}  |
+|   P7   | {p7_value:^8.10f} | {p7_quality:^8} |  {p7_quality_old:^8}  |  {p7_quality_new:^8}  |
+|   O1   | {o1_value:^8.10f} | {o1_quality:^8} |  {o1_quality_old:^8}  |  {o1_quality_new:^8}  |
+|   O2   | {o2_value:^8.10f} | {o2_quality:^8} |  {o2_quality_old:^8}  |  {o1_quality_new:^8}  |
+|   P8   | {p8_value:^8.10f} | {p8_quality:^8} |  {p8_quality_old:^8}  |  {p8_quality_new:^8}  |
+|   T8   | {t8_value:^8.10f} | {t8_quality:^8} |  {t8_quality_old:^8}  |  {t8_quality_new:^8}  |
+|   F8   | {f8_value:^8.10f} | {f8_quality:^8} |  {f8_quality_old:^8}  |  {f8_quality_new:^8}  |
+|   AF4  | {af4_value:^8.10f} | {af4_quality:^8} |  {af4_quality_old:^8}  |  {af4_quality_new:^8}  |
+|   FC6  | {fc6_value:^8.10f} | {fc6_quality:^8} |  {fc6_quality_old:^8}  |  {fc6_quality_new:^8}  |
+|   F4   | {f4_value:^8.10f} | {f4_quality:^8} |  {f4_quality_old:^8}  |  {f4_quality_new:^8}  |
 |   X    | {x:^8} |   N/A    |    N/A     |    N/A     |
 |   Y    | {y:^8} |   N/A    |    N/A     |    N/A     |
 |   Z    | {z:^8} |   N/A    |    N/A     |    N/A     |

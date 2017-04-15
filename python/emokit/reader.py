@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division
 
-import csv
 import os
 import sys
 import time
@@ -23,11 +22,12 @@ class EmotivReader(object):
     Read data from file or hid. Only CSV for now.
     """
 
-    def __init__(self, file_name=None, mode="hid", hid=None, file=None, **kwargs):
+    def __init__(self, file_name=None, mode="hid", hid=None, file=None, new_format=False, **kwargs):
         self.mode = mode
         self.file = file
         self.file_name = file_name
         self.hid = hid
+        self.new_format = new_format
         self.platform = system_platform
         self.serial_number = None
         self.lock = Lock()
@@ -48,7 +48,8 @@ class EmotivReader(object):
                 self.file = open(file_name, 'r')
             else:
                 self.file = open(file_name, 'rb')
-            self.reader = csv.reader(self.file, quoting=csv.QUOTE_ALL)
+            contents = self.file.read().split('\n')
+            self.reader = read_csv(contents)
             self.platform = "Reader"
         elif self.mode == 'hid':
             self.reader = None
@@ -92,11 +93,11 @@ class EmotivReader(object):
             if not self.platform == 'Windows':
                 try:
                     if not self._stop_signal:
-                        data = read_platform[self.platform](source)
+                        data = read_platform[self.platform](source, new_format=self.new_format)
                         self.data.put_nowait(EmotivReaderTask(data=data, timestamp=datetime.now()))
                 except Exception as ex:
-                    pass
-                    # print("Reader Error: {}".format(ex.message))
+
+                    print("Reader Error: {}".format(ex.message))
                     # Catching StopIteration for some reason stops at the second record,
                     #  even though there are more results.
             else:
@@ -107,7 +108,7 @@ class EmotivReader(object):
                 self.running = False
         if self.file is not None:
             self.file.close()
-        if type(source) != int:
+        if type(source) != int and type(source) != list:
             source.close()
         if self.hid is not None:
             if type(self.hid) != int:
@@ -133,7 +134,7 @@ class EmotivReader(object):
         self.lock.acquire()
         if not self._stop_signal:
             self.lock.release()
-            data = validate_data(data)
+            data = validate_data(data, new_format=self.new_format)
             if data is not None:
                 self.data.put_nowait(EmotivReaderTask(data=''.join(map(chr, data[1:])), timestamp=datetime.now()))
         else:
@@ -206,32 +207,35 @@ def read_csv(source):
     :param source: CSV reader
     :return: Next row in CSV file.
     """
-    # print(dir(source))
-    if sys.version_info >= (3, 0):
-        return source.__next__()
-    else:
-        return source.next()
+    while True:
+        for line in source:
+            yield line
 
 
-def read_reader(source):
+def read_reader(source, new_format=False):
     """
     Read from EmotivReader only. Return data for decryption.
     :param source: Emotiv data reader
     :return: Next row in Emotiv data file.
     """
-    data = read_csv(source)
-    return data
+    value = next(source)
+    value = value.split(',')
+    return value
 
 
-def read_non_windows(source):
+def read_non_windows(source, new_format=False):
     """
     Read from Emotiv hid device.
     :param source: Emotiv hid device
+    :param new_format: Read more data?
     :return: Next encrypted packet from Emotiv device.
     """
     # Doesn't seem to matter how big we make the buffer 32 returned every time, 33 for other platforms
     # Set timeout for 1 second, to help with thread shutdown.
-    data = validate_data(hidapi.hid_read_timeout(source, 34, 1000))
+    if new_format:
+        data = validate_data(hidapi.hid_read_timeout(source, 64, 1000), new_format)
+    else:
+        data = validate_data(hidapi.hid_read_timeout(source, 34, 1000), new_format)
     if data is not None:
         return ''.join(map(chr, data[1:]))
 

@@ -51,6 +51,7 @@ class Emotiv(object):
 
         """
         print("Initializing Emokit...")
+        self.new_format = False
         self.running = False
         self.chunk_writes = chunk_writes
         self.chunk_size = chunk_size
@@ -109,7 +110,6 @@ class Emotiv(object):
         self._stop_signal = False
         self.thread.setDaemon(True)
         self.start()
-        self.new_format = False
 
     def initialize_output(self):
         print("Initializing Output Thread...")
@@ -129,7 +129,7 @@ class Emotiv(object):
                 self.read_encrypted = False
                 if self.input_source.startswith('emotiv_values'):
                     self.read_values = True
-            self.reader = EmotivReader(file_name=self.input_source, mode="csv")
+            self.reader = EmotivReader(file_name=self.input_source, mode="csv", new_format=self.new_format)
             # Make sure the reader still has the serial number set, since we won't be obtaining it from the headset.
             self.reader.serial_number = self.serial_number
         else:
@@ -232,11 +232,11 @@ class Emotiv(object):
         :param crypto: EmotivCrypto class
         """
         self.initialize_reader()
+        if self.serial_number.startswith("UD2016") and not self.force_epoc_mode:
+            self.new_format = True
         self.initialize_writer()
         self.initialize_crypto()
         self.initialize_output()
-        if self.serial_number.startswith("UD2016"):
-            self.new_format = True
         if self.output is not None:
             self.output.start()
         self.reader.start()
@@ -297,6 +297,7 @@ class Emotiv(object):
                         if len(reader_task.data) == 33:
                             reader_task.data = reader_task.data[1:]
                         if len(reader_task.data) != 32:
+                            print("Reader task: {}".format(len(reader_task.data)))
                             self.reader.stop()
                             self.crypto.stop()
                             self.running = False
@@ -308,7 +309,6 @@ class Emotiv(object):
                             raw_data = [int(item, 2) for item in reader_task.data]
 
                         raw_data = ''.join(map(chr, raw_data[:]))
-
                         reader_task.data = raw_data
 
                     if self.display_output:
@@ -337,6 +337,17 @@ class Emotiv(object):
                     else:
                         new_packet = EmotivOldPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
                     # print(new_packet.counter)
+                    data = []
+                    for c in new_packet.raw_data:
+                        if c > 0:
+                            data.append(ord(c))
+                    # print(data)
+
+                    # values = [new_packet.sensors[name]['value'] for name in
+                    #          'AF3 F7 F3 FC5 T7 P7 O1 O2 P8 T8 FC6 F4 F8 AF4'.split(' ')]
+                    # cy = struct.pack('>' + str(len(values)) + 'h', *values)
+                    # print(cy)
+
                     if self.display_output:
                         if self.new_format:
                             if extra_data:
