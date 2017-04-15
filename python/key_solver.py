@@ -8,10 +8,10 @@ from datetime import datetime, timedelta
 
 from Crypto.Cipher import AES
 
-# filename = 'emotiv_encrypted_data_UD20160103001874_2017-04-05.17-21-32.384061.txt'
-# filename = 'emotiv_encrypted_data_UD20160103001874_2017-04-05.17-42-23.292665.txt'
-filename = 'emotiv_encrypted_data_UD20160103001874_2017-04-05.17-39-48.516489.txt'
-serial_number = 'UD20160103001874'
+filename = 'emotiv_encrypted_data_UD20160103001874_2017-04-05.17-21-32.384061.csv'
+# filename = 'emotiv_encrypted_data_UD20160103001874_2017-04-05.17-42-23.292665.csv'
+# filename = 'emotiv_encrypted_data_SN201211150798GM_2017-04-05 17-51-45.771149.csv'
+serial_number = 'SN201211150798GM'
 iv = os.urandom(AES.block_size)
 
 # Probably need to expand this and probably use a serial brute force like approach, but meh
@@ -111,7 +111,7 @@ def original_key(serial_number, is_research):
     k[13] = '\0'
     k[14] = serial_number[-4]
     k[15] = 'P'
-    return AES.new(''.join(k), AES.MODE_ECB, iv), k
+    return k
 
 
 def reversed_original_key(serial_number, is_research):
@@ -147,6 +147,10 @@ def reversed_original_key(serial_number, is_research):
     return AES.new(''.join(k), AES.MODE_ECB, iv), k
 
 
+data_ouput = "{0:^4} {1:^4} {2:^4} {3:^4} {4:^4} {5:^4} {6:^4} {7:^4} {8:^4} {9:^4} {10:^4} {11:^4} {12:^4} {13:^4} " \
+             "{14:^4} {15:^4} {16:^4} {17:^4} {18:^4} {19:^4} {20:^4} {21:^4} {22:^4} {23:^4} {24:^4} {25:^4} {26:^4} " \
+             "{27:^4} {28:^4} {29:^4} {30:^4} {31:^4}"
+
 def counter_check(file_data, cipher, swap_data=False):
     counter_misses = 0
     counter_checks = 0
@@ -166,7 +170,9 @@ def counter_check(file_data, cipher, swap_data=False):
             decrypted = cipher.decrypt(data[16:]) + cipher.decrypt(data[:16])
         counter = ord(decrypted[0])
         # (counter)
-        print([ord(char) for char in decrypted])
+        strings_of_data = [ord(char) for char in decrypted]
+        print(len(strings_of_data))
+        print(data_ouput.format(*strings_of_data))
         # Uncomment this
         # print(counter)
         # if counter <= 127:
@@ -230,8 +236,9 @@ def check_key(next_check):
 
 pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
 ['4', '\x00', '7', 'H', '4', '\x00', '7', 'T', '8', '\x00', '1', 'B', '8', '\x00', '1', 'P']
-['4', '7', '7', '8', '8', '8', '7', '1', '4', '1', '7', '7', '1', '1', '7', '4']
-check_key(['4', '7', '7', '8', '8', '8', '7', '1', '4', '1', '7', '7', '1', '1', '7', '4'])
+key = ['4', '7', '7', '8', '8', '8', '7', '1', '4', '1', '7', '7', '1', '1', '7', '4']
+# key = original_key(serial_number, False)
+check_key(key)
 print("?")
 i = 0
 last_i = 1

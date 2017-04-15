@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import platform
+import struct
 import sys
 
 system_platform = platform.system()
@@ -15,6 +16,29 @@ def is_extra_data(data):
     return True
 
 
+def bits(bytes):
+    """
+    Helper function to get a tuple of the bits in a byte.
+    :param byte: The byte from which to get the bits.
+    :return: Tuple of bits in the byte param.
+    """
+    value = 0
+    bits_list = []
+    for byte in bytes:
+        print(byte)
+        bit_list = []
+        for i in range(8, -1, -1):
+            bit_list.append(str((ord(byte) >> i) & 1))
+        binary = ''.join(bit_list)
+        bits_list.append(int(binary, 2))
+    print()
+    bit_list = []
+    print(''.join(map(chr, bin(bits_list[0] & bits_list[1]), 2)))
+    for i in range(8, -1, -1):
+        bit_list.append(str((ord(bin(bits_list[0] & bits_list[1])) >> i) & 1))
+    return value
+
+
 def get_level(data, bits, verbose=False):
     """
     Returns sensor level value from data using sensor bit mask in micro volts (uV).
@@ -23,6 +47,96 @@ def get_level(data, bits, verbose=False):
         return detailed_get_level(data, bits)
     level = 0
     for i in range(13, -1, -1):
+        level <<= 1
+        b = (bits[i] // 8) + 1
+        o = bits[i] % 8
+        if sys.version_info >= (3, 0):
+            level |= (data[b] >> o) & 1
+        else:
+            level |= (ord(data[b]) >> o) & 1
+    return level
+
+
+def get_gyro(data, bits, verbose=False):
+    """
+    Returns sensor level value from data using sensor bit mask in micro volts (uV).
+    """
+    """
+    if verbose:
+        return detailed_get_level(data, bits)
+    level = 0
+    bit_list = []
+    print("----forward-----")
+    for i in range(8):
+        level <<= 1
+        b = (bits[i] // 8) + 1
+        print(b)
+        o = bits[i] % 8
+        print(o)
+        bit_list.append(str(ord(data[b]) >> o & 1))
+        if sys.version_info >= (3, 0):
+            level |= (data[b] >> o) & 1
+        else:
+            level |= (ord(data[b]) >> o) & 1
+        print(bit_list)
+
+        print(level)
+    print(struct.unpack('>ii', ''.join(bit_list)))
+    print(struct.unpack('ii', ''.join(bit_list)))
+    print(struct.unpack('>ff', ''.join(bit_list)))
+    print(struct.unpack('ff', ''.join(bit_list)))
+    print(struct.unpack('>d', ''.join(bit_list)))
+    print(struct.unpack('d', ''.join(bit_list)))
+    print(struct.unpack('hhhh', ''.join(bit_list)))
+    print(struct.unpack('>hhhh', ''.join(bit_list)))
+    print(struct.unpack('l', ''.join(bit_list)))
+    #print(struct.unpack('>l', ''.join(bit_list)))
+
+    print("----reverse-----")
+    """
+    level = 0
+    bit_list = []
+    for i in range(7, -1, -1):
+        level <<= 1
+        b = (bits[i] // 8) + 1
+        # print(b)
+        o = bits[i] % 8
+        # print(o)
+        bit_list.append(str(ord(data[b]) >> o & 1))
+        if sys.version_info >= (3, 0):
+            level |= (data[b] >> o) & 1
+        else:
+            level |= (ord(data[b]) >> o) & 1
+            # print(bit_list)
+    """        print(level)
+    print(struct.unpack('>ii', ''.join(bit_list)))
+    print(struct.unpack('ii', ''.join(bit_list)))
+    #print(struct.unpack('>ff', ''.join(bit_list)))
+    print(struct.unpack('ff', ''.join(bit_list)))
+    print(struct.unpack('>d', ''.join(bit_list)))
+    print(struct.unpack('d', ''.join(bit_list)))
+    print(struct.unpack('l', ''.join(bit_list)))
+    print(struct.unpack('hhhh', ''.join(bit_list)))
+    print(struct.unpack('>hhhh', ''.join(bit_list)))
+    #print()"""
+    upper_high, upper_low, lower_high, lower_low = \
+        struct.unpack('>hhhh', ''.join(bit_list))
+    # print(struct.unpack('l', ''.join(bit_list)))
+    level = (upper_high - upper_low) * 8
+    level += lower_high - lower_low
+    # print("----end-----")
+    # print(level)
+    return level
+
+
+def get_level_16(data, bits, verbose=False):
+    """
+    Returns sensor level value from data using sensor bit mask in micro volts (uV).
+    """
+    if verbose:
+        return detailed_get_level(data, bits)
+    level = 0
+    for i in range(15, -1, -1):
         level <<= 1
         b = (bits[i] // 8) + 1
         o = bits[i] % 8
@@ -345,11 +459,17 @@ def device_is_emotiv(device, platform):
     return is_emotiv
 
 
-def validate_data(data):
-    if len(data) == 32:
-        data.insert(0, 0)
-    if len(data) != 33:
-        return None
+def validate_data(data, new_format=False):
+    if new_format:
+        if len(data) == 64:
+            data.insert(0, 0)
+        if len(data) != 65:
+            return None
+    else:
+        if len(data) == 32:
+            data.insert(0, 0)
+        if len(data) != 33:
+            return None
     return data
 
 
@@ -373,6 +493,17 @@ def path_checker(user_output_path, emotiv_filename):
 values_header = "Timestamp,F3 Value,F3 Quality,FC5 Value,FC5 Quality,F7 Value,F7 Quality,T7 Value,T7 Quality,P7 Value," \
                 "P7 Quality,O1 Value,O1 Quality,O2 Value,O2 Quality,P8 Value,P8 Quality,T8 Value,T8 Quality,F8 Value,F8 Quality," \
                 "AF4 Value,AF4 Quality,FC6 Value,FC6 Quality,F4 Value,F4 Quality,AF3 Value,AF3 Quality,X Value,Y Value,Z Value\n"
+
+
+def bits_to_float(b):
+    print('bits to float')
+    print('b: {}'.format(b))
+    print('bj: {}'.format("".join(b)))
+    b = "".join(b)
+    print('a: {}'.format(b))
+    # s = struct.pack('L', b)
+    # print("s: {}".format(s))
+    return struct.unpack('>d', b)[0]
 
 
 def writer_task_to_line(next_task):
