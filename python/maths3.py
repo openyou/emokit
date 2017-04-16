@@ -1,16 +1,79 @@
 import struct
-import sys
 
-for byte in chr(105):
+# print(struct.unpack('>i', ''.join([chr(242), chr(108)])))
+
+bit_list = []
+
+level = 0
+(chr(108), 29)
+for char, byte in [(chr(108), 29), (chr(253), 28)]:
     level = 0
     print(byte)
     bit_list = []
-    for i in range(8):
+    for i in range(232, 240, 1):
+        print(i)
         level <<= 1
         print(level)
-        bit_list.append(chr(ord(byte) >> i & 1))
-        print(bit_list)
+        o = i % 8
+        bit_list.append(chr(ord(char) >> o & 1))
+        level += ord(char) >> o & 1
+    print(bit_list)
+    print(level)
+    print(struct.unpack('>ii', ''.join(bit_list)))
+    print(struct.unpack('>ff', ''.join(bit_list)))
+    print(struct.unpack('hhhh', ''.join(bit_list)))
+    print(struct.unpack('d', ''.join(bit_list)))
+    print(struct.unpack('l', ''.join(bit_list)))
+    bit_list = []
+    level = 0
 
+    for i in range(239, 231, -1):
+        print(i)
+        level <<= 1
+        print(level)
+        o = i % 8
+        bit_list.append(chr(ord(char) >> o & 1))
+        level += ord(char) >> o & 1
+    print(bit_list)
+    print(level)
+    print(struct.unpack('ii', ''.join(bit_list)))
+    print(struct.unpack('ff', ''.join(bit_list)))
+    print(struct.unpack('hhhh', ''.join(bit_list)))
+    print(struct.unpack('d', ''.join(bit_list)))
+    print(struct.unpack('l', ''.join(bit_list)))
+    bit_list = []
+    for i in range(224, 232, 1):
+        print(i)
+        level <<= 1
+        print(level)
+        o = i % 8
+        bit_list.append(chr(ord(char) >> o & 1))
+        level += ord(char) >> o & 1
+    print(bit_list)
+    print(level)
+    print(struct.unpack('ii', ''.join(bit_list)))
+    print(struct.unpack('ff', ''.join(bit_list)))
+    print(struct.unpack('hhhh', ''.join(bit_list)))
+    print(struct.unpack('d', ''.join(bit_list)))
+    print(struct.unpack('l', ''.join(bit_list)))
+    level = 0
+
+    bit_list = []
+    for i in range(231, 223, -1):
+        print(i)
+        level <<= 1
+        print(level)
+        o = i % 8
+        bit_list.append(chr(ord(char) >> o & 1))
+        level += ord(char) >> o & 1
+    print(bit_list)
+    print(level)
+    print(struct.unpack('ii', ''.join(bit_list)))
+    print(struct.unpack('ff', ''.join(bit_list)))
+    print(struct.unpack('hhhh', ''.join(bit_list)))
+    print(struct.unpack('d', ''.join(bit_list)))
+    print(struct.unpack('l', ''.join(bit_list)))
+"""
     print(struct.unpack('ii', ''.join(bit_list)))
 
     print(struct.unpack('>ii', ''.join(bit_list)))
@@ -65,3 +128,4 @@ print(struct.unpack('>l', value))
 value_2 = struct.unpack('hh', value)
 value_3 = struct.pack('i', value_2)
 print(value_3)
+"""

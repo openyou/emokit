@@ -337,10 +337,10 @@ class Emotiv(object):
                     else:
                         new_packet = EmotivOldPacket(decrypted_task.data, timestamp=decrypted_task.timestamp)
                     # print(new_packet.counter)
-                    data = []
-                    for c in new_packet.raw_data:
-                        if c > 0:
-                            data.append(ord(c))
+                    # data = []
+                    # for c in new_packet.raw_data:
+                    #    if c > 0:
+                    #        data.append(ord(c))
                     # print(data)
 
                     # values = [new_packet.sensors[name]['value'] for name in
@@ -362,8 +362,9 @@ class Emotiv(object):
                         else:
                             self.output.tasks.put_nowait(EmotivOutputTask(decrypted=True,
                                                                           data=EmotivOldPacket(decrypted_task.data)))
-                    if new_packet.battery is not None:
-                        self.battery = new_packet.battery
+                    if type(new_packet) == EmotivOldPacket:
+                        if new_packet.battery is not None:
+                            self.battery = new_packet.battery
                     self.packets.put_nowait(new_packet)
                     if self.write:
                         if self.write_values:
