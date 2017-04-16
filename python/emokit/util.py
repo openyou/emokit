@@ -10,10 +10,9 @@ if sys.version_info >= (3, 0):  # pragma: no cover
 
 
 def is_extra_data(data):
-    for data in data[-10:]:
-        if data != 0:
-            return False
-    return True
+    if ord(data[1]) == 32:
+        return True
+    return False
 
 
 def bits(bytes):
@@ -28,8 +27,7 @@ def bits(bytes):
         print(byte)
         bit_list = []
         for i in range(8, -1, -1):
-            bit_list.append(str((ord(byte) >> i) & 1))
-        binary = ''.join(bit_list)
+            binary = ''.join(bit_list)
         bits_list.append(int(binary, 2))
     print()
     bit_list = []
@@ -46,14 +44,17 @@ def get_level(data, bits, verbose=False):
     if verbose:
         return detailed_get_level(data, bits)
     level = 0
+    bit_list = []
     for i in range(13, -1, -1):
         level <<= 1
         b = (bits[i] // 8) + 1
         o = bits[i] % 8
+        bit_list.append(str(ord(data[b]) >> o & 1))
         if sys.version_info >= (3, 0):
             level |= (data[b] >> o) & 1
         else:
             level |= (ord(data[b]) >> o) & 1
+    print(bit_list)
     return level
 
 
@@ -61,71 +62,10 @@ def get_gyro(data, bits, verbose=False):
     """
     Returns sensor level value from data using sensor bit mask in micro volts (uV).
     """
-    """
-    if verbose:
-        return detailed_get_level(data, bits)
-    level = 0
-    bit_list = []
-    print("----forward-----")
-    for i in range(8):
-        level <<= 1
-        b = (bits[i] // 8) + 1
-        print(b)
-        o = bits[i] % 8
-        print(o)
-        bit_list.append(str(ord(data[b]) >> o & 1))
-        if sys.version_info >= (3, 0):
-            level |= (data[b] >> o) & 1
-        else:
-            level |= (ord(data[b]) >> o) & 1
-        print(bit_list)
 
-        print(level)
-    print(struct.unpack('>ii', ''.join(bit_list)))
-    print(struct.unpack('ii', ''.join(bit_list)))
-    print(struct.unpack('>ff', ''.join(bit_list)))
-    print(struct.unpack('ff', ''.join(bit_list)))
-    print(struct.unpack('>d', ''.join(bit_list)))
-    print(struct.unpack('d', ''.join(bit_list)))
-    print(struct.unpack('hhhh', ''.join(bit_list)))
-    print(struct.unpack('>hhhh', ''.join(bit_list)))
-    print(struct.unpack('l', ''.join(bit_list)))
-    #print(struct.unpack('>l', ''.join(bit_list)))
-
-    print("----reverse-----")
-    """
-    level = 0
-    bit_list = []
-    for i in range(7, -1, -1):
-        level <<= 1
-        b = (bits[i] // 8) + 1
-        # print(b)
-        o = bits[i] % 8
-        # print(o)
-        bit_list.append(str(ord(data[b]) >> o & 1))
-        if sys.version_info >= (3, 0):
-            level |= (data[b] >> o) & 1
-        else:
-            level |= (ord(data[b]) >> o) & 1
-            # print(bit_list)
-    """        print(level)
-    print(struct.unpack('>ii', ''.join(bit_list)))
-    print(struct.unpack('ii', ''.join(bit_list)))
-    #print(struct.unpack('>ff', ''.join(bit_list)))
-    print(struct.unpack('ff', ''.join(bit_list)))
-    print(struct.unpack('>d', ''.join(bit_list)))
-    print(struct.unpack('d', ''.join(bit_list)))
-    print(struct.unpack('l', ''.join(bit_list)))
-    print(struct.unpack('hhhh', ''.join(bit_list)))
-    print(struct.unpack('>hhhh', ''.join(bit_list)))
-    #print()"""
-    upper_high, upper_low, lower_high, lower_low = \
-        struct.unpack('>hhhh', ''.join(bit_list))
-    # print(struct.unpack('l', ''.join(bit_list)))
-    level = (upper_high - upper_low) * 8
-    level += lower_high - lower_low
-    # print("----end-----")
-    # print(level)
+    # if verbose:
+    #    return detailed_get_level(data, bits)
+    level = 42
     return level
 
 
