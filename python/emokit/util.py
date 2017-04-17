@@ -24,14 +24,14 @@ def bits(bytes):
     value = 0
     bits_list = []
     for byte in bytes:
-        print(byte)
+        # print(byte)
         bit_list = []
         for i in range(8, -1, -1):
             binary = ''.join(bit_list)
         bits_list.append(int(binary, 2))
-    print()
+    # print()
     bit_list = []
-    print(''.join(map(chr, bin(bits_list[0] & bits_list[1]), 2)))
+    # print(''.join(map(chr, bin(bits_list[0] & bits_list[1]), 2)))
     for i in range(8, -1, -1):
         bit_list.append(str((ord(bin(bits_list[0] & bits_list[1])) >> i) & 1))
     return value
@@ -41,8 +41,8 @@ def get_level(data, bits, verbose=False):
     """
     Returns sensor level value from data using sensor bit mask in micro volts (uV).
     """
-    if verbose:
-        return detailed_get_level(data, bits)
+    # if verbose:
+    #    return detailed_get_level(data, bits)
     level = 0
     bit_list = []
     for i in range(13, -1, -1):
@@ -54,8 +54,24 @@ def get_level(data, bits, verbose=False):
             level |= (data[b] >> o) & 1
         else:
             level |= (ord(data[b]) >> o) & 1
-    print(bit_list)
-    return level
+            # print(level)
+    # print(bit_list)
+    # whole_bits = list(reversed(bit_list[0:7]))
+    # whole_bits.append('0')
+    # whole = int(''.join(whole_bits), 2)
+    # print(whole)
+    # print(whole / 0.051)
+    # precision_bits = bit_list[7:14]
+    # precision_bits.append('0')
+    # precision_bits.append('0')
+    # print(int(''.join(precision_bits), 2))
+    # precision = int(''.join(precision_bits), 2)
+    # print(precision / 0.51)
+    # level = whole / 0.051
+    # level += precision / 0.51
+    # level = level * 2
+    # print((level) * 0.5151515151)
+    return level * 0.5151515151
 
 
 def get_gyro(data, bits, verbose=False):

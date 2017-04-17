@@ -178,12 +178,12 @@ class EmotivOldPacket(object):
         :param verbose - Flag for outputting debug values.
         """
 
-        bit_list = []
-        for i in range(len(data) * 8):
-            byte = (i // 8)
-            print(byte)
-            bit_list.append(str((ord(data[byte]) & i)))
-        print(bit_list)
+        # bit_list = []
+        # for i in range(len(data) * 8):
+        #    byte = (i // 8)
+        #    print(byte)
+        #    bit_list.append(str((ord(data[byte]) & i)))
+        # print(bit_list)
         if timestamp is None:
             self.timestamp = datetime.now()
         else:
@@ -238,7 +238,7 @@ class EmotivOldPacket(object):
 
         for name, bits in sensors_14_bits.items():
             if not 'GYRO' in name:
-                value = get_level(self.raw_data, bits, verbose) * 0.51
+                value = get_level(self.raw_data, bits, verbose)
                 setattr(self, name, (value,))
                 self.sensors[name]['value'] = value
         self.quality_bit, self.quality_value = self.handle_quality(self.sensors, verbose)

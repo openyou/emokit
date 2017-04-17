@@ -66,6 +66,7 @@ class Grapher(object):
 
         if self.first_packet:
             self.y_offset = self.buffer[0][0]
+            # print(self.y_offset)
             self.first_packet = False
         pos = self.x_offset, self.calc_y(self.buffer[0][0]) + self.y
         for i, (value, quality) in enumerate(self.buffer):
