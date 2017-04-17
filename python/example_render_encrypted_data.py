@@ -56,7 +56,7 @@ class Grapher(object):
         """
         Calculates line height from value.
         """
-        return val - self.y_offset + gheight
+        return (val * 1.5) - self.y_offset + gheight
 
     def draw(self):
         """
@@ -66,7 +66,8 @@ class Grapher(object):
             return
 
         if self.first_packet:
-            self.y_offset = self.buffer[0][0]
+            self.y_offset = self.buffer[0][0] * 1.5
+            # print(self.y_offset)
             self.first_packet = False
         pos = self.x_offset, self.calc_y(self.buffer[0][0]) + self.y
         for i, (value, quality) in enumerate(self.buffer):
@@ -94,7 +95,7 @@ def main():
     "emotiv_encrypted_data_UD20160103001874_2017-04-05.17-42-23.292665.csv"
     "emotiv_encrypted_data_UD20160103001874_2017-04-05.17-39-48.516489.csv"
     "emotiv_encrypted_data_UD20160103001874_2017-04-05.17-21-32.384061.csv"
-    with Emotiv(display_output=True, verbose=True, is_research=True, force_epoc_mode=False, force_old_crypto=False,
+    with Emotiv(display_output=False, verbose=False, is_research=False, force_epoc_mode=False, force_old_crypto=False,
                 input_source="emotiv_encrypted_data_UD20160103001874_2017-04-05.17-39-48.516489.csv") as emotiv:
         for name in 'AF3 F7 F3 FC5 T7 P7 O1 O2 P8 T8 FC6 F4 F8 AF4'.split(' '):
             graphers.append(Grapher(screen, name, len(graphers), emotiv.old_model))
